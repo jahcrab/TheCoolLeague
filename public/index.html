@@ -649,7 +649,7 @@ const AX={w0:57,w1:188,l0:32,l1:161};
 function drawBoard(sq,mode){
   const cv=$('#board'); if(!cv)return;
   const {w0,w1,l0,l1}=AX, nx=w1-w0+1, ny=l1-l0+1;
-  const padL=38, padR=38, padT=20, padB=24, dpr=Math.min(2,window.devicePixelRatio||1);
+  const padL=2, padR=38, padT=20, padB=4, dpr=Math.min(2,window.devicePixelRatio||1);
   const avail=Math.max(300,($('.board-scroll').clientWidth||600)-padL-padR-6);
   const fit=Math.max(4,Math.min(12,Math.floor(avail/nx)));
   const cs=Math.max(4,Math.min(22,Math.round(fit*(STATE.zoom||1))));
@@ -681,16 +681,12 @@ function drawBoard(sq,mode){
       c.fillStyle=inkOn(fillFor(arr));
       c.fillText(arr.length,X(ws)+cs/2,Y(ls)+cs/2+.5); });
   }
-  // scores on all four edges, so they stay in view wherever you have scrolled
+  // winner across the top, loser down the right
   c.fillStyle=col('--muted'); c.font='600 9px '+S.getPropertyValue('--f-data');
-  c.textBaseline='middle';
-  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20){
-    c.textAlign='right'; c.fillText(v,padL-6,Y(v)+cs/2);
-    c.textAlign='left';  c.fillText(v,padL+nx*cs+6,Y(v)+cs/2); }
-  c.textAlign='center';
-  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20){
-    c.textBaseline='bottom'; c.fillText(v,X(v)+cs/2,padT-6);
-    c.textBaseline='top';    c.fillText(v,X(v)+cs/2,padT+ny*cs+6); }
+  c.textAlign='left'; c.textBaseline='middle';
+  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20) c.fillText(v,padL+nx*cs+6,Y(v)+cs/2);
+  c.textAlign='center'; c.textBaseline='bottom';
+  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20) c.fillText(v,X(v)+cs/2,padT-6);
 
   const at=ev=>{ const r=cv.getBoundingClientRect();
     return [w0+Math.floor((ev.clientX-r.left-padL)/cs), l0+Math.floor((ev.clientY-r.top-padT)/cs),
