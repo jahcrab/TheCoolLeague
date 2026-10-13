@@ -190,7 +190,8 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .rlegend span.i{display:flex;align-items:center;gap:6px}
 
 /* scorigami board */
-.board-wrap{background:var(--panel);border:1px solid var(--line);padding:12px}
+.board-wrap{background:var(--panel);border:1px solid var(--line);padding:12px;
+  width:fit-content;max-width:100%}
 .board-scroll{overflow-x:auto}
 #board{display:block;image-rendering:pixelated}
 .tip{position:fixed;z-index:30;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--f-data);
@@ -652,10 +653,11 @@ function drawBoard(sq,mode){
   const padL=2, padR=38, padT=20, padB=4, dpr=Math.min(2,window.devicePixelRatio||1);
   // "Fit" means the whole board on screen, so it is bound by height as well as
   // width — the grid is 130 rows tall and a width-only fit ran off the bottom.
-  const availW=Math.max(260,($('.board-scroll').clientWidth||600)-padL-padR-6);
+  // the wrapper shrink-wraps the canvas, so measure the column it sits in
+  const availW=Math.max(260,(($('main')||{clientWidth:900}).clientWidth)-30-padL-padR);
   const railH=($('nav.rail')||{offsetHeight:44}).offsetHeight;
-  const availH=Math.max(240,(window.innerHeight||800)-railH-150);
-  const fit=Math.max(4,Math.min(12,Math.floor(Math.min(availW/nx,availH/ny))));
+  const availH=Math.max(240,(window.innerHeight||800)-railH-110);
+  const fit=Math.max(6,Math.min(14,Math.floor(Math.min(availW/nx,availH/ny))));
   const z=STATE.zoom||1;
   const cs=Math.min(22, z===1?fit : z===2?Math.max(9,fit*2) : Math.max(16,fit*3));
   const cw=padL+nx*cs+padR, ch=padT+ny*cs+padB;
