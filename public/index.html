@@ -650,9 +650,14 @@ function drawBoard(sq,mode){
   const cv=$('#board'); if(!cv)return;
   const {w0,w1,l0,l1}=AX, nx=w1-w0+1, ny=l1-l0+1;
   const padL=2, padR=38, padT=20, padB=4, dpr=Math.min(2,window.devicePixelRatio||1);
-  const avail=Math.max(300,($('.board-scroll').clientWidth||600)-padL-padR-6);
-  const fit=Math.max(4,Math.min(12,Math.floor(avail/nx)));
-  const cs=Math.max(4,Math.min(22,Math.round(fit*(STATE.zoom||1))));
+  // "Fit" means the whole board on screen, so it is bound by height as well as
+  // width — the grid is 130 rows tall and a width-only fit ran off the bottom.
+  const availW=Math.max(260,($('.board-scroll').clientWidth||600)-padL-padR-6);
+  const railH=($('nav.rail')||{offsetHeight:44}).offsetHeight;
+  const availH=Math.max(240,(window.innerHeight||800)-railH-150);
+  const fit=Math.max(4,Math.min(12,Math.floor(Math.min(availW/nx,availH/ny))));
+  const z=STATE.zoom||1;
+  const cs=Math.min(22, z===1?fit : z===2?Math.max(9,fit*2) : Math.max(16,fit*3));
   const cw=padL+nx*cs+padR, ch=padT+ny*cs+padB;
   cv.width=cw*dpr; cv.height=ch*dpr; cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
