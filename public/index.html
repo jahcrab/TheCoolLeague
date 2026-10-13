@@ -245,6 +245,7 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .mgr-card .nm{font-family:var(--f-disp);font-size:25px;line-height:1}
 .mgr-card .rec{font-family:var(--f-data);font-size:14px;color:var(--muted);margin-top:4px}
 .mgr-card .rings{color:var(--gold);font-size:14px;margin-top:5px;letter-spacing:2px}
+.mgr-card .bio{margin:11px 0 0;max-width:68ch;font-size:15.5px;line-height:1.52;color:var(--fg)}
 .back{appearance:none;background:none;border:0;color:var(--accent);font-family:var(--f-disp);font-size:12.5px;
   letter-spacing:.13em;text-transform:uppercase;cursor:pointer;padding:0;margin-bottom:12px}
 .empty{color:var(--muted);font-style:italic;padding:14px 0}
@@ -646,6 +647,27 @@ VIEWS.scorigami=()=>{
    current season, not a re-litigation of past awards. */
 const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
   2023:'Christian McCaffrey',2024:"Ja'Marr Chase",2025:'Christian McCaffrey'};
+/* Who these people are, which the boxscores do not record. */
+const BIO={
+ Jon:'Commissioner, and the keeper of all of this. Hoisted the Garrison in 2024 off an 11–3 season that led the league in scoring, then led it in scoring again in 2025 and lost the final by 2.12. Runs the league he keeps nearly winning.',
+ Alex:'The most argued-about manager in league history, with a trade ledger that still draws a crowd. His spot was taken off him after a 2–11 debut in 2020 and handed to Graham, so that Graham and Max could stop sharing a team. He returned in 2022 and won the whole thing in the season the league still calls the sus year.',
+ Ayush:'Arrived in 2023 and became the most efficient manager the league has had: the best career win rate and the highest scoring average of anyone. Two Manager of the Year awards in four seasons and a trip to the 2023 final. Still no ring.',
+ Brendan:'Two Garrisons, and 6–1 once the bracket starts — the best postseason record in the league by a distance. Holds the all-time single-week high at 188.36, then followed it with a 77.94, the largest fall between two regular-season weeks ever recorded.',
+ Chris:'Four seasons, three playoff trips, and not one win after arriving. Said he left so Dan could have a spot back, which the league has always read as a man tired of first-round exits. His 164.80 in Week 3 of 2020 is still half of the highest-scoring game ever played.',
+ Dan:'Three seasons, one final, and a loss in it by 0.56 — the narrowest championship margin on record. Spent most of his time in the league visibly worried about the last-place punishment, which has never once been enforced.',
+ Graham:'Once the most feared trade partner in the league, quieter of late. In 2022 he led the entire league in points scored and missed the playoffs anyway, finishing 6–8 while six lower-scoring teams went through. Three appearances, zero playoff wins.',
+ Guzman:'Lives in Virginia and has never been met in person by anyone in the league, which has slowed him down not at all. Champion in 2025 as the last seed into the bracket, 5–2 in the postseason overall, and 6–0 against James V by an average of 47.7.',
+ 'James V':'A Bills fan, which the league has decided explains a great deal. Reached the 2022 final behind a 184.38, still his best week, then scored 47.50 in the championship round — the week his two Bills starters finished on zero after the game in Cincinnati was abandoned.',
+ 'James D':'An Ivy League student, and the scoring average backs it: second-highest of anyone with seven seasons. Also 1–4 in the playoffs across four appearances, which backs something else.',
+ Michael:'Champion in 2021, and author of the most dominant regular season the league has seen — 137.29 a week in 2020, 28% clear of the field, which ended in a first-round exit. His teams play with a great deal of heart.',
+ Nick:'Drafts Uncs. Repeatedly, by choice. It worked in 2020, when he went 10–3 and knocked out both the 11–2 team and the 137-a-week team on the way to the final.',
+ Owen:'A beast. Went 11–2 in 2020, the best winning percentage of any full season in league history, and took Manager of the Year for it. The one thing missing is a playoff win.',
+ Max:'Painfully, reliably mid. Seven seasons and not one playoff appearance, the only manager with a clean sheet. Held the all-time scoring record for 494 games with a 187.70 in 2021 before Brendan took it off him, which is the most Max thing that has ever happened.',
+ Bill:'His team is EV!L and has been for some time. Opened 2020 at 1–12, then went 10–4 the next year — a nine-win swing, the largest in league history. Owns the 179.98 from Week 3 of 2023, and the 74.56 that came right after it.',
+ Bobby:'Two seasons, a 5–14 record, and a career scoring average of 99.76 — the only manager ever to finish under a hundred. It has not gone well.',
+ Perna:'Three seasons, then gone. Nobody has ever given a straight answer about why, and the league has largely stopped asking.'
+};
+
 /* Manager of the Year. Regular season only. */
 const COTY={2020:'Owen',2021:'Michael',2022:'James D',2023:'Ayush',2024:'Jon',2025:'Ayush'};
 
@@ -988,6 +1010,7 @@ function mgrDetail(m){
   card.appendChild(E('div','nm',m));
   card.appendChild(E('div','rec',c.w+'-'+c.l+' regular season · '+(100*c.w/(c.w+c.l)).toFixed(1)+'% · '+f2(c.pf/c.g)+' per game'));
   if(c.titles)card.appendChild(E('div','rings','●'.repeat(c.titles)+'  '+Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', ')));
+  if(BIO[m]) card.appendChild(E('p','bio',BIO[m]));
   out.appendChild(card);
 
   out.appendChild(secH('Season by Season'));
