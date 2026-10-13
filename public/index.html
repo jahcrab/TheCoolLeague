@@ -498,6 +498,21 @@ VIEWS.overview=()=>{
   ISSUE.trade.body.forEach(t=>{const p=E('p');p.innerHTML=t;td.appendChild(p)});
   out.appendChild(td);
 
+  const L=mvpLadder();
+  out.appendChild(secH('The MVP Ladder · After Week '+W));
+  const mi=E('div','hero-body');
+  const mt=E('div');
+  ['Most valuable is not the same question as most productive. A manager who drafted perfectly wins by thirty every week, and the best back in the league is along for the ride; a manager holding one good player wins games he had no business winning. The second player was worth more.',
+   'So the ladder scores production first — points per game, points above replacement, availability — and then adds a far heavier term for the weeks a player actually decided. A <strong>win above replacement</strong> is a week your team won that it would have lost with a waiver-wire body in that slot. A <strong>loss below replacement</strong> is the reverse, and the only way to lose points here.',
+   'Both are weighted four times, so one of either moves a player further than two points a game ever will. '+
+   '<strong>'+L.rows[0].name+'</strong> leads at '+f2(L.rows[0].score)+'.'
+  ].forEach(t=>{const p=E('p');p.innerHTML=t;mt.appendChild(p)});
+  mi.appendChild(mt); out.appendChild(mi);
+  out.appendChild(mvpTable(L.rows.slice(0,10),true));
+  const ml=E('button','back'); ml.style.margin='12px 0 0';
+  ml.textContent='Full formula, replacement values and every qualifier →';
+  ml.onclick=()=>go('mvp',{}); out.appendChild(ml);
+
   out.appendChild(secH('Inside the Archive'));
   const p=E('p','lede');
   p.textContent='Every game the Cool League has played since 2020 — '+G.length+' matchups and '+
@@ -509,6 +524,7 @@ VIEWS.overview=()=>{
   [['scorigami','Scorigami','All '+sq.size+' squares, by season or by repeat. Click one to see the games.'],
    ['games','Games','Every scoreboard and full boxscore back to 2020, plus a player search.'],
    ['records','Records','Highest, lowest, closest, biggest blowouts, best seasons.'],
+   ['mvp','MVP Ladder','Wins above replacement, and the formula behind the award.'],
    ['managers','Managers','17 careers, head-to-head records, and '+champs.length+' Garrison winners.'],
    ['rings','Ring Counter','Every player who has won one, plus the six Agholor MVPs.'],
    ['newsletters','Past Issues','Every Scorigami Report from this season.']
@@ -620,6 +636,59 @@ VIEWS.scorigami=()=>{
   setTimeout(()=>drawBoard(sq,mode),0);
   return out;
 };
+
+/* ---------- MVP ladder ----------
+   Jon's formula:  PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
+   Replacement values are rebuilt from this league each week rather than carried
+   over: QB2s, RB3s, WR4s and TE2s by points per game, averaged, 14 teams deep. */
+const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
+let MVP_CACHE=null;
+function mvpLadder(){
+  if(MVP_CACHE) return MVP_CACHE;
+  const Y=SEASONS[SEASONS.length-1], M=D.mgrs, byw={};
+  D.tw.forEach(t=>{ if(t[0]===Y) byw[t[1]+'|'+t[3]]=t; });
+  const weeks=[...new Set(D.tw.filter(t=>t[0]===Y).map(t=>t[1]))].sort((a,b)=>a-b);
+  const pl={};
+  Object.values(byw).forEach(t=>{
+    const opp=byw[t[1]+'|'+t[4]];
+    t[7].forEach(([slot,started,pid,pos,pts])=>{
+      const nm=D.players[pid], pn=D.pos[pos]||'';
+      if(!pl[nm]) pl[nm]={name:nm,pos:pn,wk:[]};
+      if(!pl[nm].pos) pl[nm].pos=pn;
+      pl[nm].wk.push({pts,started:started===1,mgr:M[t[3]],pf:t[6],
+                      pa:opp?opp[6]:null,won:t[5]===1});
+    });
+  });
+  const GPof=p=>p.wk.filter(v=>v.pts>0).length;
+  const PFGof=p=>{const g=GPof(p); return g?p.wk.filter(v=>v.pts>0).reduce((s,v)=>s+v.pts,0)/g:0};
+  const minG=Math.max(3,Math.ceil(weeks.length*0.6));
+  const elig=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&GPof(p)>=minG);
+  const RV={}, SECOND={}, FIRST={};
+  Object.keys(MVP_BAND).forEach(pos=>{
+    const ranked=elig.filter(p=>p.pos===pos).map(PFGof).sort((a,b)=>b-a);
+    const [a,b]=MVP_BAND[pos], band=ranked.slice(a-1,b);
+    RV[pos]=band.length?band.reduce((s,v)=>s+v,0)/band.length:0;
+    FIRST[pos]=ranked[0]||0; SECOND[pos]=ranked[1]||0;
+  });
+  const rows=elig.map(p=>{
+    const rv=RV[p.pos], g=GPof(p), f=PFGof(p);
+    let GW=0,WAR=0,LBR=0,GAR=0;
+    p.wk.forEach(v=>{
+      if(v.pts>rv) GAR++;
+      if(!v.started||v.pa==null) return;
+      if(v.won){ GW++; if(+(v.pf-v.pts+rv).toFixed(2) < v.pa) WAR++; }
+      else if(+(v.pf-v.pts+rv).toFixed(2) > v.pa) LBR++;
+    });
+    const PAR=f-rv, POS=f-SECOND[p.pos];
+    const mgr=Object.entries(p.wk.reduce((a,v)=>(a[v.mgr]=(a[v.mgr]||0)+1,a),{}))
+      .sort((a,b)=>b[1]-a[1])[0][0];
+    return {name:p.name,pos:p.pos,mgr,pfg:f,par:PAR,gp:g,gw:GW,pos2:POS,gar:GAR,war:WAR,lbr:LBR,
+            score:f+PAR+g+GW*1.5+POS*2+GAR+WAR*4-LBR*4};
+  }).sort((a,b)=>b.score-a.score);
+  MVP_CACHE={year:Y,weeks:weeks.length,minG,RV,rows,
+             counts:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
+  return MVP_CACHE;
+}
 
 /* Pick legible ink for a count printed on a coloured square. */
 function inkOn(fill){
@@ -916,6 +985,95 @@ function mgrDetail(m){
   return out;
 }
 
+function mvpTable(rows,compact){
+  const cols=[
+    {h:'',f:(r,i)=>i+1},
+    {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
+    {h:'Pos',f:r=>r.pos},
+    {h:'Manager',f:r=>r.mgr},
+    {h:'PF/G',r:true,n:true,f:r=>f2(r.pfg)},
+    {h:'PAR',r:true,n:true,sm:false,f:r=>f2(r.par)},
+    {h:'GP',r:true,n:true,sm:false,f:r=>r.gp},
+    {h:'GW',r:true,n:true,sm:false,f:r=>r.gw},
+    {h:'POS',r:true,n:true,sm:false,f:r=>(r.pos2>0?'+':'')+f2(r.pos2)},
+    {h:'GAR',r:true,n:true,sm:false,f:r=>r.gar},
+    {h:'WAR',r:true,n:true,f:r=>r.war?'<strong style="color:var(--good)">'+r.war+'</strong>':'0'},
+    {h:'LBR',r:true,n:true,f:r=>r.lbr?'<strong style="color:var(--bad)">'+r.lbr+'</strong>':'0'},
+    {h:'MVP',r:true,n:true,f:r=>'<strong>'+f2(r.score)+'</strong>'}
+  ];
+  return tbl(compact?cols.filter(c=>['','Player','Pos','Manager','PF/G','WAR','LBR','MVP'].includes(c.h)):cols,
+             rows,{click:r=>go('games',{q:r.name})});
+}
+
+VIEWS.mvp=()=>{
+  const out=E('div'), L=mvpLadder();
+  out.appendChild(secH('The MVP Ladder · '+L.year));
+  out.appendChild(E('p','lede','Jon’s season-MVP formula, run against the league’s own numbers after '+
+    L.weeks+' weeks. It asks who has been most valuable to the team that rostered them, which is not the same question as who has scored the most.'));
+
+  const g1=E('div','grid-auto'); g1.style.marginBottom='18px';
+  const top=L.rows[0];
+  g1.appendChild(tile(top.name.split(' ').slice(-1)[0],'Leader',top.name+' · '+f2(top.score)));
+  g1.appendChild(tile(L.rows.filter(r=>r.war>0).length,'Players with a WAR','Won a week their team would otherwise have lost'));
+  g1.appendChild(tile(L.rows.filter(r=>r.lbr>0).length,'Players with an LBR','Cost a week a replacement would have won'));
+  g1.appendChild(tile(L.rows.length,'Qualified','Played at least '+L.minG+' of '+L.weeks+' weeks'));
+  out.appendChild(g1);
+
+  out.appendChild(mvpTable(L.rows.slice(0,40),false));
+
+  out.appendChild(secH('Replacement Values · '+L.year));
+  out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: the average points per game of this league’s QB2s, RB3s, WR4s and TE2s. Rebuilt every week, so they move with the season.'));
+  out.appendChild(tbl([
+    {h:'Position',f:r=>'<strong>'+r[0]+'</strong>'},
+    {h:'Replacement value',r:true,n:true,f:r=>f2(r[1])+' pts'},
+    {h:'Qualified at the position',r:true,n:true,f:r=>L.counts[r[0]]}
+  ],Object.entries(L.RV)));
+
+  out.appendChild(secH('How the Formula Works'));
+  const faq=E('div','faq'), a=E('div'), b=E('div');
+  const card=(host,t,body)=>{const d=E('div','card');d.appendChild(E('h3',null,t));
+    body.forEach(x=>{const p=E('p');p.innerHTML=x;d.appendChild(p)});host.appendChild(d)};
+  card(a,'The argument',[
+    'The usual answers — most points per game, or the biggest gap over the next player at the position — measure production. They do not measure what a player was worth to the one team that actually had him.',
+    'Take two managers. One drafts perfectly and wins every week by thirty; his best back is the best in the league, but the team would have won most of those weeks without him. The other manager’s season is held together by a single player who delivers five wins the team had no business getting. The first player had the better year. The second was more valuable.',
+    'So the formula rewards production, then adds a much heavier term for the weeks a player actually decided.']);
+  card(a,'Wins Above Replacement',[
+    'A WAR is earned when a manager wins a week that they would have lost had that player been swapped for a replacement-level starter:',
+    '<span class="num">PF − PP + RV &lt; PA</span> — your total, minus his points, plus what the waiver wire would have given you, still short of your opponent.',
+    'It only applies in weeks the team won. You cannot bail out a loss.']);
+  card(b,'A real one',[
+    'Week 1: <strong>Bijan Robinson</strong> scores 31.30 and Nick wins 120.26–117.00. Replace him with a replacement-level back and Nick puts up <span class="num">120.26 − 31.30 + '+f2(L.RV.RB)+' = '+f2(120.26-31.30+L.RV.RB)+'</span>, which loses to 117.00. WAR earned.',
+    'Week 5 he scores 15.80 in a 130.14–113.80 win. Without him: <span class="num">'+f2(130.14-15.80+L.RV.RB)+'</span>, still ahead. A fine game, no WAR — the week was never in doubt.']);
+  card(b,'Losses Below Replacement',[
+    'The mirror image, and the only negative term. If a team loses a week it would have won with replacement-level production in that slot, the player takes an LBR.',
+    'WAR rewards showing up when it counted. LBR punishes disappearing when the bar was on the floor. Both are weighted ×4, so a single one of either moves a player further than two points a game.']);
+  faq.appendChild(a); faq.appendChild(b); out.appendChild(faq);
+
+  out.appendChild(secH('The Terms'));
+  out.appendChild(E('p','lede','MVP = PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) − LBR(4)'));
+  out.appendChild(tbl([
+    {h:'Term',f:r=>'<strong>'+r[0]+'</strong>'},{h:'Weight',n:true,f:r=>r[1]},{h:'What it measures',f:r=>r[2]}
+  ],[
+    ['PF/G','×1','Points per game, by this league’s scoring'],
+    ['PAR','×1','Points above replacement — PF/G minus the replacement value at his position'],
+    ['GP','×1','Games played, so availability counts'],
+    ['GW','×1.5','Weeks he started in a win'],
+    ['POS','×2','Points over second place at his position. The position leader is positive, second place is zero, everyone else negative'],
+    ['GAR','×1','Games he outscored the replacement value'],
+    ['WAR','×4','Wins above replacement'],
+    ['LBR','×4 negative','Losses below replacement']
+  ]));
+
+  const note=E('div','card'); note.style.marginTop='18px';
+  note.appendChild(E('h3',null,'Where this version bends the method'));
+  ['A player qualifies at '+L.minG+' games, 60% of the weeks played so far. Without a cut-off, one big week off the waiver wire would top the ladder on points per game alone.',
+   'Games played is counted as weeks the player scored anything while rostered in this league, since the archive holds fantasy rosters rather than NFL inactives. A genuine zero in a game he played is counted as a week off.',
+   'Replacement values come from qualified players in this league only. This early, the QB and TE bands run shallower than fourteen deep, so those values are noisier than the RB and WR ones.'
+  ].forEach(t=>note.appendChild(E('p',null,t)));
+  out.appendChild(note);
+  return out;
+};
+
 VIEWS.rings=()=>{
   const out=E('div'), R0=D.rings||[], YRS=D.ringYears||[];
   out.appendChild(secH('Ring Counter'));
@@ -982,7 +1140,7 @@ VIEWS.newsletters=()=>{
 
 /* ---------- shell ---------- */
 const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['records','Records'],
-  ['managers','Managers'],['rings','Rings'],['newsletters','Newsletters']];
+  ['mvp','MVP'],['managers','Managers'],['rings','Rings'],['newsletters','Newsletters']];
 function go(v,st){ CUR=v; STATE=st||{}; try{location.hash=v}catch(e){} render(); scrollTo({top:0,behavior:'smooth'}); }
 function render(){
   const rail=$('#rail'); rail.innerHTML='';
