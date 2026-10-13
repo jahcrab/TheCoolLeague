@@ -881,13 +881,18 @@ VIEWS.records=()=>{
   out.appendChild(E('p','lede','Every piece of hardware the league hands out, by season.'));
   const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
     const r=i<0?null:(D.rings||[]).find(x=>x[2][i]===4); return r?r[0]:null};
+  // whoever started him in that season's final
+  const heldBy=(y,nm)=>{const t=D.tw.find(t=>t[0]===y&&t[1]===PO_FINAL[y]&&t[2]===BR_PO
+    &&t[7].some(e=>D.players[e[2]]===nm)); return t?D.mgrs[t[3]]:null};
+  const withMgr=(nm,mgr)=>nm+(mgr?' <span style="color:var(--muted)">('+mgr+')</span>':'');
   const champs=Object.keys(CHAMP).map(Number).sort((a,b)=>b-a);
   out.appendChild(tbl([
     {h:'Season',f:y=>String(y)},
     {h:'Garrison',f:y=>'<strong>'+CHAMP[y]+'</strong>'},
     {h:'Manager of the Year',f:y=>COTY[y]||'<span style="opacity:.5">—</span>'},
-    {h:'Season MVP',f:y=>AWARDED[y]||'<span style="opacity:.5">—</span>'},
-    {h:'Agholor MVP',f:y=>agholor(y)||'<span style="opacity:.5">—</span>'}
+    {h:'Season MVP',f:y=>{const nm=AWARDED[y]; if(!nm)return '<span style="opacity:.5">—</span>';
+      const r=mvpLadder(y).rows.find(x=>x.name===nm); return withMgr(nm,r&&r.mgr)}},
+    {h:'Agholor MVP',f:y=>{const nm=agholor(y); return nm?withMgr(nm,heldBy(y,nm)):'<span style="opacity:.5">—</span>'}}
   ],champs,{click:y=>go('managers',{m:CHAMP[y]})}));
   const cn=E('div','note'); cn.style.marginTop='9px';
   cn.textContent='Manager of the Year is judged on the regular season. The Agholor MVP goes to the best player on the Garrison winner’s roster in the final.';
