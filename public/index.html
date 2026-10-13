@@ -770,51 +770,60 @@ function drawBoard(sq,mode){
   const availW=Math.max(260,(($('main')||{clientWidth:900}).clientWidth)-30-padL-padR);
   const railH=($('nav.rail')||{offsetHeight:44}).offsetHeight;
   const availH=Math.max(240,(window.innerHeight||800)-railH-110);
-  const fit=Math.max(6,Math.min(14,Math.floor(Math.min(availW/nx,availH/ny))));
-  const z=STATE.zoom||1;
-  const cs=Math.min(22, z===1?fit : z===2?Math.max(9,fit*2) : Math.max(16,fit*3));
-  const cw=padL+nx*cs+padR, ch=padT+ny*cs+padB;
+  // cells are wider than they are tall, as in the workbook: that fills the width
+  // without the 130 rows running off the bottom
+  const z=STATE.zoom||1, mult=z===1?1:z===2?2:3;
+  // fractional, so the board fills the panel exactly instead of rounding 125px away
+  const grow=(fit,floor)=>z===1?fit:Math.min(30,Math.max(floor,fit*mult));
+  const csX=grow(Math.max(5,Math.min(16,availW/nx)),10);
+  const csY=grow(Math.max(4,Math.min(16,availH/ny)),8);
+  const cw=Math.round(padL+nx*csX)+padR, ch=Math.round(padT+ny*csY)+padB;
   cv.width=cw*dpr; cv.height=ch*dpr; cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
   const S=getComputedStyle(document.body), col=n=>S.getPropertyValue(n).trim();
   const heat=[col('--heat2'),col('--heat3'),col('--heat4')];
   const yr=[0,1,2,3,4,5,6].map(i=>col('--sg-y'+i));
-  const X=ws=>padL+(ws-w0)*cs, Y=ls=>padT+(ls-l0)*cs;
+  const X=ws=>padL+(ws-w0)*csX, Y=ls=>padT+(ls-l0)*csY;
+  // snap to the device pixel grid, not the CSS one, or fractional cells leave
+  // hairline seams once the canvas is scaled by devicePixelRatio
+  const snap=v=>Math.round(v*dpr)/dpr;
+  const RX=ws=>snap(X(ws)), RY=ls=>snap(Y(ls));
+  const cell=(ws,ls)=>[RX(ws),RY(ls),RX(ws+1)-RX(ws),RY(ls+1)-RY(ls)];
   c.clearRect(0,0,cw,ch);
   // playable ground, then the impossible slope
-  c.fillStyle=col('--sg-cell'); c.fillRect(padL,padT,nx*cs,ny*cs);
+  c.fillStyle=col('--sg-cell'); c.fillRect(padL,padT,RX(w1+1)-padL,RY(l1+1)-padT);
   c.fillStyle=col('--sg-void');
   for(let ls=l0;ls<=l1;ls++){ const last=Math.min(w1,ls-1); if(last<w0)continue;
-    c.fillRect(padL,Y(ls),(last-w0+1)*cs,cs); }
+    c.fillRect(padL,RY(ls),RX(last+1)-padL,RY(ls+1)-RY(ls)); }
   const fillFor=arr=>
     mode==='season' ? (yr[Math.min(...arr.map(g=>g.y))-2020]||yr[6])
   : mode==='latest' ? (yr[Math.max(...arr.map(g=>g.y))-2020]||yr[6])
   : mode==='repeats'? heat[Math.min(2,arr.length-1)]
   : col('--sg-claimed');
   sq.forEach((arr,k)=>{ const [ws,ls]=k.split('|').map(Number);
-    c.fillStyle=fillFor(arr); c.fillRect(X(ws),Y(ls),cs,cs); });
+    c.fillStyle=fillFor(arr); c.fillRect(...cell(ws,ls)); });
   // once cells are big enough, print how many games landed on each
-  if(cs>=15){
-    c.font='600 '+Math.round(cs*.52)+'px '+S.getPropertyValue('--f-data');
+  if(Math.min(csX,csY)>=13){
+    c.font='600 '+Math.round(Math.min(csX,csY)*.62)+'px '+S.getPropertyValue('--f-data');
     c.textAlign='center'; c.textBaseline='middle';
     sq.forEach((arr,k)=>{ const [ws,ls]=k.split('|').map(Number);
       c.fillStyle=inkOn(fillFor(arr));
-      c.fillText(arr.length,X(ws)+cs/2,Y(ls)+cs/2+.5); });
+      c.fillText(arr.length,X(ws)+csX/2,Y(ls)+csY/2+.5); });
   }
   // winner across the top, loser down the right
   c.fillStyle=col('--muted'); c.font='600 9px '+S.getPropertyValue('--f-data');
   c.textAlign='left'; c.textBaseline='middle';
-  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20) c.fillText(v,padL+nx*cs+6,Y(v)+cs/2);
+  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20) c.fillText(v,padL+nx*csX+6,Y(v)+csY/2);
   c.textAlign='center'; c.textBaseline='bottom';
-  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20) c.fillText(v,X(v)+cs/2,padT-6);
+  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20) c.fillText(v,X(v)+csX/2,padT-6);
 
   const at=ev=>{ const r=cv.getBoundingClientRect();
-    return [w0+Math.floor((ev.clientX-r.left-padL)/cs), l0+Math.floor((ev.clientY-r.top-padT)/cs),
+    return [w0+Math.floor((ev.clientX-r.left-padL)/csX), l0+Math.floor((ev.clientY-r.top-padT)/csY),
             ev.clientX-r.left, ev.clientY-r.top] };
   const tip=$('#tip');
   cv.onmousemove=ev=>{
     const [ws,ls,x,y]=at(ev);
-    if(x<padL||y<padT||y>padT+ny*cs||ws<w0||ws>w1||ls<l0||ls>l1){tip.style.opacity=0;cv.style.cursor='default';return}
+    if(x<padL||y<padT||y>padT+ny*csY||ws<w0||ws>w1||ls<l0||ls>l1){tip.style.opacity=0;cv.style.cursor='default';return}
     const arr=sq.get(ws+'|'+ls);
     if(!arr){tip.style.opacity=0;cv.style.cursor='default';return}
     tip.innerHTML='<b>'+ws+' – '+ls+'</b>\n'+squareLine(arr);
