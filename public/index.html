@@ -646,6 +646,9 @@ VIEWS.scorigami=()=>{
    current season, not a re-litigation of past awards. */
 const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
   2023:'Christian McCaffrey',2024:"Ja'Marr Chase",2025:'Christian McCaffrey'};
+/* Manager of the Year. Regular season only. */
+const COTY={2020:'Owen',2021:'Michael',2022:'James D',2023:'Ayush',2024:'Jon',2025:'Ayush'};
+
 /* Roster moves made after the last week in the archive, so no boxscore shows
    them yet. Clear each entry once the week it happened in has been pulled.
    Bobby <-> Alex, the night Week 5 closed. */
@@ -874,6 +877,22 @@ VIEWS.games=()=>{
 
 VIEWS.records=()=>{
   const M=D.mgrs, out=E('div'), e=elig();
+  out.appendChild(secH('The Awards'));
+  out.appendChild(E('p','lede','Every piece of hardware the league hands out, by season.'));
+  const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
+    const r=i<0?null:(D.rings||[]).find(x=>x[2][i]===4); return r?r[0]:null};
+  const champs=Object.keys(CHAMP).map(Number).sort((a,b)=>b-a);
+  out.appendChild(tbl([
+    {h:'Season',f:y=>String(y)},
+    {h:'Garrison',f:y=>'<strong>'+CHAMP[y]+'</strong>'},
+    {h:'Manager of the Year',f:y=>COTY[y]||'<span style="opacity:.5">—</span>'},
+    {h:'Season MVP',f:y=>AWARDED[y]||'<span style="opacity:.5">—</span>'},
+    {h:'Agholor MVP',f:y=>agholor(y)||'<span style="opacity:.5">—</span>'}
+  ],champs,{click:y=>go('managers',{m:CHAMP[y]})}));
+  const cn=E('div','note'); cn.style.marginTop='9px';
+  cn.textContent='Manager of the Year is judged on the regular season. The Agholor MVP goes to the best player on the Garrison winner’s roster in the final.';
+  out.appendChild(cn);
+
   out.appendChild(secH('Record Book'));
   out.appendChild(E('p','lede','Regular season and playoffs, consolation excluded. Click any line to open that scoreboard.'));
   const open=g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]});
