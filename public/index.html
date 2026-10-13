@@ -642,12 +642,14 @@ VIEWS.scorigami=()=>{
    Replacement values are rebuilt from this league each week rather than carried
    over: QB2s, RB3s, WR4s and TE2s by points per game, averaged, 14 teams deep. */
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
-let MVP_CACHE=null;
-function mvpLadder(){
-  if(MVP_CACHE) return MVP_CACHE;
-  const Y=SEASONS[SEASONS.length-1], M=D.mgrs, byw={};
-  D.tw.forEach(t=>{ if(t[0]===Y) byw[t[1]+'|'+t[3]]=t; });
-  const weeks=[...new Set(D.tw.filter(t=>t[0]===Y).map(t=>t[1]))].sort((a,b)=>a-b);
+const MVP_CACHE={};
+function mvpLadder(year){
+  const Y=year||SEASONS[SEASONS.length-1];
+  if(MVP_CACHE[Y]) return MVP_CACHE[Y];
+  const M=D.mgrs, byw={};
+  // regular season only, the same basis the league uses for records
+  D.tw.forEach(t=>{ if(t[0]===Y&&t[2]===BR_REG) byw[t[1]+'|'+t[3]]=t; });
+  const weeks=[...new Set(D.tw.filter(t=>t[0]===Y&&t[2]===BR_REG).map(t=>t[1]))].sort((a,b)=>a-b);
   const pl={};
   Object.values(byw).forEach(t=>{
     const opp=byw[t[1]+'|'+t[4]];
@@ -685,9 +687,9 @@ function mvpLadder(){
     return {name:p.name,pos:p.pos,mgr,pfg:f,par:PAR,gp:g,gw:GW,pos2:POS,gar:GAR,war:WAR,lbr:LBR,
             score:f+PAR+g+GW*1.5+POS*2+GAR+WAR*4-LBR*4};
   }).sort((a,b)=>b.score-a.score);
-  MVP_CACHE={year:Y,weeks:weeks.length,minG,RV,rows,
+  MVP_CACHE[Y]={year:Y,weeks:weeks.length,minG,RV,rows,
              counts:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
-  return MVP_CACHE;
+  return MVP_CACHE[Y];
 }
 
 /* Pick legible ink for a count printed on a coloured square. */
@@ -1006,20 +1008,42 @@ function mvpTable(rows,compact){
 }
 
 VIEWS.mvp=()=>{
-  const out=E('div'), L=mvpLadder();
-  out.appendChild(secH('The MVP Ladder · '+L.year));
-  out.appendChild(E('p','lede','Jon’s season-MVP formula, run against the league’s own numbers after '+
-    L.weeks+' weeks. It asks who has been most valuable to the team that rostered them, which is not the same question as who has scored the most.'));
+  const out=E('div'), cur=SEASONS[SEASONS.length-1];
+  const Y=SEASONS.includes(STATE.my)?STATE.my:cur, live=Y===cur;
+  const L=mvpLadder(Y);
+  out.appendChild(secH('The MVP Ladder · '+Y));
+  out.appendChild(E('p','lede','Jon’s season-MVP formula, run against the league’s own regular-season numbers '+
+    (live?'after ':'across ')+L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'));
+  const yc=E('div','ctl');
+  yc.appendChild(E('span','pill','Season'));
+  const ys=E('select'); SEASONS.slice().reverse().forEach(y=>{
+    const o=E('option',null,y+(y===cur?' · in progress':''));o.value=y;ys.appendChild(o)});
+  ys.value=Y; ys.onchange=()=>{STATE.my=+ys.value;render()};
+  yc.appendChild(ys); out.appendChild(yc);
 
   const g1=E('div','grid-auto'); g1.style.marginBottom='18px';
   const top=L.rows[0];
-  g1.appendChild(tile(top.name.split(' ').slice(-1)[0],'Leader',top.name+' · '+f2(top.score)));
+  g1.appendChild(tile(top.name.split(' ').slice(-1)[0],live?'Leader':'Winner',top.name+' · '+f2(top.score)));
   g1.appendChild(tile(L.rows.filter(r=>r.war>0).length,'Players with a WAR','Won a week their team would otherwise have lost'));
   g1.appendChild(tile(L.rows.filter(r=>r.lbr>0).length,'Players with an LBR','Cost a week a replacement would have won'));
   g1.appendChild(tile(L.rows.length,'Qualified','Played at least '+L.minG+' of '+L.weeks+' weeks'));
   out.appendChild(g1);
 
   out.appendChild(mvpTable(L.rows.slice(0,40),false));
+
+  out.appendChild(secH('By Season'));
+  out.appendChild(E('p','lede','What the formula says for every year in the archive. These are computed from the boxscores, not a record of what the league actually handed out — tell me where they disagree and I will mark the real winners.'));
+  const past=SEASONS.slice().reverse().map(y=>{const l=mvpLadder(y);return {y,l,w:l.rows[0],r:l.rows[1]}});
+  out.appendChild(tbl([
+    {h:'Season',f:r=>r.y===cur?r.y+' <span class="pill">live</span>':String(r.y)},
+    {h:'Leader',f:r=>'<strong>'+r.w.name+'</strong>'},
+    {h:'Pos',f:r=>r.w.pos},
+    {h:'Rostered by',f:r=>r.w.mgr},
+    {h:'PF/G',r:true,n:true,sm:false,f:r=>f2(r.w.pfg)},
+    {h:'WAR',r:true,n:true,f:r=>r.w.war},
+    {h:'Score',r:true,n:true,f:r=>f2(r.w.score)},
+    {h:'Runner-up',sm:false,f:r=>r.r?r.r.name+' · '+f2(r.r.score):'—'}
+  ],past,{click:r=>go('mvp',{my:r.y})}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
   out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: the average points per game of this league’s QB2s, RB3s, WR4s and TE2s. Rebuilt every week, so they move with the season.'));
