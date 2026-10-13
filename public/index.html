@@ -646,6 +646,15 @@ VIEWS.scorigami=()=>{
    current season, not a re-litigation of past awards. */
 const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
   2023:'Christian McCaffrey',2024:"Ja'Marr Chase",2025:'Christian McCaffrey'};
+/* Roster moves made after the last week in the archive, so no boxscore shows
+   them yet. Clear each entry once the week it happened in has been pulled.
+   Bobby <-> Alex, the night Week 5 closed. */
+const RECENT_MOVES={
+  'CeeDee Lamb':'Alex','Terry McLaurin':'Alex','Chase Brown':'Alex',
+  'Noah Fant':'Alex','Dalton Schultz':'Alex',
+  'Travis Kelce':'Bobby','Kyren Williams':'Bobby','KC Concepcion':'Bobby',
+  'Mike Evans':'Bobby','Romeo Doubs':'Bobby'
+};
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
 const MVP_CACHE={};
 function mvpLadder(year){
@@ -662,7 +671,7 @@ function mvpLadder(year){
       const nm=D.players[pid], pn=D.pos[pos]||'';
       if(!pl[nm]) pl[nm]={name:nm,pos:pn,wk:[]};
       if(!pl[nm].pos) pl[nm].pos=pn;
-      pl[nm].wk.push({pts,started:started===1,mgr:M[t[3]],pf:t[6],
+      pl[nm].wk.push({w:t[1],pts,started:started===1,mgr:M[t[3]],pf:t[6],
                       pa:opp?opp[6]:null,won:t[5]===1});
     });
   });
@@ -687,8 +696,9 @@ function mvpLadder(year){
       else if(+(v.pf-v.pts+rv).toFixed(2) > v.pa) LBR++;
     });
     const PAR=f-rv, POS=f-SECOND[p.pos];
-    const mgr=Object.entries(p.wk.reduce((a,v)=>(a[v.mgr]=(a[v.mgr]||0)+1,a),{}))
-      .sort((a,b)=>b[1]-a[1])[0][0];
+    // whoever holds him most recently, not whoever held him longest
+    const mgr=(Y===SEASONS[SEASONS.length-1]&&RECENT_MOVES[p.name])
+      || p.wk.reduce((a,v)=>v.w>a.w?v:a,p.wk[0]).mgr;
     return {name:p.name,pos:p.pos,mgr,pfg:f,par:PAR,gp:g,gw:GW,pos2:POS,gar:GAR,war:WAR,lbr:LBR,
             score:f+PAR+g+GW*1.5+POS*2+GAR+WAR*4-LBR*4};
   }).sort((a,b)=>b.score-a.score);
