@@ -318,6 +318,8 @@ function prep(d){
     else if(t[2]===BR_PO){ t[5]===1?(c.pw++,s.pw++):(c.pl++,s.pl++); c.po.add(t[0]); }
   });
   for(const y in CHAMP){ CAREER.get(CHAMP[y]).titles++; CAREER.get(CHAMP[y]).finals++; CAREER.get(RUNUP[y]).finals++; }
+  // a season only counts against a playoff rate once its bracket has been played
+  CAREER.forEach(c=>{ c.cseas=[...c.seasons].filter(y=>PO_FINAL[y]).length; });
   // head to head (regular + playoffs)
   G.forEach(g=>{ if(g.br===BR_CON)return;
     const a=M[g.win[3]], b=M[g.los[3]];
@@ -998,7 +1000,7 @@ VIEWS.managers=()=>{
     {h:'Win%',r:true,n:true,f:c=>(100*c.w/(c.w+c.l)).toFixed(1)+'%'},
     {h:'PF/G',r:true,n:true,f:c=>f2(c.pf/c.g)},
     {h:'PA/G',r:true,n:true,sm:false,f:c=>f2(c.pa/c.g)},
-    {h:'Playoffs',r:true,n:true,sm:false,f:c=>c.po.size?c.pw+'-'+c.pl+' · '+c.po.size+'/'+c.seasons.size:'<span style="opacity:.5">0/'+c.seasons.size+'</span>'}
+    {h:'Playoffs',r:true,n:true,sm:false,f:c=>c.po.size?c.pw+'-'+c.pl+' · '+c.po.size+'/'+c.cseas:'<span style="opacity:.5">0/'+c.cseas+'</span>'}
   ],rows,{click:c=>go('managers',{m:c.m})}));
   return out;
 };
@@ -1022,7 +1024,8 @@ function mgrDetail(m){
     {h:'PF',r:true,n:true,f:s=>f2(s.pf)},{h:'PA',r:true,n:true,f:s=>f2(s.pa)},
     {h:'PF/G',r:true,n:true,f:s=>f2(s.pf/s.g)},
     {h:'Postseason',r:true,f:s=>CHAMP[s.y]===m?'<span class="ring">● Champion</span>':RUNUP[s.y]===m?'Lost final':
-      (s.pw+s.pl?s.pw+'-'+s.pl+' playoffs':'<span style="opacity:.6">missed</span>')}
+      (s.pw+s.pl?s.pw+'-'+s.pl+' playoffs':
+       PO_FINAL[s.y]?'<span style="opacity:.6">missed</span>':'<span style="opacity:.6">in progress</span>')}
   ],yrs,{click:s=>go('games',{y:s.y,w:null,focus:m})}));
 
   out.appendChild(secH('Head to Head'));
