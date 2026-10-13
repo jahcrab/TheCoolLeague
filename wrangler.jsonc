@@ -1,0 +1,8 @@
+{
+  // Static-asset Worker: no script, just the site in ./public
+  "name": "thecoolleague",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public"
+  }
+}
