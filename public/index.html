@@ -638,7 +638,8 @@ VIEWS.scorigami=()=>{
 };
 
 /* ---------- MVP ladder ----------
-   Jon's formula:  PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
+   The league's season-MVP formula:
+     PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
    Replacement values are rebuilt from this league each week rather than carried
    over: QB2s, RB3s, WR4s and TE2s by points per game, averaged, 14 teams deep. */
 /* MVPs as the league awarded them. Final; the ladder below is a live view of the
@@ -1011,16 +1012,20 @@ function mvpTable(rows,compact){
              rows,{click:r=>go('games',{q:r.name})});
 }
 
+/* Ladders are browsable from the first season calculated with this version of
+   the formula. Earlier awards are listed, not re-ranked. */
+const LADDER_FROM=2023;
 VIEWS.mvp=()=>{
   const out=E('div'), cur=SEASONS[SEASONS.length-1];
-  const Y=SEASONS.includes(STATE.my)?STATE.my:cur, live=Y===cur;
+  const YRS=SEASONS.filter(y=>y>=LADDER_FROM);
+  const Y=YRS.includes(STATE.my)?STATE.my:cur, live=Y===cur;
   const L=mvpLadder(Y);
   out.appendChild(secH('The MVP Ladder · '+Y));
-  out.appendChild(E('p','lede','Jon’s season-MVP formula, run against the league’s own regular-season numbers '+
+  out.appendChild(E('p','lede','The league’s season-MVP formula, run against its own regular-season numbers '+
     (live?'after ':'across ')+L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'));
   const yc=E('div','ctl');
   yc.appendChild(E('span','pill','Season'));
-  const ys=E('select'); SEASONS.slice().reverse().forEach(y=>{
+  const ys=E('select'); YRS.slice().reverse().forEach(y=>{
     const o=E('option',null,y+(y===cur?' · in progress':''));o.value=y;ys.appendChild(o)});
   ys.value=Y; ys.onchange=()=>{STATE.my=+ys.value;render()};
   yc.appendChild(ys); out.appendChild(yc);
@@ -1051,7 +1056,7 @@ VIEWS.mvp=()=>{
     {h:'GP',r:true,n:true,sm:false,f:r=>(r.row||r.lead).gp},
     {h:'WAR',r:true,n:true,f:r=>(r.row||r.lead).war},
     {h:'Score',r:true,n:true,f:r=>f2((r.row||r.lead).score)}
-  ],past,{click:r=>go('mvp',{my:r.y})}));
+  ],past,{click:r=>{ if(r.y>=LADDER_FROM) go('mvp',{my:r.y}); }}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
   out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: the average points per game of this league’s QB2s, RB3s, WR4s and TE2s. Rebuilt every week, so they move with the season.'));
