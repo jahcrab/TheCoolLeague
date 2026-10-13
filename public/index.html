@@ -15,7 +15,7 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Cool League — the Scorigami board, 578 claimed squares in green above the black slope of impossible scores.">
+<meta property="og:image:alt" content="The Cool League - the Scorigami board, claimed squares in green above the black slope of impossible scores.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The Cool League">
 <meta name="twitter:description" content="Seven seasons, 646 games, 578 squares.">
@@ -62,10 +62,21 @@ a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
 header.mast{border-bottom:1px solid var(--line);background:var(--panel)}
 .mast .wrap{padding-block:16px 0}
 .kicker{font-family:var(--f-disp);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.kicker .sp{margin-left:auto}
+@media (min-width:620px){.kicker .sp{margin-left:auto}}
+@media (max-width:620px){
+  .kicker{font-size:10px;letter-spacing:.16em;gap:8px}
+  .ctl{gap:7px;margin-bottom:13px}
+  button.btn{padding:6px 9px;font-size:11.5px;letter-spacing:.08em}
+  select,input[type=search]{padding:6px 8px;font-size:13px}
+  .pill{font-size:9.5px;padding:2px 5px}
+  .board-wrap{padding:9px}
+  .sub{margin-bottom:11px}
+}
 .title{font-family:var(--f-disp);font-weight:700;font-size:clamp(38px,9vw,74px);line-height:.92;margin:6px 0 2px;text-transform:uppercase;letter-spacing:-.01em}
 .sub{font-family:var(--f-disp);font-size:clamp(11px,2.6vw,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-nav.rail{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
+nav.rail{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px;
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);
+  box-shadow:0 1px 0 var(--line), 14px 0 10px -12px var(--line2) inset, -14px 0 10px -12px var(--line2) inset}
 nav.rail::-webkit-scrollbar{display:none}
 nav.rail button{flex:0 0 auto;appearance:none;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);
   font-family:var(--f-disp);font-size:14px;letter-spacing:.11em;text-transform:uppercase;padding:9px 13px;cursor:pointer}
@@ -89,7 +100,14 @@ h2.sec:first-child{margin-top:0}
 .tile .v{font-family:var(--f-disp);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
 .tile .k{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .tile .n{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.35}
-.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+/* hint that a table runs wider than the screen */
+.scroll{background:linear-gradient(to right,var(--bg) 30%,transparent) left/40px 100% no-repeat,
+  linear-gradient(to left,var(--bg) 30%,transparent) right/40px 100% no-repeat,
+  radial-gradient(farthest-side at 0 50%,var(--line2),transparent) left/14px 100% no-repeat,
+  radial-gradient(farthest-side at 100% 50%,var(--line2),transparent) right/14px 100% no-repeat;
+  background-attachment:local,local,scroll,scroll}
+@media (max-width:560px){.h-sm{display:none}}
 table{border-collapse:collapse;width:100%;font-size:14.5px}
 th,td{text-align:left;padding:6px 18px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-family:var(--f-disp);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -179,6 +197,13 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .tip b{font-weight:600;letter-spacing:.03em}
 .legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--f-disp);font-size:11px;
   letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+/* touch readout: there is no hover on a phone, so the last tap is reported here */
+.readout{display:none;margin-top:10px;padding:10px 12px;border:1px solid var(--line2);background:var(--bg);
+  font-family:var(--f-data);font-size:12.5px;line-height:1.45;min-height:58px}
+.readout b{font-family:var(--f-disp);font-size:17px;letter-spacing:.02em;display:block;margin-bottom:3px}
+.readout .hint{font-family:var(--f-body);font-style:italic;color:var(--muted)}
+@media (hover:none){.readout{display:block}}
+.zoom{margin-left:auto;display:flex;gap:6px;align-items:center}
 .sw{display:inline-block;width:13px;height:13px;border:1px solid var(--line2);vertical-align:-2px;margin-right:5px}
 
 /* scoreboard */
@@ -317,12 +342,12 @@ function standings(y){
 function tbl(cols,rows,opt){
   opt=opt||{};
   const sc=E('div','scroll'), t=E('table'), th=E('thead'), tr=E('tr');
-  cols.forEach(c=>{const h=E('th',c.r?'r':null,c.h); if(c.w)h.style.width=c.w; tr.appendChild(h)});
+  cols.forEach(c=>{const h=E('th',(c.r?'r ':'')+(c.sm===false?'h-sm':''),c.h); if(c.w)h.style.width=c.w; tr.appendChild(h)});
   th.appendChild(tr); t.appendChild(th);
   const tb=E('tbody');
   rows.forEach((r,i)=>{
     const x=E('tr',opt.click?'clk':null);
-    cols.forEach(c=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n':'')); const v=c.f(r,i);
+    cols.forEach(c=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n ':'')+(c.sm===false?'h-sm':'')); const v=c.f(r,i);
       if(v instanceof Node)td.appendChild(v); else td.innerHTML=v==null?'':String(v); x.appendChild(td); });
     if(opt.click)x.onclick=()=>opt.click(r);
     tb.appendChild(x);
@@ -496,7 +521,7 @@ VIEWS.scorigami=()=>{
   const out=E('div'), M=D.mgrs;
   out.appendChild(secH('The Scorigami Board'));
   const p=E('p','lede');
-  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened. Hover for the score, click for the games. Consolation-bracket games are left out: teams that have given up put up lows they never reached honestly.';
+  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened; tap or hover one to see its games.';
   out.appendChild(p);
   const ctl=E('div','ctl');
   const sel=E('select'); sel.id='sg-span';
@@ -510,19 +535,20 @@ VIEWS.scorigami=()=>{
     const b=E('button','btn',t); b.setAttribute('aria-pressed',v===mode?'true':'false');
     b.onclick=()=>{STATE.mode=v;render()}; ctl.appendChild(b);
   });
+  const zc=E('span','pill','Size'); zc.style.marginLeft='4px'; ctl.appendChild(zc);
+  const zbtns=[];
+  [[1,'Fit'],[2,'Bigger'],[3,'Biggest']].forEach(([v,t])=>{
+    const b=E('button','btn',t); b.setAttribute('aria-pressed',(STATE.zoom||1)===v?'true':'false');
+    b.onclick=()=>{STATE.zoom=v; zbtns.forEach(x=>x[0].setAttribute('aria-pressed',x[1]===v?'true':'false'));
+      drawBoard(sq,mode);};
+    zbtns.push([b,v]); ctl.appendChild(b);
+  });
   out.appendChild(ctl);
 
   const maxY=(STATE.span&&STATE.span!=='all')?+STATE.span:null;
   const sq=squares(maxY);
   const nev=[...sq.values()].filter(a=>a.length===1).length;
   const games=elig().filter(g=>!maxY||g.y<=maxY);
-  const g1=E('div','grid-auto'); g1.style.marginBottom='16px';
-  g1.appendChild(tile(sq.size,'Squares claimed'));
-  g1.appendChild(tile(games.length,'Games counted'));
-  g1.appendChild(tile((100*nev/sq.size).toFixed(1)+'%','Never repeated'));
-  const mc=[...sq.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
-  g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
-  out.appendChild(g1);
 
   const bw=E('div','board-wrap'), bs=E('div','board-scroll'), cv=E('canvas');
   cv.id='board'; bs.appendChild(cv); bw.appendChild(bs);
@@ -533,9 +559,24 @@ VIEWS.scorigami=()=>{
   else if(mode==='season') L=SEASONS.filter(y=>!maxY||y<=maxY).map((y,i)=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
   else L=sw('var(--heat2)','Once')+sw('var(--heat3)','Twice')+sw('var(--heat4)','3×')+sw('var(--sg-void)','Impossible');
   lg.innerHTML=L+'<span style="margin-left:auto">Winner →  ·  Loser ↓</span>';
-  bw.appendChild(lg); out.appendChild(bw);
+  bw.appendChild(lg);
+  const ro=E('div','readout'); ro.id='sg-readout';
+  ro.innerHTML='<span class="hint">Tap a shaded square to see its game. Use Bigger if they are hard to hit.</span>';
+  bw.appendChild(ro);
+  const fn=E('div','note'); fn.style.marginTop='9px';
+  fn.textContent='Consolation-bracket games are left out: teams that have given up put up lows they never reached honestly.';
+  bw.appendChild(fn);
+  out.appendChild(bw);
 
   const detail=E('div'); detail.id='sg-detail'; detail.style.marginTop='18px'; out.appendChild(detail);
+
+  const g1=E('div','grid-auto'); g1.style.marginTop='18px';
+  g1.appendChild(tile(sq.size,'Squares claimed'));
+  g1.appendChild(tile(games.length,'Games counted'));
+  g1.appendChild(tile((100*nev/sq.size).toFixed(1)+'%','Never repeated'));
+  const mc=[...sq.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
+  g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
+  out.appendChild(g1);
 
   const newest=E('div'); newest.appendChild(secH('Newest Squares'));
   const firsts=new Map();
@@ -571,7 +612,8 @@ function drawBoard(sq,mode){
   const {w0,w1,l0,l1}=AX, nx=w1-w0+1, ny=l1-l0+1;
   const padL=38, padB=26, dpr=Math.min(2,window.devicePixelRatio||1);
   const avail=Math.max(300,($('.board-scroll').clientWidth||600)-padL-6);
-  const cs=Math.max(4,Math.min(12,Math.floor(avail/nx)));
+  const fit=Math.max(4,Math.min(12,Math.floor(avail/nx)));
+  const cs=Math.max(4,Math.min(22,Math.round(fit*(STATE.zoom||1))));
   const cw=padL+nx*cs+2, ch=ny*cs+padB+2;
   cv.width=cw*dpr; cv.height=ch*dpr; cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
@@ -615,10 +657,15 @@ function drawBoard(sq,mode){
   };
   cv.onmouseleave=()=>{tip.style.opacity=0};
   cv.onclick=ev=>{
-    const [ws,ls]=at(ev), arr=sq.get(ws+'|'+ls), d=$('#sg-detail'); if(!d||!arr)return; d.innerHTML='';
+    const [ws,ls]=at(ev), arr=sq.get(ws+'|'+ls), ro=$('#sg-readout'), d=$('#sg-detail');
+    if(ro) ro.innerHTML=arr ? '<b>'+ws+' – '+ls+'</b>'+squareLine(arr)+
+        '<span class="hint">  ·  full scoreboard below ↓</span>'
+      : '<span class="hint">'+(ws<ls?'Impossible — the winner cannot score fewer points than the loser.'
+        :ws>=w0&&ws<=w1&&ls>=l0&&ls<=l1?ws+' – '+ls+' has never happened.':'Tap a shaded square to see its game.')+'</span>';
+    if(!d||!arr)return; d.innerHTML='';
     d.appendChild(secH('Square '+ws+' – '+ls+' · '+arr.length+(arr.length>1?' games':' game')));
     arr.slice().sort((a,b)=>b.y-a.y||b.w-a.w).forEach(g=>d.appendChild(scoreboard(g,arr.length===1)));
-    d.scrollIntoView({behavior:'smooth',block:'start'});
+    if(!matchMedia('(hover:none)').matches) d.scrollIntoView({behavior:'smooth',block:'start'});
   };
 }
 
@@ -756,14 +803,14 @@ VIEWS.managers=()=>{
   const rows=[...CAREER.values()].filter(c=>c.g).sort((a,b)=>b.titles-a.titles||(b.w/(b.w+b.l))-(a.w/(a.w+a.l)));
   out.appendChild(tbl([
     {h:'Manager',f:c=>'<strong>'+c.m+'</strong>'},
-    {h:'Div',f:c=>{const d=div(SEASONS[SEASONS.length-1],c.m);return d?'<span class="pill '+(d==='East'?'e':'w')+'">'+d+'</span>':'<span style="opacity:.5">—</span>'}},
-    {h:'Seas',n:true,f:c=>c.seasons.size},
+    {h:'Div',sm:false,f:c=>{const d=div(SEASONS[SEASONS.length-1],c.m);return d?'<span class="pill '+(d==='East'?'e':'w')+'">'+d+'</span>':'<span style="opacity:.5">—</span>'}},
+    {h:'Seas',n:true,sm:false,f:c=>c.seasons.size},
     {h:'Rings',f:c=>c.titles?'<span class="ring">'+'●'.repeat(c.titles)+'</span>':''},
     {h:'Record',n:true,f:c=>c.w+'-'+c.l},
     {h:'Win%',r:true,n:true,f:c=>(100*c.w/(c.w+c.l)).toFixed(1)+'%'},
     {h:'PF/G',r:true,n:true,f:c=>f2(c.pf/c.g)},
-    {h:'PA/G',r:true,n:true,f:c=>f2(c.pa/c.g)},
-    {h:'Playoffs',r:true,n:true,f:c=>c.po.size?c.pw+'-'+c.pl+' · '+c.po.size+'/'+c.seasons.size:'<span style="opacity:.5">0/'+c.seasons.size+'</span>'}
+    {h:'PA/G',r:true,n:true,sm:false,f:c=>f2(c.pa/c.g)},
+    {h:'Playoffs',r:true,n:true,sm:false,f:c=>c.po.size?c.pw+'-'+c.pl+' · '+c.po.size+'/'+c.seasons.size:'<span style="opacity:.5">0/'+c.seasons.size+'</span>'}
   ],rows,{click:c=>go('managers',{m:c.m})}));
   return out;
 };
