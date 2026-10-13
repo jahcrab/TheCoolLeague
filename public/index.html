@@ -641,8 +641,10 @@ VIEWS.scorigami=()=>{
    Jon's formula:  PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
    Replacement values are rebuilt from this league each week rather than carried
    over: QB2s, RB3s, WR4s and TE2s by points per game, averaged, 14 teams deep. */
-/* MVPs as the league awarded them, worked out by hand at the time. */
-const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce'};
+/* MVPs as the league awarded them. 2023-25 were calculated with this version of
+   the formula and this page reproduces all three; 2020-22 used an earlier one. */
+const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
+  2023:'Christian McCaffrey',2024:"Ja'Marr Chase",2025:'Christian McCaffrey'};
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
 const MVP_CACHE={};
 function mvpLadder(year){
@@ -1034,7 +1036,7 @@ VIEWS.mvp=()=>{
   out.appendChild(mvpTable(L.rows.slice(0,40),false));
 
   out.appendChild(secH('Past Winners'));
-  out.appendChild(E('p','lede','The award as the league gave it out, with what this implementation of the formula computes beside it. Where the two disagree the winner stands — these were worked out by hand at the time, before some of the tweaks.'));
+  out.appendChild(E('p','lede','The award as the league gave it out. From 2023 on it was calculated with this version of the formula, and this page reproduces all three winners exactly. The first three seasons were worked out by hand under an earlier version, so the award stands and what this formula would have said is shown beside it.'));
   const past=SEASONS.slice().reverse().map(y=>{
     const l=mvpLadder(y), lead=l.rows[0], won=AWARDED[y];
     return {y,l,lead,won,row:won?l.rows.find(r=>r.name===won):null};
