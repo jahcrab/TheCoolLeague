@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="The Cool League archive: Scorigami board, every scoreboard and boxscore since 2020, record book, ring counter and the weekly Scorigami Report.">
+<meta name="theme-color" content="#f1ece8">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="The Cool League">
+<meta property="og:description" content="Scorigami, scoreboards, boxscores and the record book since 2020.">
+<meta property="og:type" content="website">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>The Cool League</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: fixed section rail under a masthead; each view is one column, the Scorigami board breaks wider */
+:root{
+  --bg:#f1ece8; --panel:#fbf8f6; --panel2:#e9e1dc;
+  --fg:#1d1715; --muted:#6f625c; --line:#dbcfc8; --line2:#c8b9b1;
+  --accent:#9c3218; --accent2:#c25d40; --gold:#8a6e30;
+  --good:#2f6b4f; --bad:#8c3030;
+  --heat1:#efd9d2; --heat2:#d79a85; --heat3:#b85c3c; --heat4:#8d2a12;
+  --sg-claimed:#00b050; --sg-void:#0c0c0c; --sg-cell:#ffffff; --sg-line:#e2dcd7;
+  --sg-y0:#004dd6; --sg-y1:#407dd6; --sg-y2:#78aad6; --sg-y3:#ffd579; --sg-y4:#ffaf00; --sg-y5:#ff7c00; --sg-y6:#d81e00;
+  --f-disp:'Barlow Condensed','Helvetica Neue',Arial,sans-serif;
+  --f-body:'Newsreader',Georgia,'Times New Roman',serif;
+  --f-data:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+/* Light is the default for everyone; dark is opt-in through the toggle. */
+:root[data-theme="dark"]{
+  --bg:#15110f; --panel:#1f1a17; --panel2:#282120;
+  --fg:#ece4df; --muted:#9e8f88; --line:#352c28; --line2:#4a3e39;
+  --accent:#e0603f; --accent2:#f08a6a; --gold:#c9a456;
+  --good:#5fa37d; --bad:#d46a60;
+  --heat1:#3a241e; --heat2:#6d3522; --heat3:#a9492a; --heat4:#e0603f;
+  --sg-void:#000000; --sg-cell:#120f0d; --sg-line:#2a2321;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4{font-family:var(--f-disp);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:18px}
+
+/* masthead */
+header.mast{border-bottom:1px solid var(--line);background:var(--panel)}
+.mast .wrap{padding-block:16px 0}
+.kicker{font-family:var(--f-disp);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.kicker .sp{margin-left:auto}
+.title{font-family:var(--f-disp);font-weight:700;font-size:clamp(38px,9vw,74px);line-height:.92;margin:6px 0 2px;text-transform:uppercase;letter-spacing:-.01em}
+.sub{font-family:var(--f-disp);font-size:clamp(11px,2.6vw,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+nav.rail{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
+nav.rail::-webkit-scrollbar{display:none}
+nav.rail button{flex:0 0 auto;appearance:none;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);
+  font-family:var(--f-disp);font-size:14px;letter-spacing:.11em;text-transform:uppercase;padding:9px 13px;cursor:pointer}
+nav.rail button:hover{color:var(--fg)}
+nav.rail button[aria-current="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.theme{appearance:none;background:none;border:1px solid var(--line2);color:var(--muted);flex:0 0 auto;
+  border-radius:999px;width:28px;height:28px;cursor:pointer;font-size:13px;line-height:1}
+.theme:hover{color:var(--accent);border-color:var(--accent)}
+
+/* generic */
+main{padding-block:26px 56px}
+section.view{display:block}
+h2.sec{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--line);padding-bottom:7px;margin:34px 0 16px}
+h2.sec:first-child{margin-top:0}
+.lede{font-size:17px;color:var(--muted);max-width:62ch;margin:0 0 18px}
+.num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.grid-auto{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,152px),1fr))}
+@media (min-width:700px){.grid-auto{gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}}
+.tile{background:var(--panel);border:1px solid var(--line);padding:13px 15px}
+.tile .v{font-family:var(--f-disp);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.tile .k{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.tile .n{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.35}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:6px 18px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-disp);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right}
+th:last-child,td:last-child{padding-right:0}
+td.n{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+tr.clk{cursor:pointer}
+tr.clk:hover td{background:var(--panel)}
+.pill{display:inline-block;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  padding:2px 7px;border:1px solid var(--line2);color:var(--muted)}
+.pill.e{border-color:var(--accent);color:var(--accent)}
+.pill.w{border-color:var(--gold);color:var(--gold)}
+.ring{color:var(--gold)}
+.ctl{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+select,input[type=search],input[type=text]{font-family:var(--f-disp);font-size:14px;letter-spacing:.04em;background:var(--panel);
+  color:var(--fg);border:1px solid var(--line2);padding:7px 9px;max-width:100%}
+input[type=search]{font-family:var(--f-body);letter-spacing:0}
+button.btn{appearance:none;font-family:var(--f-disp);font-size:12.5px;letter-spacing:.11em;text-transform:uppercase;
+  background:var(--panel);color:var(--fg);border:1px solid var(--line2);padding:7px 11px;cursor:pointer}
+button.btn:hover{border-color:var(--accent);color:var(--accent)}
+button.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+button.btn[aria-pressed="true"]:hover{color:var(--bg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* front page */
+.hero{border-bottom:2px solid var(--fg);padding-bottom:22px;margin-bottom:22px}
+.hero .eyebrow{font-family:var(--f-disp);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hero .eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--line2);flex:0 0 auto}
+.hero h1{font-size:clamp(34px,7.4vw,60px);line-height:1;margin:10px 0 0;font-weight:700;letter-spacing:-.005em}
+.hero .deck{font-size:clamp(17px,2.6vw,21px);color:var(--muted);max-width:50ch;margin:11px 0 0;line-height:1.38}
+.hero-body{margin-top:22px}
+.hero-body::after{content:'';display:block;clear:both}
+.hero-body figure{margin:0 0 18px}
+@media (min-width:880px){.hero-body figure{float:right;width:45%;margin:5px 0 16px 30px}}
+.hero-body p{margin:0 0 13px}
+.hero-body p:first-child::first-letter{font-size:3.1em;line-height:.82;float:left;padding:4px 9px 0 0;color:var(--accent);font-weight:600}
+figure{margin:0}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--line)}
+figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padding-left:10px;border-left:2px solid var(--accent)}
+.strip{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);background:var(--panel);margin:0 0 26px}
+.strip>div{flex:1 1 140px;padding:12px 15px;border-left:1px solid var(--line);min-width:0}
+.strip>div:first-child{border-left:0}
+.strip .v{font-family:var(--f-disp);font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.strip .k{font-family:var(--f-disp);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+.cols{display:grid;gap:26px;grid-template-columns:1fr;align-items:start}
+@media (min-width:880px){.cols{grid-template-columns:1.5fr 1fr}}
+.card.wide::after{content:'';display:block;clear:both}
+@media (min-width:700px){.card.wide img{float:left;width:46%;margin:2px 20px 8px 0}
+  .card.wide p{max-width:none}}
+.card{background:var(--panel);border:1px solid var(--line);padding:15px 17px;margin-bottom:18px}
+.card h3{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:9px}
+.card p{margin:0 0 10px;font-size:14.5px;line-height:1.5}
+.card p:last-child{margin-bottom:0}
+.card img{display:block;width:100%;height:auto;border:1px solid var(--line);margin-bottom:11px}
+.res{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.res:hover .t{color:var(--accent)}
+.res .t{font-family:var(--f-disp);font-size:18px;min-width:0}
+.res .t em{font-style:normal;color:var(--muted)}
+.res .s{font-family:var(--f-data);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{font-family:var(--f-disp);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;padding:1px 5px;border:1px solid currentColor;margin-left:7px;vertical-align:1px}
+.tag.n{color:var(--good)}.tag.r{color:var(--muted)}
+.doors{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));margin-top:14px}
+.door{display:block;background:var(--panel);border:1px solid var(--line);padding:14px 15px;text-decoration:none;color:inherit;cursor:pointer;text-align:left;font:inherit}
+.door:hover{border-color:var(--accent)}
+.door .dt{font-family:var(--f-disp);font-size:20px;line-height:1.05}
+.door .dd{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.4}
+
+/* ring counter */
+.rg{display:inline-block;width:15px;height:15px;border:1px solid var(--line2);vertical-align:-3px;border-radius:2px}
+.rg0{border-color:transparent;background:none}
+.rg1{background:var(--panel2)}
+.rg2{background:var(--accent2)}
+.rg3{background:var(--accent);border-color:var(--accent)}
+.rg4{background:var(--gold);border-color:var(--gold)}
+.rlegend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--f-disp);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 16px}
+.rlegend span.i{display:flex;align-items:center;gap:6px}
+
+/* scorigami board */
+.board-wrap{background:var(--panel);border:1px solid var(--line);padding:12px}
+.board-scroll{overflow-x:auto}
+#board{display:block;image-rendering:pixelated}
+.tip{position:fixed;z-index:30;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--f-data);
+  font-size:12px;line-height:1.4;padding:6px 9px;border-radius:3px;white-space:pre-wrap;
+  max-width:min(330px,86vw);opacity:0;transition:opacity .08s}
+.tip b{font-weight:600;letter-spacing:.03em}
+.legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--f-disp);font-size:11px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+.sw{display:inline-block;width:13px;height:13px;border:1px solid var(--line2);vertical-align:-2px;margin-right:5px}
+
+/* scoreboard */
+.sb{background:var(--panel);border:1px solid var(--line);margin-bottom:12px}
+.sb-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:9px 13px;
+  border-bottom:1px solid var(--line);background:var(--panel2)}
+.sb-head .mt{font-family:var(--f-disp);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.sb-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 13px}
+.sb-row+.sb-row{border-top:1px solid var(--line)}
+.sb-row .nm{font-family:var(--f-disp);font-size:21px;letter-spacing:.02em}
+.sb-row .sc{font-family:var(--f-data);font-size:19px;font-variant-numeric:tabular-nums}
+.sb-row.lose .nm,.sb-row.lose .sc{color:var(--muted)}
+.sb-row.win .nm{font-weight:700}
+.sb-row.win .sc{color:var(--accent);font-weight:600}
+.box{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line)}
+.box>div{padding:11px 13px;min-width:0}
+.box>div+div{border-left:1px solid var(--line)}
+.box h4{font-family:var(--f-disp);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.box table{font-size:13px}
+.box td,.box th{padding:3px 12px 3px 0;white-space:nowrap}
+.box td.p{white-space:normal;min-width:0}
+.box .sl{font-family:var(--f-disp);font-size:11px;letter-spacing:.08em;color:var(--muted);width:38px}
+.box tr.be td{color:var(--muted)}
+.note{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
+@media (max-width:620px){.box{grid-template-columns:1fr}.box>div+div{border-left:0;border-top:1px solid var(--line)}}
+
+/* newsletters */
+.news-grid{display:grid;gap:22px}
+.issue{background:var(--panel);border:1px solid var(--line)}
+.issue img{display:block;width:100%;height:auto;max-width:100%;border-bottom:1px solid var(--line)}
+.issue .cap{padding:11px 14px}
+.issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
+.issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
+.hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+.mgr-card{background:var(--panel);border:1px solid var(--line);padding:14px}
+.mgr-card .nm{font-family:var(--f-disp);font-size:25px;line-height:1}
+.mgr-card .rec{font-family:var(--f-data);font-size:14px;color:var(--muted);margin-top:4px}
+.mgr-card .rings{color:var(--gold);font-size:14px;margin-top:5px;letter-spacing:2px}
+.back{appearance:none;background:none;border:0;color:var(--accent);font-family:var(--f-disp);font-size:12.5px;
+  letter-spacing:.13em;text-transform:uppercase;cursor:pointer;padding:0;margin-bottom:12px}
+.empty{color:var(--muted);font-style:italic;padding:14px 0}
+</style>
+
+</head>
+<body>
+<header class="mast">
+  <div class="wrap">
+    <div class="kicker"><span>Est. 2020 · Seven Seasons · 14 Teams</span><span class="sp" id="asof">Through Week 5, 2026</span><button class="theme" id="theme" title="Switch theme" aria-label="Switch theme">◐</button></div>
+    <div class="title">The Cool League</div>
+    <div class="sub">Scorigami · Scoreboards · Boxscores · Record Book</div>
+    <nav class="rail" id="rail"></nav>
+  </div>
+</header>
+<main class="wrap" id="main"><p class="empty">Loading the archive…</p></main>
+<div class="tip" id="tip"></div>
+
+<script>
+const $=(s,r)=>(r||document).querySelector(s), E=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n};
+const R=x=>Math.round(x+1e-9), f2=x=>x.toFixed(2);
+const TH=document.documentElement;
+try{const t=localStorage.getItem('cl-theme'); if(t)TH.setAttribute('data-theme',t);}catch(e){}
+$('#theme').onclick=()=>{const n=TH.getAttribute('data-theme')==='dark'?'light':'dark';
+  TH.setAttribute('data-theme',n); try{localStorage.setItem('cl-theme',n)}catch(e){} render();};
+
+let D=null, G=[], BYK=new Map(), CHAMP={}, RUNUP={}, CAREER=new Map(), H2H=new Map(), SEASONS=[];
+const BR_REG=0, BR_PO=1, BR_CON=2, PO_FINAL={};
+/* The bracket is three rounds, so name them by distance from the final week. */
+function roundName(y,w,br){
+  if(br===BR_CON) return 'Consolation';
+  if(br!==BR_PO) return null;
+  const d=(PO_FINAL[y]||0)-w;
+  return d===0?'Championship':d===1?'Semi Final':d===2?'Wildcard':'Playoffs';
+}
+
+const NEWS=[
+ {w:1,hl:'Five new squares · Two repeats · The Diddy Bowl stays perfect'},
+ {w:2,hl:'Six new squares · Bobby stays perfect · Max plays both sides again'},
+ {w:3,hl:'Bobby’s perfect run ends at sixteen · Bill keeps scoring · Jon keeps not'},
+ {w:4,hl:'Brendan breaks the all-time record · Bill falls · Owen and Jon stand alone'},
+ {w:5,hl:'Graham talks · Owen goes 5–0 · Bill wins by 93'}
+];
+
+/* ---------- data prep ---------- */
+function prep(d){
+  D=d; const M=d.mgrs;
+  d.tw.forEach(t=>BYK.set(t[0]+'|'+t[1]+'|'+t[3],t));
+  G=[];
+  d.tw.forEach(t=>{
+    const o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]); if(!o||t[3]>t[4])return;
+    const win = t[5]===1?t:o, los = t[5]===1?o:t;
+    G.push({y:t[0],w:t[1],br:t[2],a:t,b:o,win:win,los:los,
+            total:Math.round((t[6]+o[6])*100)/100, marg:Math.round((win[6]-los[6])*100)/100});
+  });
+  G.sort((x,y)=>x.y-y.y||x.w-y.w||x.a[3]-y.a[3]);
+  SEASONS=[...new Set(d.tw.map(t=>t[0]))].sort();
+  // champions
+  const fin=PO_FINAL; d.tw.forEach(t=>{if(t[2]===BR_PO)fin[t[0]]=Math.max(fin[t[0]]||0,t[1])});
+  for(const y in fin) d.tw.forEach(t=>{ if(t[0]==y&&t[2]===BR_PO&&t[1]===fin[y]) (t[5]===1?CHAMP:RUNUP)[y]=M[t[3]]; });
+  // careers (regular season) + playoff record
+  M.forEach(m=>CAREER.set(m,{m,seasons:new Set(),w:0,l:0,pf:0,pa:0,g:0,pw:0,pl:0,titles:0,finals:0,po:new Set(),by:new Map()}));
+  d.tw.forEach(t=>{
+    const c=CAREER.get(M[t[3]]), o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]);
+    c.seasons.add(t[0]);
+    if(!c.by.has(t[0]))c.by.set(t[0],{y:t[0],w:0,l:0,pf:0,pa:0,g:0,pw:0,pl:0});
+    const s=c.by.get(t[0]);
+    if(t[2]===BR_REG){ t[5]===1?(c.w++,s.w++):(c.l++,s.l++); c.pf+=t[6]; c.g++; s.pf+=t[6]; s.g++;
+      if(o){c.pa+=o[6]; s.pa+=o[6];} }
+    else if(t[2]===BR_PO){ t[5]===1?(c.pw++,s.pw++):(c.pl++,s.pl++); c.po.add(t[0]); }
+  });
+  for(const y in CHAMP){ CAREER.get(CHAMP[y]).titles++; CAREER.get(CHAMP[y]).finals++; CAREER.get(RUNUP[y]).finals++; }
+  // head to head (regular + playoffs)
+  G.forEach(g=>{ if(g.br===BR_CON)return;
+    const a=M[g.win[3]], b=M[g.los[3]];
+    [[a,b,1],[b,a,0]].forEach(([x,y,won])=>{ const k=x+'|'+y; if(!H2H.has(k))H2H.set(k,{w:0,l:0,pf:0,pa:0});
+      const h=H2H.get(k); won?h.w++:h.l++; h.pf+=(x===a?g.win[6]:g.los[6]); h.pa+=(x===a?g.los[6]:g.win[6]); });
+  });
+}
+const div=(y,m)=>((D.div[y]||{})[D.mgrs.indexOf(m)])||null;
+const elig=()=>G.filter(g=>g.br!==BR_CON);
+function squares(maxYear){
+  const p=new Map();
+  elig().forEach(g=>{ if(maxYear&&g.y>maxYear)return;
+    const k=R(g.win[6])+'|'+R(g.los[6]);
+    if(!p.has(k))p.set(k,[]); p.get(k).push(g); });
+  return p;
+}
+function standings(y){
+  const rows=[];
+  CAREER.forEach(c=>{ const s=c.by.get(y); if(!s)return;
+    rows.push({m:c.m,w:s.w,l:s.l,pf:s.pf,pa:s.pa,g:s.g,d:div(y,c.m)}); });
+  rows.sort((a,b)=>(b.w/(b.w+b.l||1))-(a.w/(a.w+a.l||1))||b.pf-a.pf);
+  return rows;
+}
+
+/* ---------- small renderers ---------- */
+function tbl(cols,rows,opt){
+  opt=opt||{};
+  const sc=E('div','scroll'), t=E('table'), th=E('thead'), tr=E('tr');
+  cols.forEach(c=>{const h=E('th',c.r?'r':null,c.h); if(c.w)h.style.width=c.w; tr.appendChild(h)});
+  th.appendChild(tr); t.appendChild(th);
+  const tb=E('tbody');
+  rows.forEach((r,i)=>{
+    const x=E('tr',opt.click?'clk':null);
+    cols.forEach(c=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n':'')); const v=c.f(r,i);
+      if(v instanceof Node)td.appendChild(v); else td.innerHTML=v==null?'':String(v); x.appendChild(td); });
+    if(opt.click)x.onclick=()=>opt.click(r);
+    tb.appendChild(x);
+  });
+  t.appendChild(tb); sc.appendChild(t); return sc;
+}
+function tile(v,k,n){const d=E('div','tile');d.appendChild(E('div','v',v));d.appendChild(E('div','k',k));if(n)d.appendChild(E('div','n',n));return d}
+function secH(t){const h=E('h2','sec',t);return h}
+
+/* ---------- scoreboard ---------- */
+function scoreboard(g,open){
+  const M=D.mgrs, box=E('div','sb');
+  const hd=E('div','sb-head');
+  const rn=roundName(g.y,g.w,g.br);
+  hd.appendChild(E('div','mt',g.y+' · Week '+g.w+(rn?' · '+rn:'')));
+  hd.appendChild(E('div','mt','Margin '+f2(g.marg)+' · Total '+f2(g.total)));
+  box.appendChild(hd);
+  [g.win,g.los].forEach(t=>{
+    const r=E('div','sb-row '+(t===g.win?'win':'lose'));
+    const L=E('div'); L.appendChild(E('span','nm',M[t[3]]));
+    const dv=div(g.y,M[t[3]]); if(dv){const p=E('span','pill '+(dv==='East'?'e':'w'),dv);p.style.marginLeft='8px';L.appendChild(p)}
+    r.appendChild(L); r.appendChild(E('div','sc',f2(t[6]))); box.appendChild(r);
+  });
+  const bw=E('div','box');
+  [g.win,g.los].forEach(t=>{
+    const d=E('div'); d.appendChild(E('h4',null,M[t[3]]+' · Starters '+f2(t[7].filter(e=>e[1]).reduce((s,e)=>s+e[4],0))));
+    const st=t[7].filter(e=>e[1]), be=t[7].filter(e=>!e[1]).sort((a,b)=>b[4]-a[4]);
+    const tb=E('table'); const body=E('tbody');
+    const row=(e,cls)=>{const r=E('tr',cls);
+      r.appendChild(E('td','sl',D.slots[e[0]]));
+      const p=E('td','p'); p.textContent=D.players[e[2]]||'—';
+      r.appendChild(p); r.appendChild(E('td','n r',f2(e[4]))); body.appendChild(r)};
+    st.forEach(e=>row(e));
+    if(be.length){const sep=E('tr');const c=E('td','sl');c.colSpan=3;c.textContent='BENCH';c.style.paddingTop='8px';sep.appendChild(c);body.appendChild(sep);}
+    be.forEach(e=>row(e,'be'));
+    tb.appendChild(body); const sc=E('div','scroll'); sc.appendChild(tb); d.appendChild(sc);
+    const nt=t[7].find(e=>e[5]>0); if(nt)d.appendChild(E('div','note','Note: '+D.notes[nt[5]]+'.'));
+    bw.appendChild(d);
+  });
+  if(open) box.appendChild(bw);
+  else{
+    const b=E('button','btn','Boxscore'); b.style.margin='10px 13px 13px';
+    b.onclick=()=>{b.remove(); box.appendChild(bw)}; box.appendChild(b);
+  }
+  return box;
+}
+
+/* ---------- views ---------- */
+const VIEWS={};
+let CUR='overview', STATE={};
+
+/* This week's writing. Everything numeric on the page is computed from the
+   archive; only the prose below changes from issue to issue. */
+const ISSUE={
+  yr:2026, wk:5, head:'Famous Last Words',
+  deck:'Graham typed it into the group chat at 10:53 on Monday night. One minute later the season had answered him.',
+  photo:{src:'news/nacua.webp',alt:'Puka Nacua catching a touchdown in the end zone against a Buffalo defender',
+    cap:'Nacua’s two-yard touchdown paid Graham 7.20 and Owen 4.08. The next throw went to Adams, and paid only Owen.'},
+  lead:[
+   '“Owen hope ur nervous.” Graham sent that at 10:53, trailing by under four with Puka Nacua still on the field. At 10:54 he sent a second message: “I deserve that.” In between, Matthew Stafford found Davante Adams in the end zone for the second time, and the last door closed.',
+   'Owen 144.32, Graham 140.46 — a new square at 144–140, the tightest game of the week by eleven points, and the win that leaves Owen the only undefeated team in the league.',
+   'The cruelty is in the details. Stafford is <em>Owen’s</em> quarterback, and he spent the fourth quarter throwing touchdowns to both sides: a two-yarder to Nacua that paid Graham 7.20 and Owen 4.08, then a five-yarder to Adams that paid only Owen. Graham’s best player of the week, 37.70 from Nacua, was being fed by the man he was trying to beat.',
+   'Which is the Graham experience in one night. He has the third-most points in the league, sits 2–3, and has been scored on more than anyone. Monday’s 140.46 would have beaten ten of the other thirteen teams. It beat nobody.',
+   'And it is not new. In 2022 he led the league in points for — 1,710.70 — and led it in points against, 1,722.36. He finished 6–8, seventh of fourteen, and watched six lower-scoring teams reach the playoffs without him. Graham is not unlucky. Graham is cursed.'
+  ],
+  watch:{title:'Week 6 · The One to Watch', body:[
+   '<strong>Owen at Jon.</strong> The only undefeated team against the only winless one, which the league has never staged this deep into a year. It has happened once — Week 4 of last season, 3–0 against 0–3 — and the undefeated team was Jon.',
+   'Two teams have started 5–0: James D in 2020 and Guzman in 2021. Both won in Week 6. Two have started 0–5: Bill in 2020 and James V in 2021. Both lost in Week 6, and Bill did not stop there, opening that season 0–12. The league is 2-for-2 both ways, and on Sunday the two precedents are the same game.',
+   'Owen should enjoy it while it lasts. Five teams have started 4–0 or better and not one has hoisted the Garrison. No champion in seven seasons has opened better than 2–0 — and the worst start any champion has survived is 1–4, Alex in 2022, the sus year.',
+   'Elsewhere, James V visits Guzman, who has historically put belt to ass in this matchup: Guzman is 6–0 against him by an average of 47.7, the most lopsided series in league history.'
+  ]},
+  fall:{title:'The Fall', body:[
+   'Brendan set the all-time record at 188.36 in Week 4, then posted 77.94 — a drop of 110.42, the largest between two regular-season weeks ever.',
+   'The 187.70 that Max fell from in 2021 is the record Brendan broke. So the two highest scores in league history are each followed by a top-three collapse.'
+  ]},
+  trade:{title:'The Trade Desk', img:'news/trade.webp',
+    alt:'Trade graphic: Ceedis Johnston and The Doubblin Hut swap five players each', body:[
+   'Monday, 11:34 PM. Hours after losing by 93, Bobby sent CeeDee Lamb, Terry McLaurin, Chase Brown, Noah Fant and Dalton Schultz to Alex for Travis Kelce, Kyren Williams, Mike Evans, KC Concepcion and Romeo Doubs.',
+   'Alex’s second blockbuster in thirteen days. The two teams he has traded with are 0–5 and 1–4.'
+  ]}
+};
+
+VIEWS.overview=()=>{
+  const M=D.mgrs, out=E('div'), sq=squares(), Y=ISSUE.yr, W=ISSUE.wk;
+  const never=[...sq.values()].filter(a=>a.length===1).length;
+  const wk=G.filter(g=>g.y===Y&&g.w===W).sort((a,b)=>b.win[6]-a.win[6]);
+  const isNew=g=>{const k=R(g.win[6])+'|'+R(g.los[6]);
+    return !(sq.get(k)||[]).some(o=>o!==g&&(o.y<g.y||(o.y===g.y&&o.w<g.w)))};
+  const fresh=wk.filter(isNew).length;
+
+  const hero=E('div','hero');
+  const eb=E('div','eyebrow');
+  eb.innerHTML='<span>Scorigami Report</span><span class="dot"></span><span>Week '+W+' · '+Y+'</span>'+
+    '<span class="dot"></span><span>Latest Issue</span>';
+  hero.appendChild(eb);
+  hero.appendChild(E('h1',null,ISSUE.head));
+  hero.appendChild(E('p','deck',ISSUE.deck));
+  const hb=E('div','hero-body'), txt=E('div');
+  ISSUE.lead.forEach(t=>{const p=E('p');p.innerHTML=t;txt.appendChild(p)});
+  const fig=E('figure'), im=E('img');
+  im.src=ISSUE.photo.src; im.alt=ISSUE.photo.alt; im.width=1400; im.height=896;
+  fig.appendChild(im); fig.appendChild(E('figcaption',null,ISSUE.photo.cap));
+  hb.appendChild(fig); hb.appendChild(txt); hero.appendChild(hb);
+  out.appendChild(hero);
+
+  const strip=E('div','strip');
+  [[fresh,'New squares'],[wk.length-fresh,wk.length-fresh===1?'Repeat':'Repeats'],
+   [sq.size,'Squares claimed'],[G.length,'Games all-time'],
+   [(100*never/sq.size).toFixed(1)+'%','Never repeated']].forEach(([v,k])=>{
+    const d=E('div'); d.appendChild(E('div','v',String(v))); d.appendChild(E('div','k',k)); strip.appendChild(d);
+  });
+  out.appendChild(strip);
+
+  const cols=E('div','cols'), left=E('div'), right=E('div');
+  left.appendChild(secH('Week '+W+' · The Results'));
+  wk.forEach(g=>{
+    const r=E('div','res'), t=E('div','t');
+    t.innerHTML=M[g.win[3]]+' <em>def.</em> '+M[g.los[3]]+
+      '<span class="tag '+(isNew(g)?'n">New':'r">Repeat')+'</span>';
+    const s=E('div','s',f2(g.win[6])+' – '+f2(g.los[6]));
+    r.appendChild(t); r.appendChild(s);
+    r.onclick=()=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]});
+    left.appendChild(r);
+  });
+  const wc=E('div','card'); wc.style.marginTop='20px';
+  wc.appendChild(E('h3',null,ISSUE.watch.title));
+  ISSUE.watch.body.forEach(t=>{const p=E('p');p.innerHTML=t;wc.appendChild(p)});
+  left.appendChild(wc);
+
+  right.appendChild(secH('Standings · After Week '+W));
+  right.appendChild(tbl([
+    {h:'Manager',f:r=>'<strong>'+r.m+'</strong>'},{h:'W–L',n:true,f:r=>r.w+'–'+r.l},
+    {h:'PF',r:true,n:true,f:r=>f2(r.pf)},{h:'PA',r:true,n:true,f:r=>f2(r.pa)}
+  ],standings(Y),{click:r=>go('managers',{m:r.m})}));
+  const fc=E('div','card'); fc.style.marginTop='18px';
+  fc.appendChild(E('h3',null,ISSUE.fall.title));
+  ISSUE.fall.body.forEach(t=>{const p=E('p');p.innerHTML=t;fc.appendChild(p)});
+  right.appendChild(fc);
+  cols.appendChild(left); cols.appendChild(right); out.appendChild(cols);
+
+  const td=E('div','card wide'); td.style.marginBottom='0';
+  td.appendChild(E('h3',null,ISSUE.trade.title));
+  const ti=E('img'); ti.src=ISSUE.trade.img; ti.alt=ISSUE.trade.alt; ti.loading='lazy';
+  ti.width=1400; ti.height=933; td.appendChild(ti);
+  ISSUE.trade.body.forEach(t=>{const p=E('p');p.innerHTML=t;td.appendChild(p)});
+  out.appendChild(td);
+
+  out.appendChild(secH('Inside the Archive'));
+  const p=E('p','lede');
+  p.textContent='Every game the Cool League has played since 2020 — '+G.length+' matchups and '+
+    D.tw.reduce((s,t)=>s+t[7].length,0).toLocaleString()+
+    ' player lines, kept in the league’s own records rather than on ESPN’s site, which no longer shows what anybody scored.';
+  out.appendChild(p);
+  const champs=Object.keys(CHAMP).sort();
+  const doors=E('div','doors');
+  [['scorigami','Scorigami','All '+sq.size+' squares, by season or by repeat. Click one to see the games.'],
+   ['games','Games','Every scoreboard and full boxscore back to 2020, plus a player search.'],
+   ['records','Records','Highest, lowest, closest, biggest blowouts, best seasons.'],
+   ['managers','Managers','17 careers, head-to-head records, and '+champs.length+' Garrison winners.'],
+   ['rings','Ring Counter','Every player who has won one, plus the six Agholor MVPs.'],
+   ['newsletters','Past Issues','Every Scorigami Report from this season.']
+  ].forEach(([v,t,d])=>{
+    const a=E('button','door'); a.appendChild(E('div','dt',t)); a.appendChild(E('div','dd',d));
+    a.onclick=()=>go(v,{}); doors.appendChild(a);
+  });
+  out.appendChild(doors);
+  return out;
+};
+
+VIEWS.scorigami=()=>{
+  const out=E('div'), M=D.mgrs;
+  out.appendChild(secH('The Scorigami Board'));
+  const p=E('p','lede');
+  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened. Hover for the score, click for the games. Consolation-bracket games are left out: teams that have given up put up lows they never reached honestly.';
+  out.appendChild(p);
+  const ctl=E('div','ctl');
+  const sel=E('select'); sel.id='sg-span';
+  [['all','All seasons · 2020–'+SEASONS[SEASONS.length-1]]].concat(SEASONS.map(y=>[String(y),y===2020?'2020 only':'2020–'+String(y).slice(2)]))
+    .forEach(([v,t])=>{const o=E('option',null,t);o.value=v;sel.appendChild(o)});
+  sel.value=STATE.span||'all'; sel.onchange=()=>{STATE.span=sel.value;STATE.cell=null;render()};
+  ctl.appendChild(E('span','pill','Span')); ctl.appendChild(sel);
+  ctl.appendChild(E('span','pill','Colour'));
+  const mode=STATE.mode||'claimed';
+  [['claimed','Claimed'],['season','By season'],['repeats','Repeats']].forEach(([v,t])=>{
+    const b=E('button','btn',t); b.setAttribute('aria-pressed',v===mode?'true':'false');
+    b.onclick=()=>{STATE.mode=v;render()}; ctl.appendChild(b);
+  });
+  out.appendChild(ctl);
+
+  const maxY=(STATE.span&&STATE.span!=='all')?+STATE.span:null;
+  const sq=squares(maxY);
+  const nev=[...sq.values()].filter(a=>a.length===1).length;
+  const games=elig().filter(g=>!maxY||g.y<=maxY);
+  const g1=E('div','grid-auto'); g1.style.marginBottom='16px';
+  g1.appendChild(tile(sq.size,'Squares claimed'));
+  g1.appendChild(tile(games.length,'Games counted'));
+  g1.appendChild(tile((100*nev/sq.size).toFixed(1)+'%','Never repeated'));
+  const mc=[...sq.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
+  g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
+  out.appendChild(g1);
+
+  const bw=E('div','board-wrap'), bs=E('div','board-scroll'), cv=E('canvas');
+  cv.id='board'; bs.appendChild(cv); bw.appendChild(bs);
+  const sw=(c,t)=>'<span><span class="sw" style="background:'+c+'"></span>'+t+'</span>';
+  const lg=E('div','legend');
+  let L='';
+  if(mode==='claimed') L=sw('var(--sg-claimed)','Claimed')+sw('var(--sg-cell)','Never')+sw('var(--sg-void)','Impossible');
+  else if(mode==='season') L=SEASONS.filter(y=>!maxY||y<=maxY).map((y,i)=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
+  else L=sw('var(--heat2)','Once')+sw('var(--heat3)','Twice')+sw('var(--heat4)','3×')+sw('var(--sg-void)','Impossible');
+  lg.innerHTML=L+'<span style="margin-left:auto">Winner →  ·  Loser ↓</span>';
+  bw.appendChild(lg); out.appendChild(bw);
+
+  const detail=E('div'); detail.id='sg-detail'; detail.style.marginTop='18px'; out.appendChild(detail);
+
+  const newest=E('div'); newest.appendChild(secH('Newest Squares'));
+  const firsts=new Map();
+  games.forEach(g=>{const k=R(g.win[6])+'|'+R(g.los[6]); if(!firsts.has(k))firsts.set(k,g)});
+  const recent=[...firsts.values()].sort((a,b)=>b.y-a.y||b.w-a.w).slice(0,12);
+  newest.appendChild(tbl([
+    {h:'Square',n:true,f:g=>'<strong>'+R(g.win[6])+' – '+R(g.los[6])+'</strong>'},
+    {h:'Winner',f:g=>M[g.win[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.win[6])},
+    {h:'Loser',f:g=>M[g.los[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.los[6])},
+    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}
+  ],recent,{click:g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]})}));
+  out.appendChild(newest);
+  setTimeout(()=>drawBoard(sq,mode),0);
+  return out;
+};
+
+/* Hover text for a claimed square, in the workbook's own ScreenTip wording. */
+function squareLine(arr){
+  const M=D.mgrs;
+  if(arr.length===1){
+    const g=arr[0], when=roundName(g.y,g.w,g.br)||'Week '+g.w;
+    return g.y+' '+when+'  ·  '+M[g.win[3]]+' '+f2(g.win[6])+' def. '+M[g.los[3]]+' '+f2(g.los[6]);
+  }
+  return 'Happened '+arr.length+' times ('+arr.map(g=>g.y).sort().join(', ')+')';
+}
+
+/* Axes follow the workbook: winner's score across, loser's score DOWN, so the
+   cells where the winner scored fewer points than the loser form the black
+   slope falling left-to-right. Nothing can ever land there. */
+const AX={w0:57,w1:188,l0:32,l1:161};
+function drawBoard(sq,mode){
+  const cv=$('#board'); if(!cv)return;
+  const {w0,w1,l0,l1}=AX, nx=w1-w0+1, ny=l1-l0+1;
+  const padL=38, padB=26, dpr=Math.min(2,window.devicePixelRatio||1);
+  const avail=Math.max(300,($('.board-scroll').clientWidth||600)-padL-6);
+  const cs=Math.max(4,Math.min(12,Math.floor(avail/nx)));
+  const cw=padL+nx*cs+2, ch=ny*cs+padB+2;
+  cv.width=cw*dpr; cv.height=ch*dpr; cv.style.width=cw+'px'; cv.style.height=ch+'px';
+  const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
+  const S=getComputedStyle(document.body), col=n=>S.getPropertyValue(n).trim();
+  const heat=[col('--heat2'),col('--heat3'),col('--heat4')];
+  const yr=[0,1,2,3,4,5,6].map(i=>col('--sg-y'+i));
+  const X=ws=>padL+(ws-w0)*cs, Y=ls=>(ls-l0)*cs;
+  c.clearRect(0,0,cw,ch);
+  // playable ground, then the impossible slope
+  c.fillStyle=col('--sg-cell'); c.fillRect(padL,0,nx*cs,ny*cs);
+  c.fillStyle=col('--sg-void');
+  for(let ls=l0;ls<=l1;ls++){ const last=Math.min(w1,ls-1); if(last<w0)continue;
+    c.fillRect(padL,Y(ls),(last-w0+1)*cs,cs); }
+  sq.forEach((arr,k)=>{
+    const [ws,ls]=k.split('|').map(Number);
+    if(mode==='season'){ const first=Math.min(...arr.map(g=>g.y)); c.fillStyle=yr[first-2020]||yr[6]; }
+    else if(mode==='repeats') c.fillStyle=heat[Math.min(2,arr.length-1)];
+    else c.fillStyle=col('--sg-claimed');
+    c.fillRect(X(ws),Y(ls),cs,cs);
+  });
+  c.fillStyle=col('--muted'); c.font='600 9px '+S.getPropertyValue('--f-data');
+  c.textAlign='right'; c.textBaseline='middle';
+  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20) c.fillText(v,padL-6,Y(v)+cs/2);
+  c.textAlign='center'; c.textBaseline='top';
+  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20) c.fillText(v,X(v)+cs/2,ny*cs+7);
+
+  const at=ev=>{ const r=cv.getBoundingClientRect();
+    return [w0+Math.floor((ev.clientX-r.left-padL)/cs), l0+Math.floor((ev.clientY-r.top)/cs), ev.clientX-r.left, ev.clientY-r.top] };
+  const tip=$('#tip');
+  cv.onmousemove=ev=>{
+    const [ws,ls,x,y]=at(ev);
+    if(x<padL||y<0||y>ny*cs||ws<w0||ws>w1||ls<l0||ls>l1){tip.style.opacity=0;cv.style.cursor='default';return}
+    const arr=sq.get(ws+'|'+ls);
+    if(!arr){tip.style.opacity=0;cv.style.cursor='default';return}
+    tip.innerHTML='<b>'+ws+' – '+ls+'</b>\n'+squareLine(arr);
+    tip.style.opacity=1;
+    const tw=tip.offsetWidth, th=tip.offsetHeight, below=ev.clientY<th+20;
+    tip.style.left=Math.max(8,Math.min(innerWidth-tw-10,ev.clientX+14))+'px';
+    tip.style.top=(below?ev.clientY+18:ev.clientY-th-10)+'px';
+    cv.style.cursor='pointer';
+  };
+  cv.onmouseleave=()=>{tip.style.opacity=0};
+  cv.onclick=ev=>{
+    const [ws,ls]=at(ev), arr=sq.get(ws+'|'+ls), d=$('#sg-detail'); if(!d||!arr)return; d.innerHTML='';
+    d.appendChild(secH('Square '+ws+' – '+ls+' · '+arr.length+(arr.length>1?' games':' game')));
+    arr.slice().sort((a,b)=>b.y-a.y||b.w-a.w).forEach(g=>d.appendChild(scoreboard(g,arr.length===1)));
+    d.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+}
+
+VIEWS.games=()=>{
+  const M=D.mgrs, out=E('div');
+  out.appendChild(secH('Scoreboards & Boxscores'));
+  const y=STATE.y||SEASONS[SEASONS.length-1];
+  const weeks=[...new Set(G.filter(g=>g.y===y).map(g=>g.w))].sort((a,b)=>a-b);
+  const w=weeks.includes(STATE.w)?STATE.w:weeks[weeks.length-1];
+  const ctl=E('div','ctl');
+  const sy=E('select'); SEASONS.forEach(s=>{const o=E('option',null,s);o.value=s;sy.appendChild(o)});
+  sy.value=y; sy.onchange=()=>{STATE.y=+sy.value;STATE.w=null;render()};
+  const sw=E('select'); weeks.forEach(k=>{
+    const rn=roundName(y,k,Math.min(...G.filter(g=>g.y===y&&g.w===k).map(g=>g.br)));
+    const o=E('option',null,'Week '+k+(rn?' · '+rn:''));o.value=k;sw.appendChild(o)});
+  sw.value=w; sw.onchange=()=>{STATE.w=+sw.value;render()};
+  ctl.appendChild(E('span','pill','Season')); ctl.appendChild(sy);
+  ctl.appendChild(E('span','pill','Week')); ctl.appendChild(sw);
+  const ps=E('input'); ps.type='search'; ps.placeholder='or search a player…'; ps.value=STATE.q||'';
+  ps.oninput=()=>{STATE.q=ps.value; renderPlayer()};
+  ctl.appendChild(ps);
+  out.appendChild(ctl);
+  const pres=E('div'); pres.id='p-res'; out.appendChild(pres);
+  const list=E('div'); list.id='g-list'; out.appendChild(list);
+  setTimeout(()=>{ if(STATE.q)renderPlayer(); else fillWeek(y,w); },0);
+  return out;
+
+  function fillWeek(y,w){
+    const L=$('#g-list'); if(!L)return; L.innerHTML='';
+    const gs=G.filter(g=>g.y===y&&g.w===w).sort((a,b)=>a.br-b.br||b.win[6]-a.win[6]);
+    const rn=roundName(y,w,Math.min(...gs.map(g=>g.br)));
+    L.appendChild(secH(y+' · Week '+w+(rn?' · '+rn:'')+' · '+gs.length+' games'));
+    gs.forEach(g=>L.appendChild(scoreboard(g,STATE.focus&&(M[g.win[3]]===STATE.focus||M[g.los[3]]===STATE.focus))));
+    STATE.focus=null;
+  }
+  function renderPlayer(){
+    const r=$('#p-res'), L=$('#g-list'); if(!r)return;
+    const q=(STATE.q||'').trim().toLowerCase(); r.innerHTML='';
+    if(q.length<3){ if(L&&!L.children.length)fillWeek(y,w); return }
+    L.innerHTML='';
+    const hits=D.players.map((p,i)=>[p,i]).filter(([p])=>p.toLowerCase().includes(q));
+    if(!hits.length){r.appendChild(E('p','empty','No player in the archive matches “'+STATE.q+'”.'));return}
+    const ids=new Set(hits.map(h=>h[1]));
+    const lines=[];
+    D.tw.forEach(t=>t[7].forEach(e=>{ if(ids.has(e[2])) lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],p:D.players[e[2]],
+      sl:D.slots[e[0]],st:e[1],pts:e[4]}); }));
+    lines.sort((a,b)=>b.pts-a.pts);
+    const names=[...new Set(lines.map(l=>l.p))];
+    r.appendChild(secH((names.length===1?names[0]:names.length+' players matched')+' · '+lines.length+' weeks on a roster'));
+    if(names.length>1) r.appendChild(E('p','lede',names.slice(0,14).join(' · ')+(names.length>14?' …':'')));
+    const st=lines.filter(l=>l.st);
+    const g1=E('div','grid-auto'); g1.style.marginBottom='14px';
+    g1.appendChild(tile(f2(lines[0].pts),'Best week',lines[0].m+', '+lines[0].y+' Wk '+lines[0].w));
+    g1.appendChild(tile(st.length,'Weeks started','of '+lines.length+' on a roster'));
+    g1.appendChild(tile(f2(st.reduce((s,l)=>s+l.pts,0)/(st.length||1)),'Points per start'));
+    r.appendChild(g1);
+    r.appendChild(tbl([
+      {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
+      {h:'Player',f:l=>l.p},{h:'Manager',f:l=>l.m},{h:'Slot',f:l=>l.st?l.sl:'<span style="opacity:.6">'+l.sl+'</span>'},
+      {h:'Season',r:true,f:l=>l.y+' Wk '+l.w}
+    ],lines.slice(0,60),{click:l=>go('games',{y:l.y,w:l.w,focus:l.m,q:''})}));
+  }
+};
+
+VIEWS.records=()=>{
+  const M=D.mgrs, out=E('div'), e=elig();
+  out.appendChild(secH('Record Book'));
+  out.appendChild(E('p','lede','Regular season and playoffs, consolation excluded. Click any line to open that scoreboard.'));
+  const open=g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]});
+  const sides=[]; e.forEach(g=>{sides.push({g,t:g.win,o:g.los,won:1});sides.push({g,t:g.los,o:g.win,won:0})});
+  const list=(title,rows,cols)=>{out.appendChild(secH(title));out.appendChild(tbl(cols,rows,{click:r=>open(r.g||r)}))};
+
+  list('Highest Single Scores',sides.slice().sort((a,b)=>b.t[6]-a.t[6]).slice(0,10),[
+    {h:'',f:(r,i)=>i+1},{h:'Score',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
+    {h:'Manager',f:r=>M[r.t[3]]},{h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},
+    {h:'Result',f:r=>r.won?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
+    {h:'When',r:true,f:r=>r.g.y+' Wk '+r.g.w}]);
+
+  list('Highest Combined Scores',e.slice().sort((a,b)=>b.total-a.total).slice(0,10),[
+    {h:'',f:(r,i)=>i+1},{h:'Total',n:true,f:g=>'<strong>'+f2(g.total)+'</strong>'},
+    {h:'Winner',f:g=>M[g.win[3]]+' · '+f2(g.win[6])},{h:'Loser',f:g=>M[g.los[3]]+' · '+f2(g.los[6])},
+    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}]);
+
+  list('Highest Losing Scores',sides.filter(s=>!s.won).sort((a,b)=>b.t[6]-a.t[6]).slice(0,10),[
+    {h:'',f:(r,i)=>i+1},{h:'Lost with',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
+    {h:'Manager',f:r=>M[r.t[3]]},{h:'Beaten by',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},
+    {h:'When',r:true,f:r=>r.g.y+' Wk '+r.g.w}]);
+
+  list('Biggest Blowouts',e.slice().sort((a,b)=>b.marg-a.marg).slice(0,10),[
+    {h:'',f:(r,i)=>i+1},{h:'Margin',n:true,f:g=>'<strong>'+f2(g.marg)+'</strong>'},
+    {h:'Winner',f:g=>M[g.win[3]]+' · '+f2(g.win[6])},{h:'Loser',f:g=>M[g.los[3]]+' · '+f2(g.los[6])},
+    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}]);
+
+  list('Closest Games',e.slice().sort((a,b)=>a.marg-b.marg).slice(0,10),[
+    {h:'',f:(r,i)=>i+1},{h:'Margin',n:true,f:g=>'<strong>'+f2(g.marg)+'</strong>'},
+    {h:'Winner',f:g=>M[g.win[3]]+' · '+f2(g.win[6])},{h:'Loser',f:g=>M[g.los[3]]+' · '+f2(g.los[6])},
+    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}]);
+
+  list('Lowest Scores',sides.slice().sort((a,b)=>a.t[6]-b.t[6]).slice(0,10),[
+    {h:'',f:(r,i)=>i+1},{h:'Score',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
+    {h:'Manager',f:r=>M[r.t[3]]},{h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},
+    {h:'Result',f:r=>r.won?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
+    {h:'When',r:true,f:r=>r.g.y+' Wk '+r.g.w}]);
+
+  // player weeks
+  out.appendChild(secH('Biggest Player Weeks'));
+  const pl=[]; D.tw.forEach(t=>{ if(t[2]===BR_CON)return;
+    t[7].forEach(x=>{ if(x[1]) pl.push({p:D.players[x[2]],pts:x[4],sl:D.slots[x[0]],m:M[t[3]],y:t[0],w:t[1]}) }) });
+  pl.sort((a,b)=>b.pts-a.pts);
+  out.appendChild(tbl([
+    {h:'',f:(r,i)=>i+1},{h:'Pts',n:true,f:r=>'<strong>'+f2(r.pts)+'</strong>'},
+    {h:'Player',f:r=>r.p},{h:'Slot',f:r=>r.sl},{h:'Started for',f:r=>r.m},
+    {h:'When',r:true,f:r=>r.y+' Wk '+r.w}
+  ],pl.slice(0,12),{click:r=>go('games',{y:r.y,w:r.w,focus:r.m})}));
+
+  // season bests
+  out.appendChild(secH('Best Regular Seasons'));
+  const ss=[]; CAREER.forEach(c=>c.by.forEach(s=>{ if(s.g>=10) ss.push({m:c.m,...s,
+    ttl:CHAMP[s.y]===c.m, fin:RUNUP[s.y]===c.m}) }));
+  ss.sort((a,b)=>(b.w/(b.w+b.l))-(a.w/(a.w+a.l))||b.pf-a.pf);
+  out.appendChild(tbl([
+    {h:'',f:(r,i)=>i+1},{h:'Season',f:r=>r.y},{h:'Manager',f:r=>'<strong>'+r.m+'</strong>'},
+    {h:'Rec',n:true,f:r=>r.w+'-'+r.l},{h:'Win%',r:true,n:true,f:r=>(100*r.w/(r.w+r.l)).toFixed(1)+'%'},
+    {h:'PF/G',r:true,n:true,f:r=>f2(r.pf/r.g)},
+    {h:'Postseason',r:true,f:r=>r.ttl?'<span class="ring">● Champion</span>':r.fin?'Lost final':(r.pw+r.pl?r.pw+'-'+r.pl+' playoffs':'<span style="opacity:.6">missed</span>')}
+  ],ss.slice(0,12),{click:r=>go('managers',{m:r.m})}));
+  return out;
+};
+
+VIEWS.managers=()=>{
+  const M=D.mgrs, out=E('div');
+  if(STATE.m) return mgrDetail(STATE.m);
+  out.appendChild(secH('Managers'));
+  out.appendChild(E('p','lede','Seventeen people have managed a team in the Cool League. Records are regular season; playoff lines are kept separate.'));
+  const rows=[...CAREER.values()].filter(c=>c.g).sort((a,b)=>b.titles-a.titles||(b.w/(b.w+b.l))-(a.w/(a.w+a.l)));
+  out.appendChild(tbl([
+    {h:'Manager',f:c=>'<strong>'+c.m+'</strong>'},
+    {h:'Div',f:c=>{const d=div(SEASONS[SEASONS.length-1],c.m);return d?'<span class="pill '+(d==='East'?'e':'w')+'">'+d+'</span>':'<span style="opacity:.5">—</span>'}},
+    {h:'Seas',n:true,f:c=>c.seasons.size},
+    {h:'Rings',f:c=>c.titles?'<span class="ring">'+'●'.repeat(c.titles)+'</span>':''},
+    {h:'Record',n:true,f:c=>c.w+'-'+c.l},
+    {h:'Win%',r:true,n:true,f:c=>(100*c.w/(c.w+c.l)).toFixed(1)+'%'},
+    {h:'PF/G',r:true,n:true,f:c=>f2(c.pf/c.g)},
+    {h:'PA/G',r:true,n:true,f:c=>f2(c.pa/c.g)},
+    {h:'Playoffs',r:true,n:true,f:c=>c.po.size?c.pw+'-'+c.pl+' · '+c.po.size+'/'+c.seasons.size:'<span style="opacity:.5">0/'+c.seasons.size+'</span>'}
+  ],rows,{click:c=>go('managers',{m:c.m})}));
+  return out;
+};
+
+function mgrDetail(m){
+  const M=D.mgrs, out=E('div'), c=CAREER.get(m);
+  const b=E('button','back','← All managers'); b.onclick=()=>go('managers',{}); out.appendChild(b);
+  const card=E('div','mgr-card');
+  card.appendChild(E('div','nm',m));
+  card.appendChild(E('div','rec',c.w+'-'+c.l+' regular season · '+(100*c.w/(c.w+c.l)).toFixed(1)+'% · '+f2(c.pf/c.g)+' per game'));
+  if(c.titles)card.appendChild(E('div','rings','●'.repeat(c.titles)+'  '+Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', ')));
+  out.appendChild(card);
+
+  out.appendChild(secH('Season by Season'));
+  const yrs=[...c.by.values()].sort((a,b)=>a.y-b.y);
+  out.appendChild(tbl([
+    {h:'Season',f:s=>s.y},
+    {h:'Div',f:s=>{const d=div(s.y,m);return d?'<span class="pill '+(d==='East'?'e':'w')+'">'+d+'</span>':''}},
+    {h:'Rec',n:true,f:s=>s.w+'-'+s.l},
+    {h:'PF',r:true,n:true,f:s=>f2(s.pf)},{h:'PA',r:true,n:true,f:s=>f2(s.pa)},
+    {h:'PF/G',r:true,n:true,f:s=>f2(s.pf/s.g)},
+    {h:'Postseason',r:true,f:s=>CHAMP[s.y]===m?'<span class="ring">● Champion</span>':RUNUP[s.y]===m?'Lost final':
+      (s.pw+s.pl?s.pw+'-'+s.pl+' playoffs':'<span style="opacity:.6">missed</span>')}
+  ],yrs,{click:s=>go('games',{y:s.y,w:null,focus:m})}));
+
+  out.appendChild(secH('Head to Head'));
+  const opp=M.filter(o=>o!==m&&H2H.has(m+'|'+o)).map(o=>{const h=H2H.get(m+'|'+o);return {o,...h}})
+    .sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w);
+  out.appendChild(tbl([
+    {h:'Opponent',f:r=>r.o},{h:'Record',n:true,f:r=>'<strong>'+r.w+'-'+r.l+'</strong>'},
+    {h:'',f:r=>r.w&&!r.l?'<span class="pill" style="border-color:var(--good);color:var(--good)">Undefeated</span>':
+      r.l&&!r.w?'<span class="pill" style="border-color:var(--bad);color:var(--bad)">Never beaten</span>':''},
+    {h:'PF/G',r:true,n:true,f:r=>f2(r.pf/(r.w+r.l))},{h:'PA/G',r:true,n:true,f:r=>f2(r.pa/(r.w+r.l))},
+    {h:'Net',r:true,n:true,f:r=>{const n=(r.pf-r.pa)/(r.w+r.l);return '<span style="color:var(--'+(n>=0?'good':'bad')+')">'+(n>=0?'+':'')+f2(n)+'</span>'}}
+  ],opp,{click:r=>go('managers',{m:r.o})}));
+
+  out.appendChild(secH('Best and Worst Weeks'));
+  const mine=[]; D.tw.forEach(t=>{ if(M[t[3]]!==m||t[2]===BR_CON)return;
+    const o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]); mine.push({t,o,g:G.find(g=>g.y===t[0]&&g.w===t[1]&&(g.a===t||g.b===t))}) });
+  mine.sort((a,b)=>b.t[6]-a.t[6]);
+  const pick=mine.slice(0,5).concat(mine.slice(-5));
+  out.appendChild(tbl([
+    {h:'Score',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
+    {h:'Result',f:r=>r.t[5]===1?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
+    {h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},{h:'When',r:true,f:r=>r.t[0]+' Wk '+r.t[1]}
+  ],pick,{click:r=>go('games',{y:r.t[0],w:r.t[1],focus:m})}));
+  return out;
+}
+
+VIEWS.rings=()=>{
+  const out=E('div'), R0=D.rings||[], YRS=D.ringYears||[];
+  out.appendChild(secH('Ring Counter'));
+  out.appendChild(E('p','lede','A player earns a ring by being on a championship team’s active roster at any point that season — weeks 1–17, or 1–16 in 2020 — or by being drafted by that team that year. '+R0.length+' players have one.'));
+  const lg=E('div','rlegend');
+  lg.innerHTML=[[4,'Agholor MVP'],[3,'Started the final'],[2,'Bench in the final'],[1,'On the roster']]
+    .map(([k,t])=>'<span class="i"><span class="rg rg'+k+'"></span>'+t+'</span>').join('');
+  out.appendChild(lg);
+
+  const tot=R0.reduce((s,r)=>s+r[3],0);
+  const most=Math.max(...R0.map(r=>r[3]));
+  const g1=E('div','grid-auto'); g1.style.marginBottom='18px';
+  g1.appendChild(tile(R0.length,'Players with a ring'));
+  g1.appendChild(tile(tot,'Rings awarded','Across '+YRS.length+' championships'));
+  g1.appendChild(tile(most+'×','Most rings',R0.filter(r=>r[3]===most).length+' players have '+most));
+  g1.appendChild(tile(YRS.length,'Agholor MVPs','One each season, named for the 2020 winner'));
+  out.appendChild(g1);
+
+  const ctl=E('div','ctl');
+  const q=E('input'); q.type='search'; q.placeholder='Search a player…'; q.value=STATE.rq||'';
+  q.oninput=()=>{STATE.rq=q.value; fill()};
+  const sy=E('select');
+  [['all','Every season']].concat(YRS.map(y=>[String(y),y+' champions']))
+    .forEach(([v,t])=>{const o=E('option',null,t);o.value=v;sy.appendChild(o)});
+  sy.value=STATE.ry||'all'; sy.onchange=()=>{STATE.ry=sy.value; fill()};
+  ctl.appendChild(E('span','pill','Season')); ctl.appendChild(sy); ctl.appendChild(q);
+  out.appendChild(ctl);
+  const host=E('div'); out.appendChild(host);
+
+  function fill(){
+    const s=(STATE.rq||'').trim().toLowerCase(), yi=STATE.ry&&STATE.ry!=='all'?YRS.indexOf(+STATE.ry):-1;
+    let rows=R0.filter(r=>(!s||r[0].toLowerCase().includes(s))&&(yi<0||r[2][yi]));
+    rows=rows.slice().sort((a,b)=>b[3]-a[3]||
+      Math.max(...b[2])-Math.max(...a[2])||a[0].localeCompare(b[0]));
+    host.innerHTML='';
+    if(!rows.length){host.appendChild(E('p','empty','No player in the Ring Counter matches that.'));return}
+    const cols=[{h:'Player',f:r=>'<strong>'+r[0]+'</strong>'},{h:'Pos',f:r=>r[1]}];
+    YRS.forEach((y,i)=>cols.push({h:String(y).slice(2),r:true,
+      f:r=>'<span class="rg rg'+r[2][i]+'" title="'+y+'"></span>'}));
+    cols.push({h:'Rings',r:true,n:true,f:r=>'<strong>'+r[3]+'</strong>'});
+    host.appendChild(tbl(cols,rows,{click:r=>go('games',{q:r[0]})}));
+  }
+  setTimeout(fill,0);
+  return out;
+};
+
+VIEWS.newsletters=()=>{
+  const out=E('div');
+  out.appendChild(secH('The Scorigami Report'));
+  out.appendChild(E('p','lede','A one-page issue every week of the 2026 season: what the board did, what the league did, and whichever argument was loudest in the group chat.'));
+  const g=E('div','news-grid');
+  NEWS.slice().reverse().forEach(n=>{
+    const d=E('div','issue');
+    const im=E('img'); im.src='news/w'+n.w+'.webp'; im.alt='Scorigami Report, Week '+n.w+' of 2026';
+    im.loading='lazy'; im.width=1400; im.height=1812;
+    const cap=E('div','cap');
+    cap.appendChild(E('div','wk','Week '+n.w+' · 2026'));
+    cap.appendChild(E('div','hl',n.hl));
+    d.appendChild(im); d.appendChild(cap); g.appendChild(d);
+  });
+  out.appendChild(g);
+  return out;
+};
+
+/* ---------- shell ---------- */
+const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['records','Records'],
+  ['managers','Managers'],['rings','Rings'],['newsletters','Newsletters']];
+function go(v,st){ CUR=v; STATE=st||{}; try{location.hash=v}catch(e){} render(); scrollTo({top:0,behavior:'smooth'}); }
+function render(){
+  const rail=$('#rail'); rail.innerHTML='';
+  TABS.forEach(([k,t])=>{const b=E('button',null,t); b.setAttribute('aria-current',k===CUR?'true':'false');
+    b.onclick=()=>go(k,{}); rail.appendChild(b)});
+  const m=$('#main'); m.innerHTML='';
+  try{ m.appendChild(VIEWS[CUR]()); }
+  catch(err){ m.appendChild(E('p','empty','Something went wrong rendering this view: '+err.message)); console.error(err); }
+}
+fetch('archive.json').then(r=>r.json()).then(d=>{
+  prep(d);
+  const last=SEASONS[SEASONS.length-1], lw=Math.max(...G.filter(g=>g.y===last).map(g=>g.w));
+  $('#asof').textContent='Through Week '+lw+', '+last;
+  const h=(location.hash||'').replace('#','');
+  if(VIEWS[h])CUR=h;
+  render();
+}).catch(err=>{ $('#main').innerHTML='<p class="empty">Could not load the archive data.</p>'; console.error(err); });
+let rsz; addEventListener('resize',()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{ if(CUR!=='scorigami')return;
+  const maxY=(STATE.span&&STATE.span!=='all')?+STATE.span:null; drawBoard(squares(maxY),STATE.mode||'claimed'); },150); });
+</script>
+
+</body>
+</html>
