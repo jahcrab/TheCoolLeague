@@ -155,6 +155,8 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .strip .k{font-family:var(--f-disp);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:5px}
 .cols{display:grid;gap:26px;grid-template-columns:1fr;align-items:start}
 @media (min-width:880px){.cols{grid-template-columns:1.5fr 1fr}}
+.faq{display:grid;gap:0 18px;grid-template-columns:1fr}
+@media (min-width:760px){.faq{grid-template-columns:1fr 1fr}}
 .card.wide::after{content:'';display:block;clear:both}
 @media (min-width:700px){.card.wide img{float:left;width:46%;margin:2px 20px 8px 0}
   .card.wide p{max-width:none}}
@@ -531,7 +533,7 @@ VIEWS.scorigami=()=>{
   ctl.appendChild(E('span','pill','Span')); ctl.appendChild(sel);
   ctl.appendChild(E('span','pill','Colour'));
   const mode=STATE.mode||'claimed';
-  [['claimed','Claimed'],['season','By season'],['repeats','Repeats']].forEach(([v,t])=>{
+  [['claimed','Claimed'],['season','By season'],['latest','Latest'],['repeats','Repeats']].forEach(([v,t])=>{
     const b=E('button','btn',t); b.setAttribute('aria-pressed',v===mode?'true':'false');
     b.onclick=()=>{STATE.mode=v;render()}; ctl.appendChild(b);
   });
@@ -556,7 +558,9 @@ VIEWS.scorigami=()=>{
   const lg=E('div','legend');
   let L='';
   if(mode==='claimed') L=sw('var(--sg-claimed)','Claimed')+sw('var(--sg-cell)','Never')+sw('var(--sg-void)','Impossible');
-  else if(mode==='season') L=SEASONS.filter(y=>!maxY||y<=maxY).map((y,i)=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
+  else if(mode==='season'||mode==='latest')
+    L='<span class="i" style="letter-spacing:.1em">'+(mode==='season'?'First claimed':'Last claimed')+'</span>'+
+      SEASONS.filter(y=>!maxY||y<=maxY).map(y=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
   else L=sw('var(--heat2)','Once')+sw('var(--heat3)','Twice')+sw('var(--heat4)','3×')+sw('var(--sg-void)','Impossible');
   lg.innerHTML=L+'<span style="margin-left:auto">Winner →  ·  Loser ↓</span>';
   bw.appendChild(lg);
@@ -589,9 +593,44 @@ VIEWS.scorigami=()=>{
     {h:'When',r:true,f:g=>g.y+' Wk '+g.w}
   ],recent,{click:g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]})}));
   out.appendChild(newest);
+
+  out.appendChild(secH('How to Read the Board'));
+  const rate=SEASONS.map(y=>{
+    const gs=elig().filter(g=>g.y===y), seen=new Set();
+    elig().forEach(g=>{if(g.y<y)seen.add(R(g.win[6])+'|'+R(g.los[6]))});
+    let nu=0; gs.forEach(g=>{const k=R(g.win[6])+'|'+R(g.los[6]); if(!seen.has(k)){nu++;seen.add(k)}});
+    return {y,n:nu,g:gs.length};
+  });
+  const faq=E('div','faq');
+  const c1=E('div'), c2=E('div');
+  [['What counts as a Scorigami',
+    'A final score no Cool League game has ever produced before. Both totals are rounded to whole numbers first — the same ROUND the spreadsheet uses — so 144.32 beating 140.46 claims the square at 144–140.'],
+   ['Why the bottom-left is black',
+    'Those are scores that cannot exist: the winner would have to score fewer points than the loser. The slope is the line where the two are equal, and everything below it is unreachable.']
+  ].forEach(([t,b])=>{const d=E('div','card');d.appendChild(E('h3',null,t));d.appendChild(E('p',null,b));c1.appendChild(d)});
+  [['Why consolation games are out',
+    'Teams eliminated from the bracket stop setting lineups, and the lows they post were never reached honestly. Those games are excluded from the board, though they are still in the Games tab.'],
+   ['It is getting harder',
+    'Early on almost every game was new. ' + rate.map(r=>r.y+': '+Math.round(100*r.n/r.g)+'%').join(' · ') +
+    ' — the share of each season’s games that claimed a square nobody had claimed before.']
+  ].forEach(([t,b])=>{const d=E('div','card');d.appendChild(E('h3',null,t));d.appendChild(E('p',null,b));c2.appendChild(d)});
+  faq.appendChild(c1); faq.appendChild(c2); out.appendChild(faq);
+
   setTimeout(()=>drawBoard(sq,mode),0);
   return out;
 };
+
+/* Pick legible ink for a count printed on a coloured square. */
+function inkOn(fill){
+  let r,g,b;
+  const m=String(fill).match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+  if(m){ [,r,g,b]=m.map(Number); }
+  else { let h=String(fill).trim().replace('#','');
+    if(h.length===3) h=h.split('').map(x=>x+x).join('');
+    const n=parseInt(h,16); if(isNaN(n))return '#fff';
+    r=(n>>16)&255; g=(n>>8)&255; b=n&255; }
+  return (0.2126*r+0.7152*g+0.0722*b)>150 ? '#15110f' : '#fff';
+}
 
 /* Hover text for a claimed square, in the workbook's own ScreenTip wording. */
 function squareLine(arr){
@@ -610,42 +649,56 @@ const AX={w0:57,w1:188,l0:32,l1:161};
 function drawBoard(sq,mode){
   const cv=$('#board'); if(!cv)return;
   const {w0,w1,l0,l1}=AX, nx=w1-w0+1, ny=l1-l0+1;
-  const padL=38, padB=26, dpr=Math.min(2,window.devicePixelRatio||1);
-  const avail=Math.max(300,($('.board-scroll').clientWidth||600)-padL-6);
+  const padL=38, padR=38, padT=20, padB=24, dpr=Math.min(2,window.devicePixelRatio||1);
+  const avail=Math.max(300,($('.board-scroll').clientWidth||600)-padL-padR-6);
   const fit=Math.max(4,Math.min(12,Math.floor(avail/nx)));
   const cs=Math.max(4,Math.min(22,Math.round(fit*(STATE.zoom||1))));
-  const cw=padL+nx*cs+2, ch=ny*cs+padB+2;
+  const cw=padL+nx*cs+padR, ch=padT+ny*cs+padB;
   cv.width=cw*dpr; cv.height=ch*dpr; cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
   const S=getComputedStyle(document.body), col=n=>S.getPropertyValue(n).trim();
   const heat=[col('--heat2'),col('--heat3'),col('--heat4')];
   const yr=[0,1,2,3,4,5,6].map(i=>col('--sg-y'+i));
-  const X=ws=>padL+(ws-w0)*cs, Y=ls=>(ls-l0)*cs;
+  const X=ws=>padL+(ws-w0)*cs, Y=ls=>padT+(ls-l0)*cs;
   c.clearRect(0,0,cw,ch);
   // playable ground, then the impossible slope
-  c.fillStyle=col('--sg-cell'); c.fillRect(padL,0,nx*cs,ny*cs);
+  c.fillStyle=col('--sg-cell'); c.fillRect(padL,padT,nx*cs,ny*cs);
   c.fillStyle=col('--sg-void');
   for(let ls=l0;ls<=l1;ls++){ const last=Math.min(w1,ls-1); if(last<w0)continue;
     c.fillRect(padL,Y(ls),(last-w0+1)*cs,cs); }
-  sq.forEach((arr,k)=>{
-    const [ws,ls]=k.split('|').map(Number);
-    if(mode==='season'){ const first=Math.min(...arr.map(g=>g.y)); c.fillStyle=yr[first-2020]||yr[6]; }
-    else if(mode==='repeats') c.fillStyle=heat[Math.min(2,arr.length-1)];
-    else c.fillStyle=col('--sg-claimed');
-    c.fillRect(X(ws),Y(ls),cs,cs);
-  });
+  const fillFor=arr=>
+    mode==='season' ? (yr[Math.min(...arr.map(g=>g.y))-2020]||yr[6])
+  : mode==='latest' ? (yr[Math.max(...arr.map(g=>g.y))-2020]||yr[6])
+  : mode==='repeats'? heat[Math.min(2,arr.length-1)]
+  : col('--sg-claimed');
+  sq.forEach((arr,k)=>{ const [ws,ls]=k.split('|').map(Number);
+    c.fillStyle=fillFor(arr); c.fillRect(X(ws),Y(ls),cs,cs); });
+  // once cells are big enough, print how many games landed on each
+  if(cs>=15){
+    c.font='600 '+Math.round(cs*.52)+'px '+S.getPropertyValue('--f-data');
+    c.textAlign='center'; c.textBaseline='middle';
+    sq.forEach((arr,k)=>{ const [ws,ls]=k.split('|').map(Number);
+      c.fillStyle=inkOn(fillFor(arr));
+      c.fillText(arr.length,X(ws)+cs/2,Y(ls)+cs/2+.5); });
+  }
+  // scores on all four edges, so they stay in view wherever you have scrolled
   c.fillStyle=col('--muted'); c.font='600 9px '+S.getPropertyValue('--f-data');
-  c.textAlign='right'; c.textBaseline='middle';
-  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20) c.fillText(v,padL-6,Y(v)+cs/2);
-  c.textAlign='center'; c.textBaseline='top';
-  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20) c.fillText(v,X(v)+cs/2,ny*cs+7);
+  c.textBaseline='middle';
+  for(let v=Math.ceil(l0/20)*20; v<=l1; v+=20){
+    c.textAlign='right'; c.fillText(v,padL-6,Y(v)+cs/2);
+    c.textAlign='left';  c.fillText(v,padL+nx*cs+6,Y(v)+cs/2); }
+  c.textAlign='center';
+  for(let v=Math.ceil(w0/20)*20; v<=w1; v+=20){
+    c.textBaseline='bottom'; c.fillText(v,X(v)+cs/2,padT-6);
+    c.textBaseline='top';    c.fillText(v,X(v)+cs/2,padT+ny*cs+6); }
 
   const at=ev=>{ const r=cv.getBoundingClientRect();
-    return [w0+Math.floor((ev.clientX-r.left-padL)/cs), l0+Math.floor((ev.clientY-r.top)/cs), ev.clientX-r.left, ev.clientY-r.top] };
+    return [w0+Math.floor((ev.clientX-r.left-padL)/cs), l0+Math.floor((ev.clientY-r.top-padT)/cs),
+            ev.clientX-r.left, ev.clientY-r.top] };
   const tip=$('#tip');
   cv.onmousemove=ev=>{
     const [ws,ls,x,y]=at(ev);
-    if(x<padL||y<0||y>ny*cs||ws<w0||ws>w1||ls<l0||ls>l1){tip.style.opacity=0;cv.style.cursor='default';return}
+    if(x<padL||y<padT||y>padT+ny*cs||ws<w0||ws>w1||ls<l0||ls>l1){tip.style.opacity=0;cv.style.cursor='default';return}
     const arr=sq.get(ws+'|'+ls);
     if(!arr){tip.style.opacity=0;cv.style.cursor='default';return}
     tip.innerHTML='<b>'+ws+' – '+ls+'</b>\n'+squareLine(arr);
