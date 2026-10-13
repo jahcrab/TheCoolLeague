@@ -641,8 +641,8 @@ VIEWS.scorigami=()=>{
    Jon's formula:  PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
    Replacement values are rebuilt from this league each week rather than carried
    over: QB2s, RB3s, WR4s and TE2s by points per game, averaged, 14 teams deep. */
-/* MVPs as the league awarded them. 2023-25 were calculated with this version of
-   the formula and this page reproduces all three; 2020-22 used an earlier one. */
+/* MVPs as the league awarded them. Final; the ladder below is a live view of the
+   current season, not a re-litigation of past awards. */
 const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
   2023:'Christian McCaffrey',2024:"Ja'Marr Chase",2025:'Christian McCaffrey'};
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
@@ -1036,7 +1036,7 @@ VIEWS.mvp=()=>{
   out.appendChild(mvpTable(L.rows.slice(0,40),false));
 
   out.appendChild(secH('Past Winners'));
-  out.appendChild(E('p','lede','The award as the league gave it out. From 2023 on it was calculated with this version of the formula, and this page reproduces all three winners exactly. The first three seasons were worked out by hand under an earlier version, so the award stands and what this formula would have said is shown beside it.'));
+  out.appendChild(E('p','lede','Every MVP the league has awarded, with the season each one was taken from. Pick a year above to see that season’s full ladder.'));
   const past=SEASONS.slice().reverse().map(y=>{
     const l=mvpLadder(y), lead=l.rows[0], won=AWARDED[y];
     return {y,l,lead,won,row:won?l.rows.find(r=>r.name===won):null};
@@ -1044,19 +1044,14 @@ VIEWS.mvp=()=>{
   out.appendChild(tbl([
     {h:'Season',f:r=>r.y===cur?r.y+' <span class="pill">live</span>':String(r.y)},
     {h:'MVP',f:r=>r.won?'<strong>'+r.won+'</strong>'
-      :'<span style="opacity:.65">'+r.lead.name+'</span> <span class="pill">formula</span>'},
+      :'<strong>'+r.lead.name+'</strong> <span class="pill">leading</span>'},
     {h:'Pos',f:r=>(r.row||r.lead).pos},
     {h:'Rostered by',f:r=>(r.row||r.lead).mgr},
     {h:'PF/G',r:true,n:true,sm:false,f:r=>f2((r.row||r.lead).pfg)},
+    {h:'GP',r:true,n:true,sm:false,f:r=>(r.row||r.lead).gp},
     {h:'WAR',r:true,n:true,f:r=>(r.row||r.lead).war},
-    {h:'Score',r:true,n:true,f:r=>f2((r.row||r.lead).score)},
-    {h:'This formula ranks first',sm:false,f:r=>!r.won?'<span style="opacity:.5">—</span>'
-      :r.won===r.lead.name?'<span style="color:var(--good)">same</span>'
-      :r.lead.name+' · '+f2(r.lead.score)}
+    {h:'Score',r:true,n:true,f:r=>f2((r.row||r.lead).score)}
   ],past,{click:r=>go('mvp',{my:r.y})}));
-  const miss=past.filter(r=>r.y!==cur&&!r.won);
-  if(miss.length){const n=E('div','note');n.style.marginTop='8px';
-    n.textContent='No winner on record yet for '+miss.map(r=>r.y).join(', ')+'.';out.appendChild(n)}
 
   out.appendChild(secH('Replacement Values · '+L.year));
   out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: the average points per game of this league’s QB2s, RB3s, WR4s and TE2s. Rebuilt every week, so they move with the season.'));
