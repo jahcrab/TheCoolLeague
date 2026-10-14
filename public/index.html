@@ -214,6 +214,29 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
   text-transform:uppercase;color:var(--muted);margin:0 0 16px}
 .rlegend span.i{display:flex;align-items:center;gap:6px}
 
+/* scorigami season dial */
+.tl{display:flex;align-items:center;gap:15px;margin:0 0 16px;max-width:620px}
+.tl .pl{flex:0 0 auto;width:40px;padding:7px 0;text-align:center;font-size:11px}
+.tlr{flex:1 1 auto;min-width:0}
+.tl input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;margin:0;padding:0;
+  background:none;cursor:pointer;display:block}
+.tl input[type=range]::-webkit-slider-runnable-track{height:6px;background:var(--line2);border-radius:3px}
+.tl input[type=range]::-moz-range-track{height:6px;background:var(--line2);border-radius:3px}
+.tl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--panel);margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.tl input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);
+  border:2px solid var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.tl .ticks{display:flex;justify-content:space-between;font-family:var(--f-data);font-size:10px;
+  color:var(--muted);margin-top:2px;padding:0 2px}
+.tl .ticks span{cursor:pointer}
+.tl .ticks span:hover{color:var(--accent)}
+.tl .ticks span.on{color:var(--fg);font-weight:600}
+.tl .yr{flex:0 0 auto;text-align:right;min-width:5.2em}
+.tl .yr .n{font-family:var(--f-disp);font-size:31px;line-height:.95;font-variant-numeric:tabular-nums;display:block}
+.tl .yr small{display:block;font-family:var(--f-disp);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-top:4px}
+@media (max-width:560px){.tl{gap:11px}.tl .yr .n{font-size:26px}.tl .yr{min-width:4.6em}}
+
 /* scorigami board */
 .board-wrap{background:var(--panel);border:1px solid var(--line);padding:12px;
   width:fit-content;max-width:100%}
@@ -708,14 +731,45 @@ VIEWS.scorigami=()=>{
   const out=E('div'), M=D.mgrs;
   out.appendChild(secH('The Scorigami Board'));
   const p=E('p','lede');
-  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened; tap or hover one to see its games.';
+  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened; tap or hover one to see its games. Drag the dial to see the board as it stood after any season, or press play and watch it fill in.';
   out.appendChild(p);
+  /* the dial: drag a season and the board fills in as it did that year */
+  let timer=null, SQ=null;
+  const latest=SEASONS[SEASONS.length-1];
+  const firstY=new Map();
+  elig().forEach(g=>{const k=R(g.win[6])+'|'+R(g.los[6]);
+    if(!firstY.has(k)||g.y<firstY.get(k))firstY.set(k,g.y)});
+  const newIn=y=>[...firstY.values()].filter(v=>v===y).length;
+  let curY=(STATE.span&&STATE.span!=='all')?+STATE.span:latest;
+  if(!SEASONS.includes(curY))curY=latest;
+
+  const tl=E('div','tl');
+  const play=E('button','btn pl','▶'); play.title='Play the board from 2020';
+  const tlr=E('div','tlr');
+  const rg=E('input'); rg.type='range'; rg.min=SEASONS[0]; rg.max=latest; rg.step=1; rg.value=curY;
+  rg.setAttribute('aria-label','Seasons shown, through');
+  const ticks=E('div','ticks');
+  SEASONS.forEach(y=>{const s=E('span',y===curY?'on':null,"’"+String(y).slice(2));
+    s.onclick=()=>{stop();show(y,true)}; ticks.appendChild(s)});
+  tlr.appendChild(rg); tlr.appendChild(ticks);
+  const yl=E('div','yr'); const yn=E('span','n',String(curY)), yc=E('small');
+  yl.appendChild(yn); yl.appendChild(yc);
+  tl.appendChild(play); tl.appendChild(tlr); tl.appendChild(yl);
+  out.appendChild(tl);
+  rg.oninput=()=>{stop(); show(+rg.value,false)};
+  rg.onchange=()=>show(+rg.value,true);
+  play.onclick=()=>{
+    if(timer){stop();return}
+    play.textContent='■'; show(SEASONS[0],false);
+    let i=0;
+    timer=setInterval(()=>{
+      if(!document.body.contains(rg)){clearInterval(timer);timer=null;return}
+      if(++i>=SEASONS.length){stop(); show(latest,true); return}
+      show(SEASONS[i],i===SEASONS.length-1);
+    },850);
+  };
+
   const ctl=E('div','ctl');
-  const sel=E('select'); sel.id='sg-span';
-  [['all','All seasons · 2020–'+SEASONS[SEASONS.length-1]]].concat(SEASONS.map(y=>[String(y),y===2020?'2020 only':'2020–'+String(y).slice(2)]))
-    .forEach(([v,t])=>{const o=E('option',null,t);o.value=v;sel.appendChild(o)});
-  sel.value=STATE.span||'all'; sel.onchange=()=>{STATE.span=sel.value;STATE.cell=null;render()};
-  ctl.appendChild(E('span','pill','Span')); ctl.appendChild(sel);
   ctl.appendChild(E('span','pill','Colour'));
   const mode=STATE.mode||'claimed';
   [['claimed','Claimed'],['season','By season'],['latest','Latest'],['repeats','Repeats']].forEach(([v,t])=>{
@@ -727,13 +781,13 @@ VIEWS.scorigami=()=>{
   [[1,'Fit'],[2,'Bigger'],[3,'Biggest']].forEach(([v,t])=>{
     const b=E('button','btn',t); b.setAttribute('aria-pressed',(STATE.zoom||1)===v?'true':'false');
     b.onclick=()=>{STATE.zoom=v; zbtns.forEach(x=>x[0].setAttribute('aria-pressed',x[1]===v?'true':'false'));
-      drawBoard(sq,mode);};
+      drawBoard(SQ,mode);};
     zbtns.push([b,v]); ctl.appendChild(b);
   });
   out.appendChild(ctl);
 
-  const maxY=(STATE.span&&STATE.span!=='all')?+STATE.span:null;
-  const sq=squares(maxY);
+  const maxY=curY>=latest?null:curY;
+  const sq=squares(maxY); SQ=sq;
   const nev=[...sq.values()].filter(a=>a.length===1).length;
   const games=elig().filter(g=>!maxY||g.y<=maxY);
 
@@ -741,13 +795,16 @@ VIEWS.scorigami=()=>{
   cv.id='board'; bs.appendChild(cv); bw.appendChild(bs);
   const sw=(c,t)=>'<span><span class="sw" style="background:'+c+'"></span>'+t+'</span>';
   const lg=E('div','legend');
-  let L='';
-  if(mode==='claimed') L=sw('var(--sg-claimed)','Claimed')+sw('var(--sg-cell)','Never')+sw('var(--sg-void)','Impossible');
-  else if(mode==='season'||mode==='latest')
-    L='<span class="i" style="letter-spacing:.1em">'+(mode==='season'?'First claimed':'Last claimed')+'</span>'+
-      SEASONS.filter(y=>!maxY||y<=maxY).map(y=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
-  else L=sw('var(--heat2)','Once')+sw('var(--heat3)','Twice')+sw('var(--heat4)','3×')+sw('var(--sg-void)','Impossible');
-  lg.innerHTML=L+'<span style="margin-left:auto">Winner →  ·  Loser ↓</span>';
+  function fillLegend(mY){
+    let L='';
+    if(mode==='claimed') L=sw('var(--sg-claimed)','Claimed')+sw('var(--sg-cell)','Never')+sw('var(--sg-void)','Impossible');
+    else if(mode==='season'||mode==='latest')
+      L='<span class="i" style="letter-spacing:.1em">'+(mode==='season'?'First claimed':'Last claimed')+'</span>'+
+        SEASONS.filter(y=>!mY||y<=mY).map(y=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
+    else L=sw('var(--heat2)','Once')+sw('var(--heat3)','Twice')+sw('var(--heat4)','3×')+sw('var(--sg-void)','Impossible');
+    lg.innerHTML=L+'<span style="margin-left:auto">Winner →  ·  Loser ↓</span>';
+  }
+  fillLegend(maxY);
   bw.appendChild(lg);
   const ro=E('div','readout'); ro.id='sg-readout';
   ro.innerHTML='<span class="hint">Tap a shaded square to see its game. Use Bigger if they are hard to hit.</span>';
@@ -760,23 +817,32 @@ VIEWS.scorigami=()=>{
   const detail=E('div'); detail.id='sg-detail'; detail.style.marginTop='18px'; out.appendChild(detail);
 
   const g1=E('div','grid-auto'); g1.style.marginTop='18px';
-  g1.appendChild(tile(sq.size,'Squares claimed'));
-  g1.appendChild(tile(games.length,'Games counted'));
-  g1.appendChild(tile((100*nev/sq.size).toFixed(1)+'%','Never repeated'));
-  const mc=[...sq.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
-  g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
+  function fillTiles(sqx,gms){
+    g1.innerHTML='';
+    const nv=[...sqx.values()].filter(a=>a.length===1).length;
+    g1.appendChild(tile(sqx.size,'Squares claimed'));
+    g1.appendChild(tile(gms.length,'Games counted'));
+    g1.appendChild(tile((100*nv/sqx.size).toFixed(1)+'%','Never repeated'));
+    const mc=[...sqx.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
+    g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
+  }
+  fillTiles(sq,games);
   out.appendChild(g1);
 
-  const newest=E('div'); newest.appendChild(secH('Newest Squares'));
-  const firsts=new Map();
-  games.forEach(g=>{const k=R(g.win[6])+'|'+R(g.los[6]); if(!firsts.has(k))firsts.set(k,g)});
-  const recent=[...firsts.values()].sort((a,b)=>b.y-a.y||b.w-a.w).slice(0,12);
-  newest.appendChild(tbl([
-    {h:'Square',n:true,f:g=>'<strong>'+R(g.win[6])+' – '+R(g.los[6])+'</strong>'},
-    {h:'Winner',f:g=>M[g.win[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.win[6])},
-    {h:'Loser',f:g=>M[g.los[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.los[6])},
-    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}
-  ],recent,{click:g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]})}));
+  const newest=E('div');
+  function fillNewest(gms){
+    newest.innerHTML=''; newest.appendChild(secH('Newest Squares'));
+    const firsts=new Map();
+    gms.forEach(g=>{const k=R(g.win[6])+'|'+R(g.los[6]); if(!firsts.has(k))firsts.set(k,g)});
+    const recent=[...firsts.values()].sort((a,b)=>b.y-a.y||b.w-a.w).slice(0,12);
+    newest.appendChild(tbl([
+      {h:'Square',n:true,f:g=>'<strong>'+R(g.win[6])+' – '+R(g.los[6])+'</strong>'},
+      {h:'Winner',f:g=>M[g.win[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.win[6])},
+      {h:'Loser',f:g=>M[g.los[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.los[6])},
+      {h:'When',r:true,f:g=>g.y+' Wk '+g.w}
+    ],recent,{click:g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]})}));
+  }
+  fillNewest(games);
   out.appendChild(newest);
 
   out.appendChild(secH('How to Read the Board'));
@@ -801,8 +867,27 @@ VIEWS.scorigami=()=>{
   ].forEach(([t,b])=>{const d=E('div','card');d.appendChild(E('h3',null,t));d.appendChild(E('p',null,b));c2.appendChild(d)});
   faq.appendChild(c1); faq.appendChild(c2); out.appendChild(faq);
 
-  setTimeout(()=>drawBoard(sq,mode),0);
+  setTimeout(()=>{drawBoard(sq,mode); caption(curY);},0);
   return out;
+
+  function caption(y){
+    yn.textContent=y;
+    yc.textContent=y===SEASONS[0]?newIn(y)+' squares to start'
+      :'+'+newIn(y)+' new'+(y===latest?' so far':'');
+    [...ticks.children].forEach((s,i)=>s.classList.toggle('on',SEASONS[i]===y));
+  }
+  /* redraw in place rather than re-render: dragging has to keep up with the thumb */
+  function show(y,settle){
+    curY=y; STATE.span=y>=latest?'all':String(y); STATE.cell=null;
+    const mY=y>=latest?null:y, s2=squares(mY), gms=elig().filter(g=>!mY||g.y<=mY);
+    SQ=s2; rg.value=y; caption(y);
+    fillLegend(mY); drawBoard(s2,mode); fillTiles(s2,gms);
+    const ro=$('#sg-readout'), dt=$('#sg-detail');
+    if(ro)ro.innerHTML='<span class="hint">Tap a shaded square to see its game. Use Bigger if they are hard to hit.</span>';
+    if(dt)dt.innerHTML='';
+    if(settle)fillNewest(gms);
+  }
+  function stop(){ if(timer){clearInterval(timer);timer=null;play.textContent='▶'} }
 };
 
 /* ---------- MVP ladder ----------
