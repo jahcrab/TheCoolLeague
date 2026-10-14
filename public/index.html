@@ -1340,6 +1340,10 @@ VIEWS.games=()=>{
       g1.appendChild(tile(f2(one.best),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
       g1.appendChild(tile(one.starts,'Weeks started','of '+one.weeks+' on a roster'));
       g1.appendChild(tile(f2(one.spts),'Points started',ord(one.ptsRank)+' all time'));
+      const dr=(D.draft||{})[one.id];
+      if(dr) g1.appendChild(tile(ord(dr[0]),'Highest drafted',
+        'Round '+dr[1]+', pick '+dr[2]+' · '+dr[3]+' · '+(D.mgrs[dr[4]]||'—')+
+        (dr[5]>1?' · taken '+dr[5]+'×':'')));
       g1.appendChild(tile(one.mgrs.size,one.mgrs.size===1?'Manager':'Managers',[...one.mgrs].join(' · ')));
       const top=[...one.byMgr.values()].sort((a,b)=>b.starts-a.starts||b.spts-a.spts)[0];
       if(top&&top.starts){
