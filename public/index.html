@@ -1024,10 +1024,13 @@ function playerStats(){
   D.tw.forEach(t=>t[7].forEach(e=>{
     let s=by.get(e[2]);
     if(!s){s={id:e[2],name:D.players[e[2]],weeks:0,starts:0,spts:0,best:0,
-              mgrs:new Set(),seasons:new Set(),pos:D.pos[e[3]]||''};by.set(e[2],s)}
-    s.weeks++; s.mgrs.add(M[t[3]]); s.seasons.add(t[0]);
+              mgrs:new Set(),seasons:new Set(),byMgr:new Map(),pos:D.pos[e[3]]||''};by.set(e[2],s)}
+    const mg=M[t[3]];
+    s.weeks++; s.mgrs.add(mg); s.seasons.add(t[0]);
+    if(!s.byMgr.has(mg))s.byMgr.set(mg,{m:mg,starts:0,spts:0});
+    const u=s.byMgr.get(mg);
     if(e[4]>s.best)s.best=e[4];
-    if(e[1]){s.starts++; s.spts+=e[4]}
+    if(e[1]){s.starts++; s.spts+=e[4]; u.starts++; u.spts+=e[4]}
   }));
   const all=[...by.values()];
   const q=all.filter(s=>s.starts>=PPS_MIN).sort((a,b)=>b.spts/b.starts-a.spts/a.starts);
@@ -1338,6 +1341,13 @@ VIEWS.games=()=>{
       g1.appendChild(tile(one.starts,'Weeks started','of '+one.weeks+' on a roster'));
       g1.appendChild(tile(f2(one.spts),'Points started',ord(one.ptsRank)+' all time'));
       g1.appendChild(tile(one.mgrs.size,one.mgrs.size===1?'Manager':'Managers',[...one.mgrs].join(' · ')));
+      const top=[...one.byMgr.values()].sort((a,b)=>b.starts-a.starts||b.spts-a.spts)[0];
+      if(top&&top.starts){
+        const tied=[...one.byMgr.values()].filter(x=>x.starts===top.starts);
+        g1.appendChild(tile(tied.length>1?tied.length+' tied':top.m,'Started him most',
+          tied.length>1?tied.map(x=>x.m).join(' · ')+' · '+top.starts+' each'
+                       :top.starts+' of '+one.starts+' starts · '+f2(top.spts)+' pts'));
+      }
       const ys=[...one.seasons].sort();
       g1.appendChild(tile(ys.length,ys.length===1?'Season':'Seasons',
         ys.length>1?ys[0]+'–'+ys[ys.length-1]:String(ys[0])));
