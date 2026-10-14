@@ -1345,13 +1345,13 @@ function mgrDetail(m){
 function mvpTable(rows,compact,mv){
   const cols=[
     {h:'',f:(r,i)=>i+1},
-    {h:'',filter:false,w:'46px',f:r=>{
-      if(!mv||!(r.name in mv)) return '';
+    mv&&{h:'',filter:false,w:'46px',f:r=>{
+      if(!(r.name in mv)) return '';
       const d=mv[r.name];
       if(d===null) return '<span class="mv nr">NR</span>';
       if(d===0) return '<span class="mv sm">–</span>';
       return '<span class="mv '+(d>0?'up':'dn')+'">'+(d>0?'▲':'▼')+' '+Math.abs(d)+'</span>';
-    }},
+    }}||null,
     {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
     {h:'Pos',f:r=>r.pos},
     {h:'Manager',f:r=>r.mgr},
@@ -1365,7 +1365,8 @@ function mvpTable(rows,compact,mv){
     {h:'LBR',r:true,n:true,f:r=>r.lbr?'<strong style="color:var(--bad)">'+r.lbr+'</strong>':'0'},
     {h:'MVP',r:true,n:true,f:r=>'<strong>'+f2(r.score)+'</strong>'}
   ];
-  return tbl(compact?cols.filter(c=>['','Player','Pos','Manager','PF/G','WAR','LBR','MVP'].includes(c.h)):cols,
+  const keep=cols.filter(Boolean);
+  return tbl(compact?keep.filter(c=>['','Player','Pos','Manager','PF/G','WAR','LBR','MVP'].includes(c.h)):keep,
              rows,{click:r=>go('games',{q:r.name})});
 }
 
@@ -1380,7 +1381,7 @@ VIEWS.mvp=()=>{
   out.appendChild(secH('The MVP Ladder · '+Y));
   out.appendChild(E('p','lede','The league’s season-MVP formula, run against its own regular-season numbers '+
     (live?'after ':'across ')+L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'+
-    (L.weeks>1?' The arrows are the move since the ladder stood after Week '+(L.lastWeek-1)+'; NR means he had not qualified yet.':'')));
+    (live&&L.weeks>1?' The arrows are the move since the ladder stood after Week '+(L.lastWeek-1)+'; NR means he had not qualified yet.':'')));
   const yc=E('div','ctl');
   yc.appendChild(E('span','pill','Season'));
   const ys=E('select'); YRS.slice().reverse().forEach(y=>{
@@ -1396,7 +1397,8 @@ VIEWS.mvp=()=>{
   g1.appendChild(tile(L.rows.length,'Qualified','Played at least '+L.minG+' of '+L.weeks+' weeks'));
   out.appendChild(g1);
 
-  out.appendChild(mvpTable(L.rows.slice(0,40),false,mvpMoves(L)));
+  /* movement is only news while a season is running; a finished ladder is final */
+  out.appendChild(mvpTable(L.rows.slice(0,40),false,live?mvpMoves(L):null));
 
   out.appendChild(secH('Past Winners'));
   out.appendChild(E('p','lede','Every MVP the league has awarded, with the season each one was taken from. Pick a year above to see that season’s full ladder.'));
