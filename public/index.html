@@ -433,6 +433,8 @@ function prep(d){
       const h=H2H.get(k); won?h.w++:h.l++; h.pf+=(x===a?g.win[6]:g.los[6]); h.pa+=(x===a?g.los[6]:g.win[6]); });
   });
 }
+/* "2021 Wk 17" reads like any other week, and it was the final. Name the round. */
+const whenLab=(y,w,br)=>y+' '+(roundName(y,w,br)||'Wk '+w);
 const div=(y,m)=>((D.div[y]||{})[D.mgrs.indexOf(m)])||null;
 const elig=()=>G.filter(g=>g.br!==BR_CON);
 function squares(maxYear){
@@ -839,7 +841,7 @@ VIEWS.scorigami=()=>{
       {h:'Square',n:true,f:g=>'<strong>'+R(g.win[6])+' – '+R(g.los[6])+'</strong>'},
       {h:'Winner',f:g=>M[g.win[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.win[6])},
       {h:'Loser',f:g=>M[g.los[3]]},{h:'Pts',r:true,n:true,f:g=>f2(g.los[6])},
-      {h:'When',r:true,f:g=>g.y+' Wk '+g.w}
+      {h:'When',r:true,f:g=>whenLab(g.y,g.w,g.br)}
     ],recent,{click:g=>go('games',{y:g.y,w:g.w,focus:M[g.win[3]]})}));
   }
   fillNewest(games);
@@ -1196,7 +1198,7 @@ VIEWS.games=()=>{
     g1.appendChild(tile(won+'–'+(reg.length-won),'Regular season'));
     g1.appendChild(tile(f2(pf/(reg.length||1)),'Points per game'));
     g1.appendChild(tile(f2(pa/(reg.length||1)),'Points against'));
-    if(best)g1.appendChild(tile(f2(mine(best)[6]),'Best week','Week '+best.w));
+    if(best)g1.appendChild(tile(f2(mine(best)[6]),'Best week',roundName(y,best.w,best.br)||'Week '+best.w));
     L.appendChild(g1);
     gs.forEach(g=>L.appendChild(matchup(g,team)));
     focusGame(L);
@@ -1262,14 +1264,14 @@ VIEWS.games=()=>{
     if(names.length>1) r.appendChild(E('p','lede',names.slice(0,14).join(' · ')+(names.length>14?' …':'')));
     const st=lines.filter(l=>l.st);
     const g1=E('div','grid-auto'); g1.style.marginBottom='14px';
-    g1.appendChild(tile(f2(lines[0].pts),'Best week',lines[0].m+', '+lines[0].y+' Wk '+lines[0].w));
+    g1.appendChild(tile(f2(lines[0].pts),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
     g1.appendChild(tile(st.length,'Weeks started','of '+lines.length+' on a roster'));
     g1.appendChild(tile(f2(st.reduce((s,l)=>s+l.pts,0)/(st.length||1)),'Points per start'));
     r.appendChild(g1);
     r.appendChild(tbl([
       {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
       {h:'Player',f:l=>l.p},{h:'Manager',f:l=>l.m},{h:'Slot',f:l=>l.st?l.sl:'<span style="opacity:.6">'+l.sl+'</span>'},
-      {h:'Season',r:true,f:l=>l.y+' Wk '+l.w}
+      {h:'Season',r:true,f:l=>whenLab(l.y,l.w,l.br)}
     ],lines.slice(0,60),{click:l=>go('games',{y:l.y,w:l.w,focus:l.m,q:''})}));
   }
 };
@@ -1307,43 +1309,43 @@ VIEWS.records=()=>{
     {h:'',f:(r,i)=>i+1},{h:'Score',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
     {h:'Manager',f:r=>M[r.t[3]]},{h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},
     {h:'Result',f:r=>r.won?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
-    {h:'When',r:true,f:r=>r.g.y+' Wk '+r.g.w}]);
+    {h:'When',r:true,f:r=>whenLab(r.g.y,r.g.w,r.g.br)}]);
 
   list('Highest Combined Scores',e.slice().sort((a,b)=>b.total-a.total).slice(0,10),[
     {h:'',f:(r,i)=>i+1},{h:'Total',n:true,f:g=>'<strong>'+f2(g.total)+'</strong>'},
     {h:'Winner',f:g=>M[g.win[3]]+' · '+f2(g.win[6])},{h:'Loser',f:g=>M[g.los[3]]+' · '+f2(g.los[6])},
-    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}]);
+    {h:'When',r:true,f:g=>whenLab(g.y,g.w,g.br)}]);
 
   list('Highest Losing Scores',sides.filter(s=>!s.won).sort((a,b)=>b.t[6]-a.t[6]).slice(0,10),[
     {h:'',f:(r,i)=>i+1},{h:'Lost with',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
     {h:'Manager',f:r=>M[r.t[3]]},{h:'Beaten by',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},
-    {h:'When',r:true,f:r=>r.g.y+' Wk '+r.g.w}]);
+    {h:'When',r:true,f:r=>whenLab(r.g.y,r.g.w,r.g.br)}]);
 
   list('Biggest Blowouts',e.slice().sort((a,b)=>b.marg-a.marg).slice(0,10),[
     {h:'',f:(r,i)=>i+1},{h:'Margin',n:true,f:g=>'<strong>'+f2(g.marg)+'</strong>'},
     {h:'Winner',f:g=>M[g.win[3]]+' · '+f2(g.win[6])},{h:'Loser',f:g=>M[g.los[3]]+' · '+f2(g.los[6])},
-    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}]);
+    {h:'When',r:true,f:g=>whenLab(g.y,g.w,g.br)}]);
 
   list('Closest Games',e.slice().sort((a,b)=>a.marg-b.marg).slice(0,10),[
     {h:'',f:(r,i)=>i+1},{h:'Margin',n:true,f:g=>'<strong>'+f2(g.marg)+'</strong>'},
     {h:'Winner',f:g=>M[g.win[3]]+' · '+f2(g.win[6])},{h:'Loser',f:g=>M[g.los[3]]+' · '+f2(g.los[6])},
-    {h:'When',r:true,f:g=>g.y+' Wk '+g.w}]);
+    {h:'When',r:true,f:g=>whenLab(g.y,g.w,g.br)}]);
 
   list('Lowest Scores',sides.slice().sort((a,b)=>a.t[6]-b.t[6]).slice(0,10),[
     {h:'',f:(r,i)=>i+1},{h:'Score',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
     {h:'Manager',f:r=>M[r.t[3]]},{h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},
     {h:'Result',f:r=>r.won?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
-    {h:'When',r:true,f:r=>r.g.y+' Wk '+r.g.w}]);
+    {h:'When',r:true,f:r=>whenLab(r.g.y,r.g.w,r.g.br)}]);
 
   // player weeks
   out.appendChild(secH('Biggest Player Weeks'));
   const pl=[]; D.tw.forEach(t=>{ if(t[2]===BR_CON)return;
-    t[7].forEach(x=>{ if(x[1]) pl.push({p:D.players[x[2]],pts:x[4],sl:D.slots[x[0]],m:M[t[3]],y:t[0],w:t[1]}) }) });
+    t[7].forEach(x=>{ if(x[1]) pl.push({p:D.players[x[2]],pts:x[4],sl:D.slots[x[0]],m:M[t[3]],y:t[0],w:t[1],br:t[2]}) }) });
   pl.sort((a,b)=>b.pts-a.pts);
   out.appendChild(tbl([
     {h:'',f:(r,i)=>i+1},{h:'Pts',n:true,f:r=>'<strong>'+f2(r.pts)+'</strong>'},
     {h:'Player',f:r=>r.p},{h:'Slot',f:r=>r.sl},{h:'Started for',f:r=>r.m},
-    {h:'When',r:true,f:r=>r.y+' Wk '+r.w}
+    {h:'When',r:true,f:r=>whenLab(r.y,r.w,r.br)}
   ],pl.slice(0,12),{click:r=>go('games',{y:r.y,w:r.w,focus:r.m})}));
 
   // season bests
@@ -1422,7 +1424,7 @@ function mgrDetail(m){
   out.appendChild(tbl([
     {h:'Score',n:true,f:r=>'<strong>'+f2(r.t[6])+'</strong>'},
     {h:'Result',f:r=>r.t[5]===1?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
-    {h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},{h:'When',r:true,f:r=>r.t[0]+' Wk '+r.t[1]}
+    {h:'Opponent',f:r=>M[r.o[3]]+' · '+f2(r.o[6])},{h:'When',r:true,f:r=>whenLab(r.t[0],r.t[1],r.t[2])}
   ],pick,{click:r=>go('games',{y:r.t[0],w:r.t[1],focus:m})}));
   return out;
 }
