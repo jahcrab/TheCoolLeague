@@ -253,6 +253,64 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .note{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
 @media (max-width:620px){.box{grid-template-columns:1fr}.box>div+div{border-left:0;border-top:1px solid var(--line)}}
 
+/* games: week rail + matchup rows */
+.wkbar{display:flex;gap:6px;overflow-x:auto;padding:1px 0 14px;-webkit-overflow-scrolling:touch}
+.wkbar button{appearance:none;flex:0 0 auto;background:var(--panel);border:1px solid var(--line2);color:var(--muted);
+  font-family:var(--f-disp);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;padding:6px 11px;cursor:pointer}
+.wkbar button:hover{border-color:var(--accent);color:var(--accent)}
+.wkbar button[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.wkh{display:flex;align-items:baseline;gap:12px;justify-content:space-between;
+  border-bottom:2px solid var(--fg);padding-bottom:5px;margin:26px 0 0}
+.wkh:first-child{margin-top:4px}
+.wkh .t{font-family:var(--f-disp);font-size:23px;letter-spacing:.01em;line-height:1}
+.wkh .n{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+  text-align:right;white-space:nowrap}
+.mu{background:var(--panel);border-bottom:1px solid var(--line)}
+.mu:first-of-type{border-top:0}
+.mu-row{display:grid;align-items:center;gap:4px 9px;width:100%;appearance:none;background:none;border:0;
+  font:inherit;color:inherit;text-align:left;cursor:pointer;padding:9px 13px;
+  grid-template-columns:1fr auto auto auto 1fr auto;
+  grid-template-areas:'a sa ar sb b c'}
+.mu-row:not(.lead) .wk{display:none}
+.mu-row.lead{grid-template-columns:5.4em 1fr auto auto auto 1fr auto;
+  grid-template-areas:'wk a sa ar sb b c'}
+.mu-row:hover{background:var(--panel2)}
+.mu-row .wk{grid-area:wk;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);line-height:1.25;min-width:0}
+.mu-row .wk .rs{display:block;font-size:12.5px;letter-spacing:.08em}
+.mu-row .wk .rs.won{color:var(--good)}
+.mu-row .sd{min-width:0;display:flex;flex-direction:column;gap:2px}
+.mu-row .sd.a{grid-area:a}
+.mu-row .sd.b{grid-area:b;align-items:flex-end;text-align:right}
+.mu-row .ln{display:flex;align-items:baseline;gap:7px;min-width:0;max-width:100%}
+.mu-row .nm{font-family:var(--f-disp);font-size:19.5px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mu-row .rec{font-family:var(--f-data);font-size:11.5px;color:var(--muted);flex:0 0 auto}
+.mu-row .top{font-size:12px;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mu-row .top b{font-weight:400;font-family:var(--f-data);font-size:11px}
+.mu-row .sc{font-family:var(--f-data);font-size:17px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.mu-row .sc.s1{grid-area:sa}
+.mu-row .sc.s2{grid-area:sb}
+.mu-row .ar{grid-area:ar;color:var(--accent);font-size:10px;line-height:1}
+.mu-row .cv{grid-area:c;color:var(--line2);font-size:10px;transition:transform .12s}
+.mu-row:hover .cv{color:var(--accent)}
+.mu-row .w .nm{font-weight:700}
+.mu-row .sc.w{color:var(--accent);font-weight:600}
+.mu.open .cv{transform:rotate(180deg);color:var(--accent)}
+.mu.open{border-bottom-color:var(--line2)}
+.mu:not(.open) .box{display:none}
+.mu .box{border-top:1px solid var(--line)}
+@media (max-width:660px){
+  .mu-row{grid-template-columns:1fr auto auto;grid-template-areas:'a sa c' 'b sb c';row-gap:3px}
+  .mu-row.lead{grid-template-columns:4.6em 1fr auto auto;grid-template-areas:'wk a sa c' 'wk b sb c'}
+  .mu-row.lead .wk{align-self:center}
+  .mu-row .ar{display:none}
+  .mu-row .nm{font-size:17.5px}
+  .mu-row .sc{font-size:15.5px}
+  .mu-row .sd.b{align-items:flex-start;text-align:left}
+  .mu-row .sd.b .ln{flex-direction:row-reverse;justify-content:flex-end}
+  .mu-row .top{display:none}
+}
+
 /* newsletters */
 .news-grid{display:grid;gap:22px}
 .issue{background:var(--panel);border:1px solid var(--line)}
@@ -473,8 +531,18 @@ function scoreboard(g,open){
     const dv=div(g.y,M[t[3]]); if(dv){const p=E('span','pill '+(dv==='East'?'e':'w'),dv);p.style.marginLeft='8px';L.appendChild(p)}
     r.appendChild(L); r.appendChild(E('div','sc',f2(t[6]))); box.appendChild(r);
   });
-  const bw=E('div','box');
-  [g.win,g.los].forEach(t=>{
+  const bw=boxOnly(g);
+  if(open) box.appendChild(bw);
+  else{
+    const b=E('button','btn','Boxscore'); b.style.margin='10px 13px 13px';
+    b.onclick=()=>{b.remove(); box.appendChild(bw)}; box.appendChild(b);
+  }
+  return box;
+}
+/* the two lineups, side by side — shared by the scoreboard card and the matchup rows */
+function boxOnly(g,first){
+  const M=D.mgrs, bw=E('div','box');
+  [first||g.win, (first||g.win)===g.win?g.los:g.win].forEach(t=>{
     const d=E('div'); d.appendChild(E('h4',null,M[t[3]]+' · Starters '+f2(t[7].filter(e=>e[1]).reduce((s,e)=>s+e[4],0))));
     const st=t[7].filter(e=>e[1]), be=t[7].filter(e=>!e[1]).sort((a,b)=>b[4]-a[4]);
     const tb=E('table'); const body=E('tbody');
@@ -489,12 +557,7 @@ function scoreboard(g,open){
     const nt=t[7].find(e=>e[5]>0); if(nt)d.appendChild(E('div','note','Note: '+D.notes[nt[5]]+'.'));
     bw.appendChild(d);
   });
-  if(open) box.appendChild(bw);
-  else{
-    const b=E('button','btn','Boxscore'); b.style.margin='10px 13px 13px';
-    b.onclick=()=>{b.remove(); box.appendChild(bw)}; box.appendChild(b);
-  }
-  return box;
+  return bw;
 }
 
 /* ---------- views ---------- */
@@ -946,39 +1009,146 @@ function drawBoard(sq,mode){
 VIEWS.games=()=>{
   const M=D.mgrs, out=E('div');
   out.appendChild(secH('Scoreboards & Boxscores'));
-  const y=STATE.y||SEASONS[SEASONS.length-1];
+  const y=SEASONS.indexOf(STATE.y)>=0?STATE.y:SEASONS[SEASONS.length-1];
   const weeks=[...new Set(G.filter(g=>g.y===y).map(g=>g.w))].sort((a,b)=>a-b);
-  const w=weeks.includes(STATE.w)?STATE.w:weeks[weeks.length-1];
+  const roster=[...new Set(G.filter(g=>g.y===y).flatMap(g=>[M[g.win[3]],M[g.los[3]]]))].sort();
+  /* a link that names a manager but no week lands on that manager's season schedule */
+  if(STATE.focus&&STATE.w==null&&!STATE.team){ STATE.team=STATE.focus; STATE.focus=null; }
+  const team=roster.indexOf(STATE.team)>=0?STATE.team:null;
+  const w=team?'all':(STATE.w==='all'?'all':(weeks.indexOf(STATE.w)>=0?STATE.w:weeks[weeks.length-1]));
+  const REC=records(y);
+  const set=o=>{ STATE=Object.assign({},STATE,o); render(); };
+
   const ctl=E('div','ctl');
+  ctl.appendChild(E('span','pill','Season'));
   const sy=E('select'); SEASONS.forEach(s=>{const o=E('option',null,s);o.value=s;sy.appendChild(o)});
-  sy.value=y; sy.onchange=()=>{STATE.y=+sy.value;STATE.w=null;render()};
-  const sw=E('select'); weeks.forEach(k=>{
-    const rn=roundName(y,k,Math.min(...G.filter(g=>g.y===y&&g.w===k).map(g=>g.br)));
-    const o=E('option',null,'Week '+k+(rn?' · '+rn:''));o.value=k;sw.appendChild(o)});
-  sw.value=w; sw.onchange=()=>{STATE.w=+sw.value;render()};
-  ctl.appendChild(E('span','pill','Season')); ctl.appendChild(sy);
-  ctl.appendChild(E('span','pill','Week')); ctl.appendChild(sw);
+  sy.value=y; sy.onchange=()=>set({y:+sy.value,w:null,team:null,focus:null}); ctl.appendChild(sy);
+  ctl.appendChild(E('span','pill','Team'));
+  const stm=E('select'); const all=E('option',null,'Every team'); all.value=''; stm.appendChild(all);
+  roster.forEach(m=>{const o=E('option',null,m);o.value=m;stm.appendChild(o)});
+  stm.value=team||''; stm.onchange=()=>set({team:stm.value||null,w:null,focus:null});
+  ctl.appendChild(stm);
   const ps=E('input'); ps.type='search'; ps.placeholder='or search a player…'; ps.value=STATE.q||'';
   ps.oninput=()=>{STATE.q=ps.value; renderPlayer()};
   ctl.appendChild(ps);
   out.appendChild(ctl);
+
+  /* the week rail: one tap per week, the way a schedule page should move */
+  if(!team){
+    const bar=E('div','wkbar');
+    const chip=(lab,on,title,fn)=>{const b=E('button',null,lab);
+      b.setAttribute('aria-pressed',on?'true':'false'); if(title)b.title=title; b.onclick=fn; bar.appendChild(b)};
+    chip('All weeks',w==='all','Every game of the season',()=>set({w:'all',focus:null}));
+    weeks.forEach(k=>{
+      const rn=roundName(y,k,Math.min(...G.filter(g=>g.y===y&&g.w===k).map(g=>g.br)));
+      const lab=rn==='Championship'?'Final':rn==='Semi Final'?'Semis':rn==='Wildcard'?'Wild Card':rn==='Consolation'?'Cons.':String(k);
+      chip(lab,w===k,'Week '+k+(rn?' · '+rn:''),()=>set({w:k,focus:null}));
+    });
+    out.appendChild(bar);
+  }
+
   const pres=E('div'); pres.id='p-res'; out.appendChild(pres);
   const list=E('div'); list.id='g-list'; out.appendChild(list);
-  setTimeout(()=>{ if(STATE.q)renderPlayer(); else fillWeek(y,w); },0);
+  if((STATE.q||'').trim().length>=3) setTimeout(renderPlayer,0);
+  else if(team) teamList(list); else weekList(list);
   return out;
 
-  function fillWeek(y,w){
-    const L=$('#g-list'); if(!L)return; L.innerHTML='';
-    const gs=G.filter(g=>g.y===y&&g.w===w).sort((a,b)=>a.br-b.br||b.win[6]-a.win[6]);
-    const rn=roundName(y,w,Math.min(...gs.map(g=>g.br)));
-    L.appendChild(secH(y+' · Week '+w+(rn?' · '+rn:'')+' · '+gs.length+' games'));
-    gs.forEach(g=>L.appendChild(scoreboard(g,STATE.focus&&(M[g.win[3]]===STATE.focus||M[g.los[3]]===STATE.focus))));
-    STATE.focus=null;
+  /* running record through each week, so a schedule reads like a season */
+  function records(y){
+    const r={}, run={};
+    G.filter(g=>g.y===y&&g.br===BR_REG).sort((a,b)=>a.w-b.w).forEach(g=>{
+      [[M[g.win[3]],1],[M[g.los[3]],0]].forEach(([m,won])=>{
+        run[m]=run[m]||[0,0]; run[m][won?0:1]++;
+        r[m+'|'+g.w]=r[m+'|last']=run[m][0]+'-'+run[m][1];
+      });
+    });
+    return r;
   }
+  function rec(m,g){ const v=REC[m+'|'+g.w]||REC[m+'|last']; return v?'('+v+')':'' }
+
+  function weekList(L){
+    (w==='all'?weeks:[w]).forEach(k=>{
+      const gs=G.filter(g=>g.y===y&&g.w===k).sort((a,b)=>a.br-b.br||b.win[6]-a.win[6]);
+      const rn=roundName(y,k,Math.min(...gs.map(g=>g.br)));
+      const hi=gs.reduce((a,g)=>Math.max(a,g.win[6]),0);
+      const h=E('div','wkh');
+      h.appendChild(E('div','t','Week '+k));
+      h.appendChild(E('div','n',(rn?rn+' · ':'')+gs.length+' games · high '+f2(hi)));
+      L.appendChild(h);
+      gs.forEach(g=>L.appendChild(matchup(g)));
+    });
+    focusGame(L);
+  }
+
+  function teamList(L){
+    const gs=G.filter(g=>g.y===y&&(M[g.win[3]]===team||M[g.los[3]]===team)).sort((a,b)=>a.w-b.w);
+    const mine=g=>M[g.win[3]]===team?g.win:g.los;
+    const reg=gs.filter(g=>g.br===BR_REG);
+    const won=reg.filter(g=>M[g.win[3]]===team).length;
+    const pf=reg.reduce((s,g)=>s+mine(g)[6],0), pa=reg.reduce((s,g)=>s+(mine(g)===g.win?g.los:g.win)[6],0);
+    const best=gs.slice().sort((a,b)=>mine(b)[6]-mine(a)[6])[0];
+    const h=E('div','wkh');
+    const t=E('div','t'); t.textContent=team+' · '+y;
+    const dv=div(y,team); if(dv){const p=E('span','pill '+(dv==='East'?'e':'w'),dv);p.style.marginLeft='9px';p.style.verticalAlign='4px';t.appendChild(p)}
+    h.appendChild(t); h.appendChild(E('div','n',gs.length+' games'));
+    L.appendChild(h);
+    const g1=E('div','grid-auto'); g1.style.margin='14px 0 16px';
+    g1.appendChild(tile(won+'–'+(reg.length-won),'Regular season'));
+    g1.appendChild(tile(f2(pf/(reg.length||1)),'Points per game'));
+    g1.appendChild(tile(f2(pa/(reg.length||1)),'Points against'));
+    if(best)g1.appendChild(tile(f2(mine(best)[6]),'Best week','Week '+best.w));
+    L.appendChild(g1);
+    gs.forEach(g=>L.appendChild(matchup(g,team)));
+    focusGame(L);
+  }
+
+  /* one game as a row: both sides, the arrow on the winner, the boxscore a tap away */
+  function matchup(g,lead){
+    const left = lead ? (M[g.win[3]]===lead?g.win:g.los) : (g.los[3]<g.win[3]?g.los:g.win);
+    const right = left===g.win?g.los:g.win;
+    const wrap=E('div','mu');
+    const row=E('button','mu-row'+(lead?' lead':'')); row.type='button';
+    row.setAttribute('aria-expanded','false');
+    const wk=E('div','wk');
+    if(lead){ const rn=roundName(g.y,g.w,g.br);
+      wk.appendChild(E('span',null,rn==='Championship'?'Final':rn==='Semi Final'?'Semis':rn==='Wildcard'?'Wild Card':rn==='Consolation'?'Cons.':'Week '+g.w));
+      wk.appendChild(E('span','rs'+(left===g.win?' won':''),left===g.win?'Won':'Lost')); }
+    row.appendChild(wk);
+    const side=(t,cls)=>{ const s=E('div','sd '+cls+(t===g.win?' w':''));
+      const ln=E('div','ln'), n=E('span','nm',M[t[3]]), r=E('span','rec',rec(M[t[3]],g));
+      if(cls==='b'){ln.appendChild(r);ln.appendChild(n)}else{ln.appendChild(n);ln.appendChild(r)}
+      s.appendChild(ln);
+      const hi=t[7].filter(e=>e[1]).sort((a,b)=>b[4]-a[4])[0];
+      if(hi){ const d=E('div','top'); d.textContent=(D.players[hi[2]]||'—')+' ';
+        d.appendChild(E('b',null,f2(hi[4]))); s.appendChild(d); }
+      return s };
+    const sc=(t,cls)=>E('div','sc '+cls+(t===g.win?' w':''),f2(t[6]));
+    row.appendChild(side(left,'a')); row.appendChild(sc(left,'s1'));
+    row.appendChild(E('div','ar',left===g.win?'◀':'▶'));
+    row.appendChild(sc(right,'s2')); row.appendChild(side(right,'b'));
+    row.appendChild(E('div','cv','▼'));
+    row.onclick=()=>{ const on=wrap.classList.toggle('open');
+      row.setAttribute('aria-expanded',on?'true':'false');
+      if(on&&!wrap.querySelector('.box')) wrap.appendChild(boxOnly(g,left)); };
+    wrap.appendChild(row);
+    wrap._g=g;
+    return wrap;
+  }
+
+  /* arriving from a link elsewhere on the site: open that game and go to it */
+  function focusGame(L){
+    if(!STATE.focus)return;
+    const hit=[...L.children].find(n=>n._g&&(M[n._g.win[3]]===STATE.focus||M[n._g.los[3]]===STATE.focus)
+      &&(STATE.w==='all'||STATE.w==null||n._g.w===STATE.w));
+    STATE.focus=null; if(!hit)return;
+    hit.querySelector('.mu-row').click();
+    setTimeout(()=>hit.scrollIntoView({behavior:'smooth',block:'center'}),60);
+  }
+
   function renderPlayer(){
     const r=$('#p-res'), L=$('#g-list'); if(!r)return;
     const q=(STATE.q||'').trim().toLowerCase(); r.innerHTML='';
-    if(q.length<3){ if(L&&!L.children.length)fillWeek(y,w); return }
+    if(q.length<3){ if(L&&!L.children.length){ team?teamList(L):weekList(L); } return }
     L.innerHTML='';
     const hits=D.players.map((p,i)=>[p,i]).filter(([p])=>p.toLowerCase().includes(q));
     if(!hits.length){r.appendChild(E('p','empty','No player in the archive matches “'+STATE.q+'”.'));return}
