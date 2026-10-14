@@ -1218,7 +1218,9 @@ VIEWS.games=()=>{
   const ctl=E('div','ctl');
   ctl.appendChild(E('span','pill','Season'));
   const sy=E('select'); SEASONS.forEach(s=>{const o=E('option',null,s);o.value=s;sy.appendChild(o)});
-  sy.value=y; sy.onchange=()=>set({y:+sy.value,w:null,team:null,focus:null}); ctl.appendChild(sy);
+  // keep the team you are looking at when you change season; if he was not in the
+  // league that year the roster check below drops it back to every team
+  sy.value=y; sy.onchange=()=>set({y:+sy.value,w:null,focus:null}); ctl.appendChild(sy);
   ctl.appendChild(E('span','pill','Team'));
   const stm=E('select'); const all=E('option',null,'Every team'); all.value=''; stm.appendChild(all);
   roster.forEach(m=>{const o=E('option',null,m);o.value=m;stm.appendChild(o)});
