@@ -136,6 +136,11 @@ th.hd .fb.on{color:var(--accent);font-weight:700}
 .fmenu .fi.on{color:var(--accent);font-weight:600}
 .fmenu .fi.nil{opacity:.4}
 .fmenu .fn{font-family:var(--f-data);font-size:11px;color:var(--muted)}
+.mv{font-family:var(--f-data);font-size:11px;white-space:nowrap;letter-spacing:.02em}
+.mv.up{color:var(--good)}
+.mv.dn{color:var(--bad)}
+.mv.sm{color:var(--line2)}
+.mv.nr{font-size:9px;letter-spacing:.08em;color:var(--muted);border:1px solid var(--line2);padding:1px 3px}
 .pill{display:inline-block;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--line2);color:var(--muted)}
 .pill.e{border-color:var(--accent);color:var(--accent)}
@@ -667,10 +672,11 @@ VIEWS.overview=()=>{
   ['Most valuable is not the same question as most productive. A manager who drafted perfectly wins by thirty every week, and the best back in the league is along for the ride; a manager holding one good player wins games he had no business winning. The second player was worth more.',
    'So the ladder scores production first — points per game, points above replacement, availability — and then adds a far heavier term for the weeks a player actually decided. A <strong>win above replacement</strong> is a week your team won that it would have lost with a waiver-wire body in that slot. A <strong>loss below replacement</strong> is the reverse, and the only way to lose points here.',
    'Both are weighted four times, so one of either moves a player further than two points a game ever will. '+
-   '<strong>'+L.rows[0].name+'</strong> leads at '+f2(L.rows[0].score)+'.'
+   '<strong>'+L.rows[0].name+'</strong> leads at '+f2(L.rows[0].score)+'. '+
+   'The arrows are the move since last week; <span class="mv nr">NR</span> means he had not qualified yet.'
   ].forEach(t=>{const p=E('p');p.innerHTML=t;mt.appendChild(p)});
   mi.appendChild(mt); out.appendChild(mi);
-  out.appendChild(mvpTable(L.rows.slice(0,10),true));
+  out.appendChild(mvpTable(L.rows.slice(0,10),true,mvpMoves(L)));
   const ml=E('button','back'); ml.style.margin='12px 0 0';
   ml.textContent='Full formula, replacement values and every qualifier →';
   ml.onclick=()=>go('mvp',{}); out.appendChild(ml);
@@ -843,13 +849,15 @@ const RECENT_MOVES={
 };
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
 const MVP_CACHE={};
-function mvpLadder(year){
-  const Y=year||SEASONS[SEASONS.length-1];
-  if(MVP_CACHE[Y]) return MVP_CACHE[Y];
-  const M=D.mgrs, byw={};
+/* `upto` runs the same formula against a shorter season, which is how last
+   week's ladder — and so the week's movement — is worked out. */
+function mvpLadder(year,upto){
+  const Y=year||SEASONS[SEASONS.length-1], CK=Y+'|'+(upto||'');
+  if(MVP_CACHE[CK]) return MVP_CACHE[CK];
+  const M=D.mgrs, byw={}, inRange=t=>t[0]===Y&&t[2]===BR_REG&&(!upto||t[1]<=upto);
   // regular season only, the same basis the league uses for records
-  D.tw.forEach(t=>{ if(t[0]===Y&&t[2]===BR_REG) byw[t[1]+'|'+t[3]]=t; });
-  const weeks=[...new Set(D.tw.filter(t=>t[0]===Y&&t[2]===BR_REG).map(t=>t[1]))].sort((a,b)=>a-b);
+  D.tw.forEach(t=>{ if(inRange(t)) byw[t[1]+'|'+t[3]]=t; });
+  const weeks=[...new Set(D.tw.filter(inRange).map(t=>t[1]))].sort((a,b)=>a-b);
   const pl={};
   Object.values(byw).forEach(t=>{
     const opp=byw[t[1]+'|'+t[4]];
@@ -888,9 +896,16 @@ function mvpLadder(year){
     return {name:p.name,pos:p.pos,mgr,pfg:f,par:PAR,gp:g,gw:GW,pos2:POS,gar:GAR,war:WAR,lbr:LBR,
             score:f+PAR+g+GW*1.5+POS*2+GAR+WAR*4-LBR*4};
   }).sort((a,b)=>b.score-a.score);
-  MVP_CACHE[Y]={year:Y,weeks:weeks.length,minG,RV,rows,
+  MVP_CACHE[CK]={year:Y,weeks:weeks.length,lastWeek:weeks[weeks.length-1],minG,RV,rows,
              counts:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
-  return MVP_CACHE[Y];
+  return MVP_CACHE[CK];
+}
+/* Where each player sat a week ago: +n climbed, -n slipped, null is new to the ladder. */
+function mvpMoves(L){
+  if(!L.lastWeek||L.weeks<2) return null;
+  const was={}; mvpLadder(L.year,L.lastWeek-1).rows.forEach((r,i)=>was[r.name]=i+1);
+  const mv={}; L.rows.forEach((r,i)=>{ mv[r.name]=was[r.name]==null?null:was[r.name]-(i+1); });
+  return mv;
 }
 
 /* Pick legible ink for a count printed on a coloured square. */
@@ -1327,9 +1342,16 @@ function mgrDetail(m){
   return out;
 }
 
-function mvpTable(rows,compact){
+function mvpTable(rows,compact,mv){
   const cols=[
     {h:'',f:(r,i)=>i+1},
+    {h:'',filter:false,w:'46px',f:r=>{
+      if(!mv||!(r.name in mv)) return '';
+      const d=mv[r.name];
+      if(d===null) return '<span class="mv nr">NR</span>';
+      if(d===0) return '<span class="mv sm">–</span>';
+      return '<span class="mv '+(d>0?'up':'dn')+'">'+(d>0?'▲':'▼')+' '+Math.abs(d)+'</span>';
+    }},
     {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
     {h:'Pos',f:r=>r.pos},
     {h:'Manager',f:r=>r.mgr},
@@ -1357,7 +1379,8 @@ VIEWS.mvp=()=>{
   const L=mvpLadder(Y);
   out.appendChild(secH('The MVP Ladder · '+Y));
   out.appendChild(E('p','lede','The league’s season-MVP formula, run against its own regular-season numbers '+
-    (live?'after ':'across ')+L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'));
+    (live?'after ':'across ')+L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'+
+    (L.weeks>1?' The arrows are the move since the ladder stood after Week '+(L.lastWeek-1)+'; NR means he had not qualified yet.':'')));
   const yc=E('div','ctl');
   yc.appendChild(E('span','pill','Season'));
   const ys=E('select'); YRS.slice().reverse().forEach(y=>{
@@ -1373,7 +1396,7 @@ VIEWS.mvp=()=>{
   g1.appendChild(tile(L.rows.length,'Qualified','Played at least '+L.minG+' of '+L.weeks+' weeks'));
   out.appendChild(g1);
 
-  out.appendChild(mvpTable(L.rows.slice(0,40),false));
+  out.appendChild(mvpTable(L.rows.slice(0,40),false,mvpMoves(L)));
 
   out.appendChild(secH('Past Winners'));
   out.appendChild(E('p','lede','Every MVP the league has awarded, with the season each one was taken from. Pick a year above to see that season’s full ladder.'));
