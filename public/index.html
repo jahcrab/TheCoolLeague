@@ -292,7 +292,9 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .wkh:first-child{margin-top:4px}
 .wkh .t{font-family:var(--f-disp);font-size:23px;letter-spacing:.01em;line-height:1}
 .wkh .n{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
-  text-align:right;white-space:nowrap}
+  text-align:right}
+.brh{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  padding:12px 0 5px;border-bottom:1px solid var(--line2)}
 .mu{background:var(--panel);border-bottom:1px solid var(--line)}
 .mu:first-of-type{border-top:0}
 .mu-row{display:grid;align-items:center;gap:4px 9px;width:100%;appearance:none;background:none;border:0;
@@ -1242,13 +1244,21 @@ VIEWS.games=()=>{
   function weekList(L){
     (w==='all'?weeks:[w]).forEach(k=>{
       const gs=G.filter(g=>g.y===y&&g.w===k).sort((a,b)=>a.br-b.br||b.win[6]-a.win[6]);
-      const rn=roundName(y,k,Math.min(...gs.map(g=>g.br)));
       const hi=gs.reduce((a,g)=>Math.max(a,g.win[6]),0);
+      // a playoff week is two brackets at once — six teams in the bracket and
+      // everyone else in the consolation — so count and label them apart
+      const brs=[...new Set(gs.map(g=>g.br))].sort((a,b)=>a-b);
       const h=E('div','wkh');
       h.appendChild(E('div','t','Week '+k));
-      h.appendChild(E('div','n',(rn?rn+' · ':'')+gs.length+' games · high '+f2(hi)));
+      h.appendChild(E('div','n',brs.map(br=>(roundName(y,k,br)||'Regular season')+' '+
+        gs.filter(g=>g.br===br).length).join(' · ')+' · high '+f2(hi)));
       L.appendChild(h);
-      gs.forEach(g=>L.appendChild(matchup(g)));
+      brs.forEach(br=>{
+        const part=gs.filter(g=>g.br===br);
+        if(brs.length>1) L.appendChild(E('div','brh',
+          (roundName(y,k,br)||'Regular season')+' · '+part.length+(part.length>1?' games':' game')));
+        part.forEach(g=>L.appendChild(matchup(g)));
+      });
     });
     focusGame(L);
   }
