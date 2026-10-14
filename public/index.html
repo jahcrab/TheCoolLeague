@@ -435,6 +435,16 @@ function prep(d){
 }
 /* "2021 Wk 17" reads like any other week, and it was the final. Name the round. */
 const whenLab=(y,w,br)=>y+' '+(roundName(y,w,br)||'Wk '+w);
+/* How a season ended, by the round they went out in rather than a 0-1 record. */
+function poLab(y,m){
+  const gs=G.filter(g=>g.y===y&&g.br===BR_PO&&(D.mgrs[g.win[3]]===m||D.mgrs[g.los[3]]===m))
+            .sort((a,b)=>a.w-b.w);
+  const dim=t=>'<span style="opacity:.6">'+t+'</span>';
+  if(!gs.length) return PO_FINAL[y]?dim('missed'):dim('in progress');
+  const last=gs[gs.length-1], won=D.mgrs[last.win[3]]===m, rn=roundName(y,last.w,BR_PO);
+  if(won) return last.w===PO_FINAL[y]?'<span class="ring">● Champion</span>':'Won '+rn;
+  return 'Lost '+(rn==='Championship'?'final':rn);
+}
 const div=(y,m)=>((D.div[y]||{})[D.mgrs.indexOf(m)])||null;
 const elig=()=>G.filter(g=>g.br!==BR_CON);
 function squares(maxYear){
@@ -1357,7 +1367,7 @@ VIEWS.records=()=>{
     {h:'',f:(r,i)=>i+1},{h:'Season',f:r=>r.y},{h:'Manager',f:r=>'<strong>'+r.m+'</strong>'},
     {h:'Rec',n:true,f:r=>r.w+'-'+r.l},{h:'Win%',r:true,n:true,f:r=>(100*r.w/(r.w+r.l)).toFixed(1)+'%'},
     {h:'PF/G',r:true,n:true,f:r=>f2(r.pf/r.g)},
-    {h:'Postseason',r:true,f:r=>r.ttl?'<span class="ring">● Champion</span>':r.fin?'Lost final':(r.pw+r.pl?r.pw+'-'+r.pl+' playoffs':'<span style="opacity:.6">missed</span>')}
+    {h:'Postseason',r:true,f:r=>poLab(r.y,r.m)}
   ],ss.slice(0,12),{click:r=>go('managers',{m:r.m})}));
   return out;
 };
@@ -1400,9 +1410,7 @@ function mgrDetail(m){
     {h:'Rec',n:true,f:s=>s.w+'-'+s.l},
     {h:'PF',r:true,n:true,f:s=>f2(s.pf)},{h:'PA',r:true,n:true,f:s=>f2(s.pa)},
     {h:'PF/G',r:true,n:true,f:s=>f2(s.pf/s.g)},
-    {h:'Postseason',r:true,f:s=>CHAMP[s.y]===m?'<span class="ring">● Champion</span>':RUNUP[s.y]===m?'Lost final':
-      (s.pw+s.pl?s.pw+'-'+s.pl+' playoffs':
-       PO_FINAL[s.y]?'<span style="opacity:.6">missed</span>':'<span style="opacity:.6">in progress</span>')}
+    {h:'Postseason',r:true,f:s=>poLab(s.y,m)}
   ],yrs,{click:s=>go('games',{y:s.y,w:null,focus:m})}));
 
   out.appendChild(secH('Head to Head'));
