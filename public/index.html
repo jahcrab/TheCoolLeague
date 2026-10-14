@@ -459,9 +459,9 @@ function poLab(y,m){
 }
 const div=(y,m)=>((D.div[y]||{})[D.mgrs.indexOf(m)])||null;
 const elig=()=>G.filter(g=>g.br!==BR_CON);
-function squares(maxYear){
+function squares(maxYear,maxWeek){
   const p=new Map();
-  elig().forEach(g=>{ if(maxYear&&g.y>maxYear)return;
+  elig().forEach(g=>{ if(maxYear&&(g.y>maxYear||(maxWeek&&g.y===maxYear&&g.w>maxWeek)))return;
     const k=R(g.win[6])+'|'+R(g.los[6]);
     if(!p.has(k))p.set(k,[]); p.get(k).push(g); });
   return p;
@@ -782,15 +782,26 @@ VIEWS.scorigami=()=>{
   out.appendChild(tl);
   rg.oninput=()=>{stop(); show(+rg.value,false)};
   rg.onchange=()=>show(+rg.value,true);
+  // every week the league has played, in order, so the board fills a week at a
+  // time rather than a season at a time
+  const STEPS=[];
+  SEASONS.forEach(y=>[...new Set(elig().filter(g=>g.y===y).map(g=>g.w))]
+    .sort((a,b)=>a-b).forEach(w=>STEPS.push([y,w])));
   play.onclick=()=>{
     if(timer){stop();return}
-    play.textContent='■'; show(SEASONS[0],false);
-    let i=0;
-    timer=setInterval(()=>{
-      if(!document.body.contains(rg)){clearInterval(timer);timer=null;return}
-      if(++i>=SEASONS.length){stop(); show(latest,true); return}
-      show(SEASONS[i],i===SEASONS.length-1);
-    },850);
+    play.textContent='■';
+    // paced on the clock, not on frames, so it runs a season a second on any machine
+    const dur=SEASONS.length*1000, t0=performance.now();
+    const frame=now=>{
+      if(!document.body.contains(rg)){timer=null;return}
+      const p=Math.min(1,(now-t0)/dur);
+      if(p>=1){ timer=null; play.textContent='▶'; show(latest,true); return }
+      const step=STEPS[Math.max(0,Math.min(STEPS.length-1,Math.floor(p*STEPS.length)))];
+      if(!step){ timer=null; play.textContent='▶'; show(latest,true); return }
+      showWeek(step[0],step[1]);
+      timer=requestAnimationFrame(frame);
+    };
+    timer=requestAnimationFrame(frame);
   };
 
   const ctl=E('div','ctl');
@@ -848,7 +859,7 @@ VIEWS.scorigami=()=>{
     g1.appendChild(tile(gms.length,'Games counted'));
     g1.appendChild(tile((100*nv/sqx.size).toFixed(1)+'%','Never repeated'));
     const mc=[...sqx.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
-    g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
+    if(mc) g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
   }
   fillTiles(sq,games);
   out.appendChild(g1);
@@ -900,6 +911,14 @@ VIEWS.scorigami=()=>{
       :'+'+newIn(y)+' new'+(y===latest?' so far':'');
     [...ticks.children].forEach((s,i)=>s.classList.toggle('on',SEASONS[i]===y));
   }
+  /* one frame of the animation: the board as it stood after a given week */
+  function showWeek(y,w){
+    curY=y; STATE.span=y>=latest?'all':String(y); SQ=squares(y,w);
+    rg.value=y; yn.textContent=y; yc.textContent='Week '+w;
+    [...ticks.children].forEach((n,i)=>n.classList.toggle('on',SEASONS[i]===y));
+    fillLegend(y); drawBoard(SQ,mode);
+    fillTiles(SQ,elig().filter(g=>g.y<y||(g.y===y&&g.w<=w)));
+  }
   /* redraw in place rather than re-render: dragging has to keep up with the thumb */
   function show(y,settle){
     curY=y; STATE.span=y>=latest?'all':String(y); STATE.cell=null;
@@ -911,7 +930,7 @@ VIEWS.scorigami=()=>{
     if(dt)dt.innerHTML='';
     if(settle)fillNewest(gms);
   }
-  function stop(){ if(timer){clearInterval(timer);timer=null;play.textContent='▶'} }
+  function stop(){ if(timer){cancelAnimationFrame(timer);timer=null;play.textContent='▶';show(curY,true)} }
 };
 
 /* ---------- MVP ladder ----------
