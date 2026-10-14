@@ -116,6 +116,26 @@ th:last-child,td:last-child{padding-right:0}
 td.n{font-family:var(--f-data);font-variant-numeric:tabular-nums}
 tr.clk{cursor:pointer}
 tr.clk:hover td{background:var(--panel)}
+/* sortable / filterable headers */
+th.hd{white-space:nowrap}
+th.hd .hl{cursor:pointer;user-select:none}
+th.hd .hl:hover{color:var(--fg)}
+th.hd.srt .hl{color:var(--accent)}
+th.hd.srt .hl::after{content:' ▲';font-size:8px;vertical-align:1px}
+th.hd.srt.dn .hl::after{content:' ▼'}
+th.hd .fb{appearance:none;background:none;border:0;cursor:pointer;color:var(--line2);
+  font-size:10px;padding:0 2px;margin-left:4px;line-height:1;vertical-align:1px}
+th.hd .fb:hover{color:var(--accent)}
+th.hd .fb.on{color:var(--accent);font-weight:700}
+.fmenu{position:fixed;z-index:40;background:var(--panel);border:1px solid var(--line2);
+  box-shadow:0 6px 22px rgba(0,0,0,.14);max-height:min(60vh,340px);overflow-y:auto;min-width:148px;padding:4px}
+.fmenu .fi{display:flex;justify-content:space-between;gap:12px;width:100%;appearance:none;background:none;
+  border:0;text-align:left;cursor:pointer;font-family:var(--f-body);font-size:13.5px;color:var(--fg);
+  padding:6px 9px;line-height:1.25}
+.fmenu .fi:hover{background:var(--panel2)}
+.fmenu .fi.on{color:var(--accent);font-weight:600}
+.fmenu .fi.nil{opacity:.4}
+.fmenu .fn{font-family:var(--f-data);font-size:11px;color:var(--muted)}
 .pill{display:inline-block;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--line2);color:var(--muted)}
 .pill.e{border-color:var(--accent);color:var(--accent)}
@@ -345,20 +365,96 @@ function standings(y){
 }
 
 /* ---------- small renderers ---------- */
+/* Every table on the site is built here, so sorting and per-column filtering
+   added once shows up everywhere. Row numbering keeps the original rank so a
+   filtered view still says where each row stood in the full list. */
 function tbl(cols,rows,opt){
   opt=opt||{};
-  const sc=E('div','scroll'), t=E('table'), th=E('thead'), tr=E('tr');
-  cols.forEach(c=>{const h=E('th',(c.r?'r ':'')+(c.sm===false?'h-sm':''),c.h); if(c.w)h.style.width=c.w; tr.appendChild(h)});
-  th.appendChild(tr); t.appendChild(th);
-  const tb=E('tbody');
-  rows.forEach((r,i)=>{
-    const x=E('tr',opt.click?'clk':null);
-    cols.forEach(c=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n ':'')+(c.sm===false?'h-sm':'')); const v=c.f(r,i);
-      if(v instanceof Node)td.appendChild(v); else td.innerHTML=v==null?'':String(v); x.appendChild(td); });
-    if(opt.click)x.onclick=()=>opt.click(r);
-    tb.appendChild(x);
+  const strip=v=>v instanceof Node ? v.textContent
+    : String(v==null?'':v).replace(/<[^>]*>/g,'').replace(/&[a-z]+;/gi,' ').replace(/\s+/g,' ').trim();
+  const base=rows.map((r,i)=>({r,i}));
+  const text=cols.map(c=>base.map(b=>strip(c.f(b.r,b.i))));
+  const num=s=>{const m=String(s).replace(/[,%]/g,'').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):NaN};
+  // a column is worth filtering when its values actually group the rows
+  const opts=cols.map((c,ci)=>{
+    if(opt.nofilter||c.filter===false||base.length<5) return null;
+    const vals=[...new Set(text[ci].filter(v=>v!==''))];
+    // only worth a filter if the values genuinely group rows, not label them
+    return (vals.length>1 && vals.length<=14 && vals.length<=base.length*0.55) ? vals.sort((a,b)=>{
+      const x=num(a),y=num(b); return isNaN(x)||isNaN(y)?a.localeCompare(b):x-y}) : null;
   });
-  t.appendChild(tb); sc.appendChild(t); return sc;
+  const pick={}, sort={ci:null,dir:1};
+  const sc=E('div','scroll'), t=E('table'), th=E('thead'), tr=E('tr'), tb=E('tbody');
+
+  cols.forEach((c,ci)=>{
+    const h=E('th',(c.r?'r ':'')+(c.sm===false?'h-sm ':'')+'hd');
+    if(c.w)h.style.width=c.w;
+    const lab=E('span','hl',c.h); h.appendChild(lab);
+    if(c.h){ lab.onclick=()=>{ sort.dir=sort.ci===ci?-sort.dir:1; sort.ci=ci; draw(); }; }
+    if(opts[ci]){
+      const b=E('button','fb','▾'); b.title='Filter by '+(c.h||'value');
+      b.onclick=e=>{e.stopPropagation(); menu(b,ci)};
+      h.appendChild(b);
+    }
+    tr.appendChild(h);
+  });
+  th.appendChild(tr); t.appendChild(th); t.appendChild(tb);
+
+  function menu(anchor,ci){
+    closeMenus();
+    const m=E('div','fmenu'); m.dataset.open='1';
+    const all=E('button','fi'+(pick[ci]==null?' on':''),'All');
+    all.onclick=()=>{delete pick[ci];closeMenus();draw()};
+    m.appendChild(all);
+    // count against the rows the other filters already allow, so the number
+    // shown is what selecting it will actually give you
+    const pool=base.filter(b2=>cols.every((c2,cj)=>cj===ci||pick[cj]==null||text[cj][b2.i]===pick[cj]));
+    opts[ci].forEach(v=>{
+      const n=pool.filter(b2=>text[ci][b2.i]===v).length;
+      const b=E('button','fi'+(pick[ci]===v?' on':'')+(n?'':' nil'));
+      b.appendChild(E('span',null,v)); b.appendChild(E('span','fn',String(n)));
+      b.onclick=()=>{pick[ci]=v;closeMenus();draw()};
+      m.appendChild(b);
+    });
+    document.body.appendChild(m);
+    const r=anchor.getBoundingClientRect();
+    m.style.left=Math.max(8,Math.min(innerWidth-m.offsetWidth-8,r.left-4))+'px';
+    m.style.top=(r.bottom+6)+'px';
+    setTimeout(()=>document.addEventListener('click',closeMenus,{once:true}),0);
+  }
+  function closeMenus(){ document.querySelectorAll('.fmenu').forEach(x=>x.remove()); }
+
+  function draw(){
+    tb.innerHTML='';
+    let view=base.filter(b=>cols.every((c,ci)=>pick[ci]==null||text[ci][b.i]===pick[ci]));
+    if(sort.ci!=null){
+      const ci=sort.ci, key=b=>text[ci][b.i];
+      view=view.slice().sort((a,b)=>{
+        const x=num(key(a)), y=num(key(b));
+        const d=(!isNaN(x)&&!isNaN(y))?x-y:key(a).localeCompare(key(b));
+        return d*sort.dir;
+      });
+    }
+    [...th.querySelectorAll('th')].forEach((h,ci)=>{
+      h.classList.toggle('srt',sort.ci===ci);
+      h.classList.toggle('dn',sort.ci===ci&&sort.dir<0);
+      const b=h.querySelector('.fb'); if(b)b.classList.toggle('on',pick[ci]!=null);
+    });
+    view.forEach(({r,i})=>{
+      const x=E('tr',opt.click?'clk':null);
+      cols.forEach((c,ci)=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n ':'')+(c.sm===false?'h-sm':''));
+        const v=c.f(r,i);
+        if(v instanceof Node)td.appendChild(v); else td.innerHTML=v==null?'':String(v);
+        x.appendChild(td); });
+      if(opt.click)x.onclick=()=>opt.click(r);
+      tb.appendChild(x);
+    });
+    if(!view.length){ const x=E('tr'), td=E('td',null,'Nothing matches those filters.');
+      td.colSpan=cols.length; td.style.cssText='color:var(--muted);font-style:italic;padding:14px 0';
+      x.appendChild(td); tb.appendChild(x); }
+  }
+  draw();
+  sc.appendChild(t); return sc;
 }
 function tile(v,k,n){const d=E('div','tile');d.appendChild(E('div','v',v));d.appendChild(E('div','k',k));if(n)d.appendChild(E('div','n',n));return d}
 function secH(t){const h=E('h2','sec',t);return h}
@@ -1133,7 +1229,7 @@ VIEWS.mvp=()=>{
     {h:'Position',f:r=>'<strong>'+r[0]+'</strong>'},
     {h:'Replacement value',r:true,n:true,f:r=>f2(r[1])+' pts'},
     {h:'Qualified at the position',r:true,n:true,f:r=>L.counts[r[0]]}
-  ],Object.entries(L.RV)));
+  ],Object.entries(L.RV),{nofilter:true}));
 
   out.appendChild(secH('How the Formula Works'));
   const faq=E('div','faq'), a=E('div'), b=E('div');
@@ -1168,7 +1264,7 @@ VIEWS.mvp=()=>{
     ['GAR','×1','Games he outscored the replacement value'],
     ['WAR','×4','Wins above replacement'],
     ['LBR','×4 negative','Losses below replacement']
-  ]));
+  ],{nofilter:true}));
 
   const note=E('div','card'); note.style.marginTop='18px';
   note.appendChild(E('h3',null,'Where this version bends the method'));
