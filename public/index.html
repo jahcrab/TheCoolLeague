@@ -1341,9 +1341,13 @@ VIEWS.games=()=>{
       g1.appendChild(tile(one.starts,'Weeks started','of '+one.weeks+' on a roster'));
       g1.appendChild(tile(f2(one.spts),'Points started',ord(one.ptsRank)+' all time'));
       const dr=(D.draft||{})[one.id];
-      if(dr) g1.appendChild(tile(ord(dr[0]),'Highest drafted',
-        'Round '+dr[1]+', pick '+dr[2]+' · '+dr[3]+' · '+(D.mgrs[dr[4]]||'—')+
-        (dr[5]>1?' · taken '+dr[5]+'×':'')));
+      if(dr&&dr.length){
+        // going first overall twice is the sort of thing that should say so
+        const b0=dr[0], same=dr.filter(r=>r[0]===b0[0]);
+        g1.appendChild(tile(ord(b0[0])+(same.length>1?' ×'+same.length:''),'Highest drafted',
+          'Round '+b0[1]+', pick '+b0[2]+' · '+same.map(r=>r[3]+' '+(D.mgrs[r[4]]||'—')).join(', ')+
+          (dr.length>1?' · taken '+dr.length+'×':'')));
+      }
       g1.appendChild(tile(one.mgrs.size,one.mgrs.size===1?'Manager':'Managers',[...one.mgrs].join(' · ')));
       const top=[...one.byMgr.values()].sort((a,b)=>b.starts-a.starts||b.spts-a.spts)[0];
       if(top&&top.starts){
