@@ -351,15 +351,16 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .mgr-card .nm{font-family:var(--f-disp);font-size:25px;line-height:1}
 .mgr-card .rec{font-family:var(--f-data);font-size:14px;color:var(--muted);margin-top:4px}
 .mgr-card .rings{color:var(--gold);font-size:14px;margin-top:5px;letter-spacing:2px}
-.mgr-card .hon{margin-top:9px;display:flex;flex-direction:column;gap:5px}
-.mgr-card .hon>div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.mgr-card .hon .k{flex:0 0 auto;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.14em;
+.hon{display:flex;flex-direction:column;gap:5px}
+.mgr-card .hon{margin-top:9px}
+.hon>div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.hon .k{flex:0 0 auto;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--muted)}
-@media (min-width:520px){.mgr-card .hon .k{min-width:11.4em}}
-.mgr-card .hon .v{font-family:var(--f-data);font-size:13.5px;color:var(--fg)}
-.mgr-card .hon .v .who{color:var(--muted);font-family:var(--f-body);font-size:14px}
-.mgr-card .hon .dots{letter-spacing:2px}
-.mgr-card .hon .g .k,.mgr-card .hon .g .v{color:var(--gold)}
+@media (min-width:520px){.hon .k{min-width:11.4em}}
+.hon .v{font-family:var(--f-data);font-size:13.5px;color:var(--fg)}
+.hon .v .who{color:var(--muted);font-family:var(--f-body);font-size:14px}
+.hon .dots{letter-spacing:2px}
+.hon .g .k,.hon .g .v{color:var(--gold)}
 .mgr-card .bio{margin:11px 0 0;max-width:68ch;font-size:15.5px;line-height:1.52;color:var(--fg)}
 .back{appearance:none;background:none;border:0;color:var(--accent);font-family:var(--f-disp);font-size:12.5px;
   letter-spacing:.13em;text-transform:uppercase;cursor:pointer;padding:0;margin-bottom:12px}
@@ -1014,6 +1015,49 @@ function mvpMoves(L){
   return mv;
 }
 
+/* Career lines for every player in the archive, ranked once and kept. */
+const PPS_MIN=5;
+let PSTATS=null;
+function playerStats(){
+  if(PSTATS)return PSTATS;
+  const M=D.mgrs, by=new Map();
+  D.tw.forEach(t=>t[7].forEach(e=>{
+    let s=by.get(e[2]);
+    if(!s){s={id:e[2],name:D.players[e[2]],weeks:0,starts:0,spts:0,best:0,
+              mgrs:new Set(),seasons:new Set(),pos:D.pos[e[3]]||''};by.set(e[2],s)}
+    s.weeks++; s.mgrs.add(M[t[3]]); s.seasons.add(t[0]);
+    if(e[4]>s.best)s.best=e[4];
+    if(e[1]){s.starts++; s.spts+=e[4]}
+  }));
+  const all=[...by.values()];
+  const q=all.filter(s=>s.starts>=PPS_MIN).sort((a,b)=>b.spts/b.starts-a.spts/a.starts);
+  q.forEach((s,i)=>s.ppsRank=i+1);
+  all.slice().sort((a,b)=>b.spts-a.spts).forEach((s,i)=>s.ptsRank=i+1);
+  PSTATS={by,all,qual:q.length};
+  return PSTATS;
+}
+const ord=n=>{const t=['th','st','nd','rd'],v=n%100; return n+(t[(v-20)%10]||t[v]||t[0])};
+/* What a player has won: rings by season, the Agholor, the league MVP. */
+function playerHonours(s){
+  const hon=E('div','hon'); hon.style.margin='0 0 14px';
+  const line=(lab,val,gold)=>{const d=E('div',gold?'g':null);
+    d.appendChild(E('span','k',lab)); const v=E('span','v'); v.innerHTML=val; d.appendChild(v); hon.appendChild(d)};
+  const YRS=D.ringYears||[], rr=(D.rings||[]).find(x=>sameName(x[0],s.name));
+  line('Position',s.pos||'—');
+  if(rr&&rr[3]){
+    line(rr[3]===1?'Ring':'Rings',
+      YRS.map((y,i)=>rr[2][i]?'<span class="rg rg'+rr[2][i]+'" title="'+RING_LVL[rr[2][i]]+'"></span>&nbsp;'+y:'')
+         .filter(Boolean).join('&nbsp;&nbsp; '),true);
+    const agh=YRS.filter((y,i)=>rr[2][i]===4);
+    if(agh.length) line('Agholor MVP',agh.join(', '),true);
+  }
+  const mvp=Object.keys(AWARDED).filter(y=>sameName(AWARDED[y],s.name));
+  if(mvp.length) line('Season MVP',mvp.join(', '));
+  return hon;
+}
+const RING_LVL={1:'On the roster',2:'Bench in the final',3:'Started the final',4:'Agholor MVP'};
+const sameName=(a,b)=>String(a).replace(/[’']/g,"'")===String(b).replace(/[’']/g,"'");
+
 /* Pick legible ink for a count printed on a coloured square. */
 function inkOn(fill){
   let r,g,b;
@@ -1282,10 +1326,26 @@ VIEWS.games=()=>{
     r.appendChild(secH((names.length===1?names[0]:names.length+' players matched')+' · '+lines.length+' weeks on a roster'));
     if(names.length>1) r.appendChild(E('p','lede',names.slice(0,14).join(' · ')+(names.length>14?' …':'')));
     const st=lines.filter(l=>l.st);
+    const one=names.length===1?playerStats().by.get(hits.find(h=>h[0]===names[0])[1]):null;
+    if(one) r.appendChild(playerHonours(one));
     const g1=E('div','grid-auto'); g1.style.marginBottom='14px';
-    g1.appendChild(tile(f2(lines[0].pts),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
-    g1.appendChild(tile(st.length,'Weeks started','of '+lines.length+' on a roster'));
-    g1.appendChild(tile(f2(st.reduce((s,l)=>s+l.pts,0)/(st.length||1)),'Points per start'));
+    if(one){
+      const S=playerStats(), pps=one.starts?one.spts/one.starts:0;
+      g1.appendChild(tile(f2(pps),'Points per start',
+        one.ppsRank?ord(one.ppsRank)+' of '+S.qual+' with '+PPS_MIN+'+ starts'
+                   :'needs '+PPS_MIN+' starts to rank'));
+      g1.appendChild(tile(f2(one.best),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
+      g1.appendChild(tile(one.starts,'Weeks started','of '+one.weeks+' on a roster'));
+      g1.appendChild(tile(f2(one.spts),'Points started',ord(one.ptsRank)+' all time'));
+      g1.appendChild(tile(one.mgrs.size,one.mgrs.size===1?'Manager':'Managers',[...one.mgrs].join(' · ')));
+      const ys=[...one.seasons].sort();
+      g1.appendChild(tile(ys.length,ys.length===1?'Season':'Seasons',
+        ys.length>1?ys[0]+'–'+ys[ys.length-1]:String(ys[0])));
+    }else{
+      g1.appendChild(tile(f2(lines[0].pts),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
+      g1.appendChild(tile(st.length,'Weeks started','of '+lines.length+' on a roster'));
+      g1.appendChild(tile(f2(st.reduce((s,l)=>s+l.pts,0)/(st.length||1)),'Points per start'));
+    }
     r.appendChild(g1);
     r.appendChild(tbl([
       {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
