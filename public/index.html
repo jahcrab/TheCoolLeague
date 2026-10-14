@@ -351,6 +351,15 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .mgr-card .nm{font-family:var(--f-disp);font-size:25px;line-height:1}
 .mgr-card .rec{font-family:var(--f-data);font-size:14px;color:var(--muted);margin-top:4px}
 .mgr-card .rings{color:var(--gold);font-size:14px;margin-top:5px;letter-spacing:2px}
+.mgr-card .hon{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.mgr-card .hon>div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.mgr-card .hon .k{flex:0 0 auto;font-family:var(--f-disp);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+@media (min-width:520px){.mgr-card .hon .k{min-width:11.4em}}
+.mgr-card .hon .v{font-family:var(--f-data);font-size:13.5px;color:var(--fg)}
+.mgr-card .hon .v .who{color:var(--muted);font-family:var(--f-body);font-size:14px}
+.mgr-card .hon .dots{letter-spacing:2px}
+.mgr-card .hon .g .k,.mgr-card .hon .g .v{color:var(--gold)}
 .mgr-card .bio{margin:11px 0 0;max-width:68ch;font-size:15.5px;line-height:1.52;color:var(--fg)}
 .back{appearance:none;background:none;border:0;color:var(--accent);font-family:var(--f-disp);font-size:12.5px;
   letter-spacing:.13em;text-transform:uppercase;cursor:pointer;padding:0;margin-bottom:12px}
@@ -1398,7 +1407,18 @@ function mgrDetail(m){
   const card=E('div','mgr-card');
   card.appendChild(E('div','nm',m));
   card.appendChild(E('div','rec',c.w+'-'+c.l+' regular season · '+(100*c.w/(c.w+c.l)).toFixed(1)+'% · '+f2(c.pf/c.g)+' per game'));
-  if(c.titles)card.appendChild(E('div','rings','●'.repeat(c.titles)+'  '+Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', ')));
+  /* the trophy case: rings, Manager of the Year, and seasons he held the MVP */
+  const hon=E('div','hon');
+  const line=(lab,val,gold)=>{const d=E('div',gold?'g':null);
+    d.appendChild(E('span','k',lab)); const v=E('span','v'); v.innerHTML=val; d.appendChild(v); hon.appendChild(d)};
+  if(c.titles) line('The Garrison','<span class="dots">'+'●'.repeat(c.titles)+'</span> '+
+    Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', '),true);
+  const coty=Object.keys(COTY).filter(y=>COTY[y]===m);
+  if(coty.length) line('Manager of the Year',coty.join(', '));
+  const mvps=Object.keys(AWARDED).filter(y=>{
+    const r=mvpLadder(+y).rows.find(x=>x.name===AWARDED[y]); return r&&r.mgr===m});
+  if(mvps.length) line('Rostered the MVP',mvps.map(y=>y+' <span class="who">'+AWARDED[y]+'</span>').join('  ·  '));
+  if(hon.children.length) card.appendChild(hon);
   if(BIO[m]) card.appendChild(E('p','bio',BIO[m]));
   out.appendChild(card);
 
