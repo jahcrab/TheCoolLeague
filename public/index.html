@@ -425,31 +425,39 @@ function prep(d){
   const fin=PO_FINAL; d.tw.forEach(t=>{if(t[2]===BR_PO)fin[t[0]]=Math.max(fin[t[0]]||0,t[1])});
   for(const y in fin) d.tw.forEach(t=>{ if(t[0]==y&&t[2]===BR_PO&&t[1]===fin[y]) (t[5]===1?CHAMP:RUNUP)[y]=M[t[3]]; });
   // careers (regular season) + playoff record
-  M.forEach(m=>CAREER.set(m,{m,seasons:new Set(),w:0,l:0,pf:0,pa:0,g:0,pw:0,pl:0,titles:0,finals:0,po:new Set(),by:new Map()}));
+  // a shared team has no career of its own; its results go to the people who ran it
+  M.forEach(m=>{ if(SHARED[m])return;
+    CAREER.set(m,{m,seasons:new Set(),w:0,l:0,pf:0,pa:0,g:0,pw:0,pl:0,titles:0,finals:0,po:new Set(),by:new Map()}); });
   d.tw.forEach(t=>{
-    const c=CAREER.get(M[t[3]]), o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]);
-    c.seasons.add(t[0]);
-    if(!c.by.has(t[0]))c.by.set(t[0],{y:t[0],w:0,l:0,pf:0,pa:0,g:0,pw:0,pl:0});
-    const s=c.by.get(t[0]);
-    if(t[2]===BR_REG){ t[5]===1?(c.w++,s.w++):(c.l++,s.l++); c.pf+=t[6]; c.g++; s.pf+=t[6]; s.g++;
-      if(o){c.pa+=o[6]; s.pa+=o[6];} }
-    else if(t[2]===BR_PO){ t[5]===1?(c.pw++,s.pw++):(c.pl++,s.pl++); c.po.add(t[0]); }
+    const o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]);
+    credits(M[t[3]]).forEach(nm=>{
+      const c=CAREER.get(nm); if(!c)return;
+      c.seasons.add(t[0]);
+      if(!c.by.has(t[0]))c.by.set(t[0],{y:t[0],w:0,l:0,pf:0,pa:0,g:0,pw:0,pl:0});
+      const s=c.by.get(t[0]);
+      if(t[2]===BR_REG){ t[5]===1?(c.w++,s.w++):(c.l++,s.l++); c.pf+=t[6]; c.g++; s.pf+=t[6]; s.g++;
+        if(o){c.pa+=o[6]; s.pa+=o[6];} }
+      else if(t[2]===BR_PO){ t[5]===1?(c.pw++,s.pw++):(c.pl++,s.pl++); c.po.add(t[0]); }
+    });
   });
   for(const y in CHAMP){ CAREER.get(CHAMP[y]).titles++; CAREER.get(CHAMP[y]).finals++; CAREER.get(RUNUP[y]).finals++; }
   // a season only counts against a playoff rate once its bracket has been played
   CAREER.forEach(c=>{ c.cseas=[...c.seasons].filter(y=>PO_FINAL[y]).length; });
   // head to head (regular + playoffs)
   G.forEach(g=>{ if(g.br===BR_CON)return;
-    const a=M[g.win[3]], b=M[g.los[3]];
-    [[a,b,1],[b,a,0]].forEach(([x,y,won])=>{ const k=x+'|'+y; if(!H2H.has(k))H2H.set(k,{w:0,l:0,pf:0,pa:0});
-      const h=H2H.get(k); won?h.w++:h.l++; h.pf+=(x===a?g.win[6]:g.los[6]); h.pa+=(x===a?g.los[6]:g.win[6]); });
+    const A1=credits(M[g.win[3]]), B1=credits(M[g.los[3]]);
+    A1.forEach(a=>B1.forEach(b=>{
+      [[a,b,1],[b,a,0]].forEach(([x,y,won])=>{ const k=x+'|'+y; if(!H2H.has(k))H2H.set(k,{w:0,l:0,pf:0,pa:0});
+        const h=H2H.get(k); won?h.w++:h.l++;
+        h.pf+=(won?g.win[6]:g.los[6]); h.pa+=(won?g.los[6]:g.win[6]); });
+    }));
   });
 }
 /* "2021 Wk 17" reads like any other week, and it was the final. Name the round. */
 const whenLab=(y,w,br)=>y+' '+(roundName(y,w,br)||'Wk '+w);
 /* How a season ended, by the round they went out in rather than a 0-1 record. */
 function poLab(y,m){
-  const gs=G.filter(g=>g.y===y&&g.br===BR_PO&&(D.mgrs[g.win[3]]===m||D.mgrs[g.los[3]]===m))
+  const gs=G.filter(g=>g.y===y&&g.br===BR_PO&&(owns(D.mgrs[g.win[3]],m)||owns(D.mgrs[g.los[3]],m)))
             .sort((a,b)=>a.w-b.w);
   const dim=t=>'<span style="opacity:.6">'+t+'</span>';
   if(!gs.length) return PO_FINAL[y]?dim('missed'):dim('in progress');
@@ -457,6 +465,11 @@ function poLab(y,m){
   if(won) return last.w===PO_FINAL[y]?'<span class="ring">● Champion</span>':'Won '+rn;
   return 'Lost '+(rn==='Championship'?'final':rn);
 }
+/* Max and Graham ran one team in 2020. It is stored under a name of its own, and
+   these two say who a team's results belong to without duplicating the games. */
+const SHARED={'Max & Graham':['Max','Graham']};
+const credits=n=>SHARED[n]||[n];
+const owns=(n,m)=>n===m||(SHARED[n]||[]).includes(m);
 const div=(y,m)=>((D.div[y]||{})[D.mgrs.indexOf(m)])||null;
 const elig=()=>G.filter(g=>g.br!==BR_CON);
 function squares(maxYear,maxWeek){
@@ -466,12 +479,23 @@ function squares(maxYear,maxWeek){
     if(!p.has(k))p.set(k,[]); p.get(k).push(g); });
   return p;
 }
+/* One row per team, under the name the team was kept under — a season shared by
+   two managers is one team, not two. */
+function teamSeasons(){
+  if(teamSeasons.c) return teamSeasons.c;
+  const by=new Map();
+  D.tw.forEach(t=>{
+    const nm=D.mgrs[t[3]], k=t[0]+'|'+nm, o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]);
+    if(!by.has(k))by.set(k,{m:nm,y:t[0],w:0,l:0,pf:0,pa:0,g:0});
+    const s=by.get(k);
+    if(t[2]===BR_REG){ t[5]===1?s.w++:s.l++; s.pf+=t[6]; s.g++; if(o)s.pa+=o[6]; }
+  });
+  return (teamSeasons.c=[...by.values()].filter(s=>s.g));
+}
 function standings(y){
-  const rows=[];
-  CAREER.forEach(c=>{ const s=c.by.get(y); if(!s)return;
-    rows.push({m:c.m,w:s.w,l:s.l,pf:s.pf,pa:s.pa,g:s.g,d:div(y,c.m)}); });
-  rows.sort((a,b)=>(b.w/(b.w+b.l||1))-(a.w/(a.w+a.l||1))||b.pf-a.pf);
-  return rows;
+  return teamSeasons().filter(s=>s.y===y)
+    .map(s=>({...s,d:div(y,s.m)}))
+    .sort((a,b)=>(b.w/(b.w+b.l||1))-(a.w/(a.w+a.l||1))||b.pf-a.pf);
 }
 
 /* ---------- small renderers ---------- */
@@ -952,7 +976,7 @@ const BIO={
  Brendan:'Two Garrisons and 6–1 once the bracket starts, more playoff wins than anyone has managed. The first title came from nowhere — 7–6 in 2020, in from the sixth and last seed — and was followed by 5–9 and 5–9 before the second arrived in 2023. Then 11–3 in 2024, out in the semis. Holds the all-time single-week high at 188.36 and followed it with a 77.94, the largest fall between two regular-season weeks ever recorded.',
  Chris:'Four seasons, three trips to the bracket, and not one win once there. Opened at 10–3 and 122.84 a week in 2020 and lost in the semis, went out in the first round the next two years, then 6–8 and gone. Said he left so Dan could have a spot back, which the league has always read as a man tired of December. His 164.80 in Week 3 of 2020 is still half of the highest-scoring game ever played.',
  Dan:'Three seasons spread across five years, and the middle one was nearly everything: 10–4 in 2021 and a championship lost by 0.56, the narrowest final on record. Either side of it sit a 4–9 and a 4–10. He is 0–4 lifetime against Michael, the man who beat him in that final. Spent his entire time here visibly worried about the last-place punishment, which has never once been enforced.',
- Graham:'Once the most feared trade partner in the league, quieter of late. Three trips to the bracket, three first-round exits, no playoff wins. In 2022 he led the entire league in points scored and in points allowed at the same time, finished 6–8, and watched six lower-scoring teams go through without him — which is the shape of his whole run here. The points arrive. The wins do not.',
+ Graham:'Once the most feared trade partner in the league, quieter of late. Here since the start, sharing a team with Max in 2020. Three trips to the bracket, three first-round exits, no playoff wins. In 2022 he led the entire league in points scored and in points allowed at the same time, finished 6–8, and watched six lower-scoring teams go through without him — which is the shape of his whole run here. The points arrive. The wins do not.',
  Guzman:'Lives in Virginia and has never been met in person by anyone in the league, which has slowed him down not at all. Won a playoff game in 2021 and again in 2023 and lost the semi both times, bottomed out at 4–10 in 2024, then went 7–7 and won the 2025 title from the sixth and last seed, the worst record any champion has carried in. He has more career losses than wins and a ring anyway, is 5–2 in the postseason, and is 6–0 against James V by an average of 47.7.',
  'James V':'A Bills fan, which the league has decided explains a great deal. The worst career record of anyone who has lasted, with both extremes on his own ledger: a 2022 run to the final behind a 184.38, and a 2–12 in 2025. Josh Allen has scored more points for him than any player has produced for any manager in league history. He is 0–6 against Guzman.',
  'James D':'An Ivy League student, and the scoring average backs it: the highest of anyone who has been here all seven seasons. Never finished worse than 7–7 in his first six years, and reached the bracket in four of them. What he has to show for it is 1–4 — two semi-finals lost, two first rounds lost, one win.',
@@ -1048,12 +1072,14 @@ function playerStats(){
     let s=by.get(e[2]);
     if(!s){s={id:e[2],name:D.players[e[2]],weeks:0,starts:0,spts:0,best:0,
               mgrs:new Set(),seasons:new Set(),byMgr:new Map(),pos:D.pos[e[3]]||''};by.set(e[2],s)}
-    const mg=M[t[3]];
-    s.weeks++; s.mgrs.add(mg); s.seasons.add(t[0]);
-    if(!s.byMgr.has(mg))s.byMgr.set(mg,{m:mg,starts:0,spts:0});
-    const u=s.byMgr.get(mg);
+    s.weeks++; s.seasons.add(t[0]);
     if(e[4]>s.best)s.best=e[4];
-    if(e[1]){s.starts++; s.spts+=e[4]; u.starts++; u.spts+=e[4]}
+    if(e[1]){s.starts++; s.spts+=e[4]}
+    credits(M[t[3]]).forEach(mg=>{
+      s.mgrs.add(mg);
+      if(!s.byMgr.has(mg))s.byMgr.set(mg,{m:mg,starts:0,spts:0});
+      if(e[1]){const u=s.byMgr.get(mg); u.starts++; u.spts+=e[4]}
+    });
   }));
   const all=[...by.values()];
   const q=all.filter(s=>s.starts>=PPS_MIN).sort((a,b)=>b.spts/b.starts-a.spts/a.starts);
@@ -1207,7 +1233,8 @@ VIEWS.games=()=>{
   out.appendChild(secH('Scoreboards & Boxscores'));
   const y=SEASONS.indexOf(STATE.y)>=0?STATE.y:SEASONS[SEASONS.length-1];
   const weeks=[...new Set(G.filter(g=>g.y===y).map(g=>g.w))].sort((a,b)=>a-b);
-  const roster=[...new Set(G.filter(g=>g.y===y).flatMap(g=>[M[g.win[3]],M[g.los[3]]]))].sort();
+  const roster=[...new Set(G.filter(g=>g.y===y)
+    .flatMap(g=>[...credits(M[g.win[3]]),...credits(M[g.los[3]])]))].sort();
   /* a link that names a manager but no week lands on that manager's season schedule */
   if(STATE.focus&&STATE.w==null&&!STATE.team){ STATE.team=STATE.focus; STATE.focus=null; }
   const team=roster.indexOf(STATE.team)>=0?STATE.team:null;
@@ -1287,10 +1314,10 @@ VIEWS.games=()=>{
   }
 
   function teamList(L){
-    const gs=G.filter(g=>g.y===y&&(M[g.win[3]]===team||M[g.los[3]]===team)).sort((a,b)=>a.w-b.w);
-    const mine=g=>M[g.win[3]]===team?g.win:g.los;
+    const gs=G.filter(g=>g.y===y&&(owns(M[g.win[3]],team)||owns(M[g.los[3]],team))).sort((a,b)=>a.w-b.w);
+    const mine=g=>owns(M[g.win[3]],team)?g.win:g.los;
     const reg=gs.filter(g=>g.br===BR_REG);
-    const won=reg.filter(g=>M[g.win[3]]===team).length;
+    const won=reg.filter(g=>owns(M[g.win[3]],team)).length;
     const pf=reg.reduce((s,g)=>s+mine(g)[6],0), pa=reg.reduce((s,g)=>s+(mine(g)===g.win?g.los:g.win)[6],0);
     const best=gs.slice().sort((a,b)=>mine(b)[6]-mine(a)[6])[0];
     const h=E('div','wkh');
@@ -1310,7 +1337,7 @@ VIEWS.games=()=>{
 
   /* one game as a row: both sides, the arrow on the winner, the boxscore a tap away */
   function matchup(g,lead){
-    const left = lead ? (M[g.win[3]]===lead?g.win:g.los) : (g.los[3]<g.win[3]?g.los:g.win);
+    const left = lead ? (owns(M[g.win[3]],lead)?g.win:g.los) : (g.los[3]<g.win[3]?g.los:g.win);
     const right = left===g.win?g.los:g.win;
     const wrap=E('div','mu');
     const row=E('button','mu-row'+(lead?' lead':'')); row.type='button';
@@ -1344,7 +1371,7 @@ VIEWS.games=()=>{
   /* arriving from a link elsewhere on the site: open that game and go to it */
   function focusGame(L){
     if(!STATE.focus)return;
-    const hit=[...L.children].find(n=>n._g&&(M[n._g.win[3]]===STATE.focus||M[n._g.los[3]]===STATE.focus)
+    const hit=[...L.children].find(n=>n._g&&(owns(M[n._g.win[3]],STATE.focus)||owns(M[n._g.los[3]],STATE.focus))
       &&(STATE.w==='all'||STATE.w==null||n._g.w===STATE.w));
     STATE.focus=null; if(!hit)return;
     hit.querySelector('.mu-row').click();
@@ -1487,9 +1514,8 @@ VIEWS.records=()=>{
 
   // season bests
   out.appendChild(secH('Best Regular Seasons'));
-  const ss=[]; CAREER.forEach(c=>c.by.forEach(s=>{ if(s.g>=10) ss.push({m:c.m,...s,
-    ttl:CHAMP[s.y]===c.m, fin:RUNUP[s.y]===c.m}) }));
-  ss.sort((a,b)=>(b.w/(b.w+b.l))-(a.w/(a.w+a.l))||b.pf-a.pf);
+  const ss=teamSeasons().filter(s=>s.g>=10).slice()
+    .sort((a,b)=>(b.w/(b.w+b.l))-(a.w/(a.w+a.l))||b.pf-a.pf);
   out.appendChild(tbl([
     {h:'',f:(r,i)=>i+1},{h:'Season',f:r=>r.y},{h:'Manager',f:r=>'<strong>'+r.m+'</strong>'},
     {h:'Rec',n:true,f:r=>r.w+'-'+r.l},{h:'Win%',r:true,n:true,f:r=>(100*r.w/(r.w+r.l)).toFixed(1)+'%'},
@@ -1520,6 +1546,7 @@ VIEWS.managers=()=>{
 };
 
 function mgrDetail(m){
+  if(!CAREER.has(m)) m=credits(m)[0];
   const M=D.mgrs, out=E('div'), c=CAREER.get(m);
   const b=E('button','back','← All managers'); b.onclick=()=>go('managers',{}); out.appendChild(b);
   const card=E('div','mgr-card');
@@ -1563,7 +1590,7 @@ function mgrDetail(m){
   ],opp,{click:r=>go('managers',{m:r.o})}));
 
   out.appendChild(secH('Best and Worst Weeks'));
-  const mine=[]; D.tw.forEach(t=>{ if(M[t[3]]!==m||t[2]===BR_CON)return;
+  const mine=[]; D.tw.forEach(t=>{ if(!owns(M[t[3]],m)||t[2]===BR_CON)return;
     const o=BYK.get(t[0]+'|'+t[1]+'|'+t[4]); mine.push({t,o,g:G.find(g=>g.y===t[0]&&g.w===t[1]&&(g.a===t||g.b===t))}) });
   mine.sort((a,b)=>b.t[6]-a.t[6]);
   const pick=mine.slice(0,5).concat(mine.slice(-5));
