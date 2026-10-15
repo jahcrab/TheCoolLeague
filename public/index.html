@@ -354,13 +354,14 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
-.shots{display:flex;flex-wrap:wrap;align-items:flex-end;gap:22px;margin:18px 0 28px}
-.shot{margin:0}
-.shot img{display:block;height:300px;width:auto;max-width:100%;border:1px solid var(--line)}
-.shot figcaption{font-size:13.5px;line-height:1.5;color:var(--muted);margin-top:9px}
-.cup-shot img{border:0;height:300px;background:transparent}
-@media(max-width:620px){.shot img{height:auto;width:100%}
-  .cup-shot{max-width:150px}.cup-shot img{width:100%}}
+.faq .card{overflow:hidden}
+.side{float:right;width:198px;max-width:46%;margin:3px 0 12px 18px}
+.side img{display:block;width:100%;height:auto;border:1px solid var(--line)}
+.side figcaption{font-size:12.5px;line-height:1.45;color:var(--muted);margin-top:7px}
+.side.tall{width:92px}
+.side.tall img{border:0;background:transparent}
+@media(max-width:700px){.side{float:none;width:100%;max-width:none;margin:4px 0 14px}
+  .side.tall{width:120px}}
 .lore{display:grid;gap:0;margin-top:4px}
 .lore>div{padding:11px 0 11px 20px;border-bottom:1px solid var(--line);font-size:15.5px;line-height:1.5;position:relative}
 .lore>div::before{content:'';position:absolute;left:2px;top:19px;width:7px;height:7px;background:var(--accent)}
@@ -1019,7 +1020,11 @@ const BIO={
 const ABOUT={
  lede:'Fourteen teams, seven seasons, one trophy made out of a Funko Pop and a selfie stick. This is where the league keeps its own history \u2014 who started it, how it works, and the things that only make sense if you were there.',
  cards:[
-  {t:'How it started',p:[
+  {t:'How it started',
+   img:{src:'manny-cave.jpg',w:640,h:160,cls:'wide',
+     alt:'A weathered New York Giants sign reading MAN ny CAVE',
+     cap:'<strong>The sign.</strong> Perna\u2019s basement, and the whole etymology.'},
+   p:[
    'The Cool League was founded in the summer of 2020, the summer of the pandemic, when every one of the founding managers was a sophomore in high school. There was not a great deal else going on.',
    'The first draft was held in the Manny Cave, which is Perna\u2019s basement. The sign on the wall down there is a Giants one, and the logo sits in the middle of the words \u2014 MAN <em>ny</em> CAVE. That is the whole etymology.',
    'Jon named the league. There is no story behind the name. He just said it and it stuck, which is roughly how most things here have gone.']},
@@ -1033,11 +1038,19 @@ const ABOUT={
   {t:'The sus year',p:[
    'Nobody in the league calls 2022 by its number. It is the sus year, and the standings explain why: <strong>six</strong> teams finished 8\u20136 and four more finished 7\u20137, so ten of the fourteen landed within one game of each other.',
    'Graham scored 1,710.70 points, more than anyone in the league, and missed the playoffs at 6\u20138. Alex made it as the six seed on 1,388.62, the fewest points of any team in the bracket and the second fewest in the entire league \u2014 then won the whole thing. On the way he and Perna swapped four players for four players, Josh Jacobs and Tee Higgins going one way, and Perna finished 5\u20139.']},
-  {t:'The hardware',p:[
+  {t:'The hardware',
+   img:{src:'garrison.png',w:271,h:900,cls:'tall',
+     alt:'The Garrison: a Mr. Garrison Funko Pop mounted on a selfie stick',
+     cap:'<strong>The Garrison.</strong> Six names, bottom to top.'},
+   p:[
    'The championship trophy is <strong>the Garrison</strong>: a Mr. Garrison Funko Pop mounted on a selfie stick on a trophy base, with every champion\u2019s name written on tape up the handle. It telescopes, so it can be raised properly when it is won. Nobody knows why it is Mr. Garrison.',
    'Jon built it after the 2022 season, which means the first three titles \u2014 Brendan in 2020, Michael in 2021, Alex in 2022 \u2014 were all won before the trophy existed.',
    'Three other awards go out each year. <strong>Manager of the Year</strong> is judged on the regular season alone. The <strong>Season MVP</strong> goes to the most valuable player in the league, by the formula set out in the MVP tab. The <strong>Agholor MVP</strong> goes to the best player on the champion\u2019s roster in the final, and is named for Nelson Agholor, who was undrafted, scored 26.50 in the 2020 championship, and has had an award in his name ever since.']},
-  {t:'The unwritten rules',p:[
+  {t:'The unwritten rules',
+   img:{src:'draft-2023.jpg',w:1118,h:845,
+     alt:'The league lined up on a lawn at night before the 2023 draft',
+     cap:'<strong>Draft day, 2023.</strong> \u201cDress nice.\u201d'},
+   p:[
    'The league has tried to agree on a punishment for last place in every season it has ever played. It has never once managed to get everyone to sign off on the same one, so nothing has ever been enforced. Finishing fourteenth remains, formally, free.',
    'New managers arrive and old ones leave case by case. There is no expansion draft, no waiting list and no rule about any of it \u2014 a seat opens, somebody takes it.',
    'The draft day dress code, in full, is <em>dress nice</em>. The results speak for themselves.']}
@@ -1800,18 +1813,6 @@ VIEWS.about=()=>{
   out.appendChild(secH('About the League'));
   out.appendChild(E('p','lede',ABOUT.lede));
 
-  const shots=E('div','shots');
-  const shot=(cls,src,alt,w,h,cap)=>{
-    const f=E('figure',cls), i=E('img');
-    i.src=src; i.alt=alt; i.width=w; i.height=h; i.loading='lazy'; i.decoding='async';
-    const c=E('figcaption'); c.innerHTML=cap;
-    f.appendChild(i); f.appendChild(c); shots.appendChild(f);
-  };
-  shot('shot','draft-2023.jpg','The league lined up on a lawn at night before the 2023 draft',1118,845,
-    '<strong>Draft day, 2023.</strong> The dress code, in its entirety, was \u201cdress nice.\u201d');
-  shot('shot cup-shot','garrison.png','The Garrison: a Mr. Garrison Funko Pop on a selfie stick',271,900,
-    '<strong>The Garrison.</strong> Six names, bottom to top.');
-  out.appendChild(shots);
 
   const g1=E('div','grid-auto'); g1.style.margin='4px 0 20px';
   const yrs=SEASONS.length, last=SEASONS[SEASONS.length-1];
@@ -1824,6 +1825,13 @@ VIEWS.about=()=>{
   const faq=E('div','faq'), a=E('div'), b=E('div');
   ABOUT.cards.forEach((c,i)=>{
     const d=E('div','card'); d.appendChild(E('h3',null,c.t));
+    if(c.img){                       /* a sidebar the text runs around */
+      const f=E('figure','side'+(c.img.cls?' '+c.img.cls:'')), im=E('img');
+      im.src=c.img.src; im.alt=c.img.alt; im.width=c.img.w; im.height=c.img.h;
+      im.loading='lazy'; im.decoding='async';
+      const cp=E('figcaption'); cp.innerHTML=c.img.cap;
+      f.appendChild(im); f.appendChild(cp); d.appendChild(f);
+    }
     c.p.forEach(x=>{const q=E('p');q.innerHTML=x;d.appendChild(q)});
     (i%2?b:a).appendChild(d);
   });
