@@ -1017,19 +1017,35 @@ const ABOUT={
  cards:[
   {t:'How it started',p:[
    'The Cool League was founded in the summer of 2020, the summer of the pandemic, when every one of the founding managers was a sophomore in high school. There was not a great deal else going on.',
-   'The first draft was held in the Manny Cave.',
-   'It has run every season since, and the week-by-week records on this site go back to the first game of that first year.']},
+   'The first draft was held in the Manny Cave, which is Perna\u2019s basement. The sign on the wall down there says MAN CAVE. Nobody has ever called it that.',
+   'Jon named the league. There is no story behind the name. He just said it and it stuck, which is roughly how most things here have gone.']},
   {t:'The Max and Graham team',p:[
    'Graham went missing on draft day in 2020. With no time to find a replacement, Max stepped in and drafted the team in his place, and the two of them shared it for the whole season.',
-   'That is why 2020 shows up on both their records here, and why the team appears under the name Max &amp; Graham rather than either of theirs. Graham got a team of his own from 2021 onwards.']},
+   'That is why 2020 shows up on both their records here, and why the team appears under the name Max &amp; Graham rather than either of theirs. It is also why the league\u2019s first season had fourteen teams and fifteen managers. Graham got a team of his own from 2021 onwards.']},
   {t:'How it works',p:[
-   'Fourteen teams in two divisions, East and West. Fourteen regular-season weeks \u2014 thirteen in 2020 \u2014 then a six-team bracket in which the top two seeds get a bye. Everyone else plays out a consolation ladder, which is kept in the Games tab but counted nowhere else: no Scorigami squares, no record book, no head-to-head.',
+   'Fourteen teams in two divisions, East and West. It has been fourteen since the first season and it has never been anything else.',
+   'Full PPR, snake draft, in person, every year without exception. Fourteen regular-season weeks \u2014 thirteen in 2020 \u2014 then a six-team bracket in which the top two seeds get a bye. Everyone else plays out a consolation ladder, which is kept in the Games tab but counted nowhere else: no Scorigami squares, no record book, no head-to-head.',
    'Lineups are QB, two RB, two WR, TE, FLEX, D/ST and K, with seven on the bench and an IR slot.']},
+  {t:'The sus year',p:[
+   'Nobody in the league calls 2022 by its number. It is the sus year, and the standings explain why: <strong>six</strong> teams finished 8\u20136 and four more finished 7\u20137, so ten of the fourteen landed within one game of each other.',
+   'Graham scored 1,710.70 points, more than anyone in the league, and missed the playoffs at 6\u20138. Alex made it as the six seed on 1,388.62, the fewest points of any team in the bracket and the second fewest in the entire league \u2014 then won the whole thing. On the way he and Perna swapped four players for four players, Josh Jacobs and Tee Higgins going one way, and Perna finished 5\u20139.']},
   {t:'The hardware',p:[
-   'The championship trophy is <strong>the Garrison</strong>: a Mr. Garrison Funko Pop mounted on a selfie stick on a trophy base, with every champion\u2019s name written on tape up the handle. It telescopes, so it can be raised properly when it is won.',
-   'Three other awards go out each year. <strong>Manager of the Year</strong> is judged on the regular season alone. The <strong>Season MVP</strong> goes to the most valuable player in the league, by the formula set out in the MVP tab. The <strong>Agholor MVP</strong> goes to the best player on the champion\u2019s roster in the final, and is named for Nelson Agholor, who was undrafted, scored 26.50 in the 2020 championship, and has had an award in his name ever since.']}
+   'The championship trophy is <strong>the Garrison</strong>: a Mr. Garrison Funko Pop mounted on a selfie stick on a trophy base, with every champion\u2019s name written on tape up the handle. It telescopes, so it can be raised properly when it is won. Nobody knows why it is Mr. Garrison.',
+   'Jon built it after the 2022 season, which means the first three titles \u2014 Brendan in 2020, Michael in 2021, Alex in 2022 \u2014 were all won before the trophy existed.',
+   'Three other awards go out each year. <strong>Manager of the Year</strong> is judged on the regular season alone. The <strong>Season MVP</strong> goes to the most valuable player in the league, by the formula set out in the MVP tab. The <strong>Agholor MVP</strong> goes to the best player on the champion\u2019s roster in the final, and is named for Nelson Agholor, who was undrafted, scored 26.50 in the 2020 championship, and has had an award in his name ever since.']},
+  {t:'The unwritten rules',p:[
+   'The league has tried to agree on a punishment for last place in every season it has ever played. It has never once managed to get everyone to sign off on the same one, so nothing has ever been enforced. Finishing fourteenth remains, formally, free.',
+   'New managers arrive and old ones leave case by case. There is no expansion draft, no waiting list and no rule about any of it \u2014 a seat opens, somebody takes it.',
+   'The draft day dress code, in full, is <em>dress nice</em>. The results speak for themselves.']}
  ],
- facts:[]
+ facts:[
+  'The Manny Cave is Perna\u2019s basement. The sign hanging in it reads MAN CAVE.',
+  'Nobody knows why the trophy is a Mr. Garrison Funko Pop. Including the person who built it.',
+  'Seven drafts, seven in-person drafts. The pandemic summer included.',
+  'Fourteen teams and fifteen managers in 2020 \u2014 the only season a team was shared.',
+  'Three of the six Garrisons were won before the Garrison existed.',
+  'Nobody has ever served a last-place punishment, and it has not been for lack of proposals.'
+ ]
 };
 
 /* Manager of the Year. Regular season only. */
@@ -1785,7 +1801,7 @@ VIEWS.about=()=>{
   im.width=1118; im.height=845; im.loading='lazy'; im.decoding='async';
   fig.appendChild(im);
   const cap=E('figcaption');
-  cap.innerHTML='<strong>Draft day, 2023.</strong> Fourteen teams, one lawn, and no agreement whatsoever on what counts as dressing for the occasion.';
+  cap.innerHTML='<strong>Draft day, 2023.</strong> The dress code, in its entirety, was \u201cdress nice.\u201d';
   fig.appendChild(cap); out.appendChild(fig);
 
   const g1=E('div','grid-auto'); g1.style.margin='4px 0 20px';
@@ -1805,7 +1821,7 @@ VIEWS.about=()=>{
   faq.appendChild(a); faq.appendChild(b); out.appendChild(faq);
 
   if(ABOUT.facts.length){
-    out.appendChild(secH('League Lore'));
+    out.appendChild(secH('Things That Are True'));
     const ul=E('div','lore');
     ABOUT.facts.forEach(x=>{const d=E('div');d.innerHTML=x;ul.appendChild(d)});
     out.appendChild(ul);
