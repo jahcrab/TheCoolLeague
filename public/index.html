@@ -354,9 +354,13 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
-.shot{margin:18px 0 26px;max-width:720px}
-.shot img{width:100%;height:auto;display:block;border:1px solid var(--line)}
-.shot figcaption{font-size:14px;line-height:1.5;color:var(--muted);margin-top:9px;max-width:66ch}
+.shots{display:flex;flex-wrap:wrap;align-items:flex-end;gap:22px;margin:18px 0 28px}
+.shot{margin:0}
+.shot img{display:block;height:300px;width:auto;max-width:100%;border:1px solid var(--line)}
+.shot figcaption{font-size:13.5px;line-height:1.5;color:var(--muted);margin-top:9px}
+.cup-shot img{border:0;height:300px;background:transparent}
+@media(max-width:620px){.shot img{height:auto;width:100%}
+  .cup-shot{max-width:150px}.cup-shot img{width:100%}}
 .lore{display:grid;gap:0;margin-top:4px}
 .lore>div{padding:11px 0 11px 20px;border-bottom:1px solid var(--line);font-size:15.5px;line-height:1.5;position:relative}
 .lore>div::before{content:'';position:absolute;left:2px;top:19px;width:7px;height:7px;background:var(--accent)}
@@ -1017,7 +1021,7 @@ const ABOUT={
  cards:[
   {t:'How it started',p:[
    'The Cool League was founded in the summer of 2020, the summer of the pandemic, when every one of the founding managers was a sophomore in high school. There was not a great deal else going on.',
-   'The first draft was held in the Manny Cave, which is Perna\u2019s basement. The sign on the wall down there says MAN CAVE. Nobody has ever called it that.',
+   'The first draft was held in the Manny Cave, which is Perna\u2019s basement. The sign on the wall down there is a Giants one, and the logo sits in the middle of the words \u2014 MAN <em>ny</em> CAVE. That is the whole etymology.',
    'Jon named the league. There is no story behind the name. He just said it and it stuck, which is roughly how most things here have gone.']},
   {t:'The Max and Graham team',p:[
    'Graham went missing on draft day in 2020. With no time to find a replacement, Max stepped in and drafted the team in his place, and the two of them shared it for the whole season.',
@@ -1039,7 +1043,7 @@ const ABOUT={
    'The draft day dress code, in full, is <em>dress nice</em>. The results speak for themselves.']}
  ],
  facts:[
-  'The Manny Cave is Perna\u2019s basement. The sign hanging in it reads MAN CAVE.',
+  'The Manny Cave is Perna\u2019s basement, named by a Giants sign with the logo wedged between the words.',
   'Nobody knows why the trophy is a Mr. Garrison Funko Pop. Including the person who built it.',
   'Seven drafts, seven in-person drafts. The pandemic summer included.',
   'Fourteen teams and fifteen managers in 2020 \u2014 the only season a team was shared.',
@@ -1512,7 +1516,7 @@ VIEWS.records=()=>{
   const champs=Object.keys(CHAMP).map(Number).sort((a,b)=>b-a);
   out.appendChild(tbl([
     {h:'Season',f:y=>String(y)},
-    {h:'Garrison',f:y=>'<img class="cup sm" src="trophy.png" alt="" width="145" height="360"><strong>'+CHAMP[y]+'</strong>'},
+    {h:'Garrison',f:y=>'<img class="cup sm" src="trophy.png" alt="" width="109" height="360"><strong>'+CHAMP[y]+'</strong>'},
     {h:'Manager of the Year',f:y=>COTY[y]||'<span style="opacity:.5">—</span>'},
     {h:'Season MVP',f:y=>{const nm=AWARDED[y]; if(!nm)return '<span style="opacity:.5">—</span>';
       const r=mvpLadder(y).rows.find(x=>x.name===nm); return withMgr(nm,r&&r.mgr)}},
@@ -1616,7 +1620,7 @@ function mgrDetail(m){
   const line=(lab,val,gold)=>{const d=E('div',gold?'g':null);
     d.appendChild(E('span','k',lab)); const v=E('span','v'); v.innerHTML=val; d.appendChild(v); hon.appendChild(d)};
   if(c.titles) line('The Garrison',
-    '<img class="cup" src="trophy.png" alt="" width="145" height="360">'.repeat(c.titles)+
+    '<img class="cup" src="trophy.png" alt="" width="109" height="360">'.repeat(c.titles)+
     '<span class="cupy">'+Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', ')+'</span>',true);
   const coty=Object.keys(COTY).filter(y=>COTY[y]===m);
   if(coty.length) line('Manager of the Year',coty.join(', '));
@@ -1796,13 +1800,18 @@ VIEWS.about=()=>{
   out.appendChild(secH('About the League'));
   out.appendChild(E('p','lede',ABOUT.lede));
 
-  const fig=E('figure','shot');
-  const im=E('img'); im.src='draft-2023.jpg'; im.alt='The league on a lawn at night before the 2023 draft';
-  im.width=1118; im.height=845; im.loading='lazy'; im.decoding='async';
-  fig.appendChild(im);
-  const cap=E('figcaption');
-  cap.innerHTML='<strong>Draft day, 2023.</strong> The dress code, in its entirety, was \u201cdress nice.\u201d';
-  fig.appendChild(cap); out.appendChild(fig);
+  const shots=E('div','shots');
+  const shot=(cls,src,alt,w,h,cap)=>{
+    const f=E('figure',cls), i=E('img');
+    i.src=src; i.alt=alt; i.width=w; i.height=h; i.loading='lazy'; i.decoding='async';
+    const c=E('figcaption'); c.innerHTML=cap;
+    f.appendChild(i); f.appendChild(c); shots.appendChild(f);
+  };
+  shot('shot','draft-2023.jpg','The league lined up on a lawn at night before the 2023 draft',1118,845,
+    '<strong>Draft day, 2023.</strong> The dress code, in its entirety, was \u201cdress nice.\u201d');
+  shot('shot cup-shot','garrison.png','The Garrison: a Mr. Garrison Funko Pop on a selfie stick',271,900,
+    '<strong>The Garrison.</strong> Six names, bottom to top.');
+  out.appendChild(shots);
 
   const g1=E('div','grid-auto'); g1.style.margin='4px 0 20px';
   const yrs=SEASONS.length, last=SEASONS[SEASONS.length-1];
@@ -1839,7 +1848,7 @@ VIEWS.about=()=>{
     {h:'From',n:true,f:r=>String(r.first)},
     {h:'To',n:true,f:r=>r.here?'<span style="opacity:.6">present</span>':String(r.last)},
     {h:'Seasons',r:true,n:true,f:r=>r.n},
-    {h:'Garrisons',r:true,f:r=>r.titles?'<img class="cup sm" src="trophy.png" alt="" width="145" height="360">'.repeat(r.titles):'<span style="opacity:.45">\u2014</span>'}
+    {h:'Garrisons',r:true,f:r=>r.titles?'<img class="cup sm" src="trophy.png" alt="" width="109" height="360">'.repeat(r.titles):'<span style="opacity:.45">\u2014</span>'}
   ],rows,{click:r=>go('managers',{m:r.m})}));
   return out;
 };
