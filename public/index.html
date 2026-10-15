@@ -354,6 +354,9 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
+.shot{margin:18px 0 26px;max-width:720px}
+.shot img{width:100%;height:auto;display:block;border:1px solid var(--line)}
+.shot figcaption{font-size:14px;line-height:1.5;color:var(--muted);margin-top:9px;max-width:66ch}
 .lore{display:grid;gap:0;margin-top:4px}
 .lore>div{padding:11px 0 11px 20px;border-bottom:1px solid var(--line);font-size:15.5px;line-height:1.5;position:relative}
 .lore>div::before{content:'';position:absolute;left:2px;top:19px;width:7px;height:7px;background:var(--accent)}
@@ -1776,6 +1779,14 @@ VIEWS.about=()=>{
   const out=E('div');
   out.appendChild(secH('About the League'));
   out.appendChild(E('p','lede',ABOUT.lede));
+
+  const fig=E('figure','shot');
+  const im=E('img'); im.src='draft-2023.jpg'; im.alt='The league on a lawn at night before the 2023 draft';
+  im.width=1118; im.height=845; im.loading='lazy'; im.decoding='async';
+  fig.appendChild(im);
+  const cap=E('figcaption');
+  cap.innerHTML='<strong>Draft day, 2023.</strong> Fourteen teams, one lawn, and no agreement whatsoever on what counts as dressing for the occasion.';
+  fig.appendChild(cap); out.appendChild(fig);
 
   const g1=E('div','grid-auto'); g1.style.margin='4px 0 20px';
   const yrs=SEASONS.length, last=SEASONS[SEASONS.length-1];
