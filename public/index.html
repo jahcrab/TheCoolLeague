@@ -354,6 +354,9 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
+.lore{display:grid;gap:0;margin-top:4px}
+.lore>div{padding:11px 0 11px 20px;border-bottom:1px solid var(--line);font-size:15.5px;line-height:1.5;position:relative}
+.lore>div::before{content:'';position:absolute;left:2px;top:19px;width:7px;height:7px;background:var(--accent)}
 .hr{border:0;border-top:1px solid var(--line);margin:28px 0}
 .mgr-card{background:var(--panel);border:1px solid var(--line);padding:14px}
 .mgr-card .nm{font-family:var(--f-disp);font-size:25px;line-height:1}
@@ -780,7 +783,8 @@ VIEWS.overview=()=>{
    ['mvp','MVP Ladder','Wins above replacement, and the formula behind the award.'],
    ['managers','Managers','17 careers, head-to-head records, and '+champs.length+' Garrison winners.'],
    ['rings','Ring Counter','Every player who has won one, plus the six Agholor MVPs.'],
-   ['newsletters','Past Issues','Every Scorigami Report from this season.']
+   ['newsletters','Past Issues','Every Scorigami Report from this season.'],
+   ['about','About the League','Where it came from, how it works, and what the trophy actually is.']
   ].forEach(([v,t,d])=>{
     const a=E('button','door'); a.appendChild(E('div','dt',t)); a.appendChild(E('div','dd',d));
     a.onclick=()=>go(v,{}); doors.appendChild(a);
@@ -1001,6 +1005,28 @@ const BIO={
  Bill:'His team is EV!L and has been for some time. Opened 2020 at 1–12, then went 10–4 the next year — a nine-win swing, still the largest in league history. The five years since have been the middle of the table and one first-round exit. He started Nick Folk 42 times, more than any manager has started any player.',
  Bobby:'Two seasons in, with the worst win rate of anyone who has ever managed a team here, and not narrowly. It has not gone well.',
  Perna:'Three seasons, never once in the bracket, 18–23, and then gone. He did finish 3–0 against Brendan, who won two titles in that span, so the record will show he knew something. Nobody has ever given a straight answer about why he left, and the league has largely stopped asking.'
+};
+
+/* The league's own story. Everything here is hand-written: add a fact by adding
+   a line to FACTS, or a paragraph to the card it belongs in. */
+const ABOUT={
+ lede:'Fourteen teams, seven seasons, one trophy made out of a Funko Pop and a selfie stick. This is where the league keeps its own history \u2014 who started it, how it works, and the things that only make sense if you were there.',
+ cards:[
+  {t:'How it started',p:[
+   'The Cool League was founded in the summer of 2020, the summer of the pandemic, when every one of the founding managers was a sophomore in high school. There was not a great deal else going on.',
+   'The first draft was held in the Manny Cave.',
+   'It has run every season since, and the week-by-week records on this site go back to the first game of that first year.']},
+  {t:'The Max and Graham team',p:[
+   'Graham went missing on draft day in 2020. With no time to find a replacement, Max stepped in and drafted the team in his place, and the two of them shared it for the whole season.',
+   'That is why 2020 shows up on both their records here, and why the team appears under the name Max &amp; Graham rather than either of theirs. Graham got a team of his own from 2021 onwards.']},
+  {t:'How it works',p:[
+   'Fourteen teams in two divisions, East and West. Fourteen regular-season weeks \u2014 thirteen in 2020 \u2014 then a six-team bracket in which the top two seeds get a bye. Everyone else plays out a consolation ladder, which is kept in the Games tab but counted nowhere else: no Scorigami squares, no record book, no head-to-head.',
+   'Lineups are QB, two RB, two WR, TE, FLEX, D/ST and K, with seven on the bench and an IR slot.']},
+  {t:'The hardware',p:[
+   'The championship trophy is <strong>the Garrison</strong>: a Mr. Garrison Funko Pop mounted on a selfie stick on a trophy base, with every champion\u2019s name written on tape up the handle. It telescopes, so it can be raised properly when it is won.',
+   'Three other awards go out each year. <strong>Manager of the Year</strong> is judged on the regular season alone. The <strong>Season MVP</strong> goes to the most valuable player in the league, by the formula set out in the MVP tab. The <strong>Agholor MVP</strong> goes to the best player on the champion\u2019s roster in the final, and is named for Nelson Agholor, who was undrafted, scored 26.50 in the 2020 championship, and has had an award in his name ever since.']}
+ ],
+ facts:[]
 };
 
 /* Manager of the Year. Regular season only. */
@@ -1746,6 +1772,51 @@ VIEWS.mvp=()=>{
   return out;
 };
 
+VIEWS.about=()=>{
+  const out=E('div');
+  out.appendChild(secH('About the League'));
+  out.appendChild(E('p','lede',ABOUT.lede));
+
+  const g1=E('div','grid-auto'); g1.style.margin='4px 0 20px';
+  const yrs=SEASONS.length, last=SEASONS[SEASONS.length-1];
+  g1.appendChild(tile(yrs,'Seasons',SEASONS[0]+'\u2013'+last));
+  g1.appendChild(tile(14,'Teams','Seven East, seven West'));
+  g1.appendChild(tile([...CAREER.values()].filter(c=>c.g).length,'Managers all time'));
+  g1.appendChild(tile(Object.keys(CHAMP).length,'Garrisons handed out'));
+  out.appendChild(g1);
+
+  const faq=E('div','faq'), a=E('div'), b=E('div');
+  ABOUT.cards.forEach((c,i)=>{
+    const d=E('div','card'); d.appendChild(E('h3',null,c.t));
+    c.p.forEach(x=>{const q=E('p');q.innerHTML=x;d.appendChild(q)});
+    (i%2?b:a).appendChild(d);
+  });
+  faq.appendChild(a); faq.appendChild(b); out.appendChild(faq);
+
+  if(ABOUT.facts.length){
+    out.appendChild(secH('League Lore'));
+    const ul=E('div','lore');
+    ABOUT.facts.forEach(x=>{const d=E('div');d.innerHTML=x;ul.appendChild(d)});
+    out.appendChild(ul);
+  }
+
+  out.appendChild(secH('The Roll Call'));
+  out.appendChild(E('p','lede','Everyone who has managed a team, and when. Click a name for their career.'));
+  const rows=[...CAREER.values()].filter(c=>c.g).map(c=>{
+    const ys=[...c.seasons].sort();
+    return {m:c.m,first:ys[0],last:ys[ys.length-1],n:ys.length,
+            here:ys[ys.length-1]===last,titles:c.titles};
+  }).sort((x,y)=>x.first-y.first||y.n-x.n||x.m.localeCompare(y.m));
+  out.appendChild(tbl([
+    {h:'Manager',f:r=>'<strong>'+r.m+'</strong>'},
+    {h:'From',n:true,f:r=>String(r.first)},
+    {h:'To',n:true,f:r=>r.here?'<span style="opacity:.6">present</span>':String(r.last)},
+    {h:'Seasons',r:true,n:true,f:r=>r.n},
+    {h:'Garrisons',r:true,f:r=>r.titles?'<img class="cup sm" src="trophy.png" alt="" width="145" height="360">'.repeat(r.titles):'<span style="opacity:.45">\u2014</span>'}
+  ],rows,{click:r=>go('managers',{m:r.m})}));
+  return out;
+};
+
 VIEWS.rings=()=>{
   const out=E('div'), R0=D.rings||[], YRS=D.ringYears||[];
   out.appendChild(secH('Ring Counter'));
@@ -1812,7 +1883,8 @@ VIEWS.newsletters=()=>{
 
 /* ---------- shell ---------- */
 const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['records','Records'],
-  ['mvp','MVP'],['managers','Managers'],['rings','Rings'],['newsletters','Newsletters']];
+  ['mvp','MVP'],['managers','Managers'],['rings','Rings'],['newsletters','Newsletters'],
+  ['about','About']];
 function go(v,st){ CUR=v; STATE=st||{}; try{location.hash=v}catch(e){} render(); scrollTo({top:0,behavior:'smooth'}); }
 function render(){
   const rail=$('#rail'); rail.innerHTML='';
