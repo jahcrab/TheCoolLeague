@@ -368,6 +368,9 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .hon .v{font-family:var(--f-data);font-size:13.5px;color:var(--fg)}
 .hon .v .who{color:var(--muted);font-family:var(--f-body);font-size:14px}
 .hon .dots{letter-spacing:2px}
+.cup{height:42px;width:auto;vertical-align:-14px;margin-right:5px}
+.cup.sm{height:32px;vertical-align:-11px;margin-right:7px}
+.hon .cupy{margin-left:4px}
 .hon .g .k,.hon .g .v{color:var(--gold)}
 .mgr-card .bio{margin:11px 0 0;max-width:68ch;font-size:15.5px;line-height:1.52;color:var(--fg)}
 .back{appearance:none;background:none;border:0;color:var(--accent);font-family:var(--f-disp);font-size:12.5px;
@@ -1464,7 +1467,7 @@ VIEWS.records=()=>{
   const champs=Object.keys(CHAMP).map(Number).sort((a,b)=>b-a);
   out.appendChild(tbl([
     {h:'Season',f:y=>String(y)},
-    {h:'Garrison',f:y=>'<strong>'+CHAMP[y]+'</strong>'},
+    {h:'Garrison',f:y=>'<img class="cup sm" src="trophy.png" alt="" width="145" height="360"><strong>'+CHAMP[y]+'</strong>'},
     {h:'Manager of the Year',f:y=>COTY[y]||'<span style="opacity:.5">—</span>'},
     {h:'Season MVP',f:y=>{const nm=AWARDED[y]; if(!nm)return '<span style="opacity:.5">—</span>';
       const r=mvpLadder(y).rows.find(x=>x.name===nm); return withMgr(nm,r&&r.mgr)}},
@@ -1567,8 +1570,9 @@ function mgrDetail(m){
   const hon=E('div','hon');
   const line=(lab,val,gold)=>{const d=E('div',gold?'g':null);
     d.appendChild(E('span','k',lab)); const v=E('span','v'); v.innerHTML=val; d.appendChild(v); hon.appendChild(d)};
-  if(c.titles) line('The Garrison','<span class="dots">'+'●'.repeat(c.titles)+'</span> '+
-    Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', '),true);
+  if(c.titles) line('The Garrison',
+    '<img class="cup" src="trophy.png" alt="" width="145" height="360">'.repeat(c.titles)+
+    '<span class="cupy">'+Object.keys(CHAMP).filter(y=>CHAMP[y]===m).join(', ')+'</span>',true);
   const coty=Object.keys(COTY).filter(y=>COTY[y]===m);
   if(coty.length) line('Manager of the Year',coty.join(', '));
   const mvps=Object.keys(AWARDED).filter(y=>{
