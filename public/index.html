@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="The Cool League archive: Scorigami board, every scoreboard and boxscore since 2020, record book, ring counter and the weekly Scorigami Report.">
 <meta name="theme-color" content="#f1ece8">
+<link rel="icon" href="logo-64.png" type="image/png" sizes="64x64">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:site_name" content="The Cool League">
 <meta property="og:title" content="The Cool League">
 <meta property="og:description" content="Seven seasons, 646 games, 578 squares. Scorigami, every scoreboard and boxscore since 2020, and the record book.">
@@ -72,8 +74,12 @@ header.mast{border-bottom:1px solid var(--line);background:var(--panel)}
   .board-wrap{padding:9px}
   .sub{margin-bottom:11px}
 }
-.title{font-family:var(--f-disp);font-weight:700;font-size:clamp(38px,9vw,74px);line-height:.92;margin:6px 0 2px;text-transform:uppercase;letter-spacing:-.01em}
-.sub{font-family:var(--f-disp);font-size:clamp(11px,2.6vw,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:clamp(10px,2vw,20px);margin:6px 0 0}
+.brand-t{min-width:0}
+.crest{flex:0 0 auto;width:clamp(52px,10vw,104px);height:auto;display:block}
+.title{font-family:var(--f-disp);font-weight:700;font-size:clamp(34px,8.2vw,74px);line-height:.92;margin:0 0 2px;text-transform:uppercase;letter-spacing:-.01em}
+.sub{font-family:var(--f-disp);font-size:clamp(11px,2.6vw,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:0}
+.brand+.rail{margin-top:14px}
 nav.rail{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px;
   position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);
   box-shadow:0 1px 0 var(--line), 14px 0 10px -12px var(--line2) inset, -14px 0 10px -12px var(--line2) inset}
@@ -374,8 +380,13 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 <header class="mast">
   <div class="wrap">
     <div class="kicker"><span>Est. 2020 · Seven Seasons · 14 Teams</span><span class="sp" id="asof">Through Week 5, 2026</span><button class="theme" id="theme" title="Switch theme" aria-label="Switch theme">◐</button></div>
-    <div class="title">The Cool League</div>
-    <div class="sub">Scorigami · Scoreboards · Boxscores · Record Book</div>
+    <div class="brand">
+      <img class="crest" src="logo.png" width="1133" height="1210" alt="" decoding="async">
+      <div class="brand-t">
+        <div class="title">The Cool League</div>
+        <div class="sub">Scorigami · Scoreboards · Boxscores · Record Book</div>
+      </div>
+    </div>
     <nav class="rail" id="rail"></nav>
   </div>
 </header>
