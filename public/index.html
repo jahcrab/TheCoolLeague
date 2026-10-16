@@ -1200,7 +1200,9 @@ function allPro(){
     });
   });
   const teams={}, byPlayer=new Map();
-  SEASONS.forEach(y=>{
+  // a season gets its teams once it has a champion, so nothing is handed out mid-year
+  const done=SEASONS.filter(y=>CHAMP[y]);
+  done.forEach(y=>{
     const pool=Object.values(by[y]||{}).sort((a,b)=>b.pts-a.pts);
     const used=new Set(), sides=[];
     for(let t=0;t<3;t++){
@@ -1219,7 +1221,7 @@ function allPro(){
     }
     teams[y]=sides;
   });
-  return (APRO={teams,byPlayer});
+  return (APRO={teams,byPlayer,seasons:done});
 }
 
 /* Career lines for every player in the archive, ranked once and kept. */
@@ -1717,16 +1719,14 @@ function allProBlock(){
   const A=allPro(), out=E('div');
   out.appendChild(secH('All-Pro Teams'));
   out.appendChild(E('p','lede','One QB, two RB, two WR, a TE, a K and a FLEX, taken in that order off the season\u2019s scoring list \u2014 then the second and third teams carry on down it. Regular season only, and only what a player scored while somebody had him in a starting lineup.'));
-  const y=SEASONS.indexOf(STATE.apy)>=0?STATE.apy:SEASONS[SEASONS.length-1];
+  const YS=A.seasons;
+  if(!YS.length){ out.appendChild(E('p','empty','No season has finished yet.')); return out }
+  const y=YS.indexOf(STATE.apy)>=0?STATE.apy:YS[YS.length-1];
   const ctl=E('div','ctl');
   ctl.appendChild(E('span','pill','Season'));
-  const sy=E('select'); SEASONS.slice().reverse().forEach(v=>{const o=E('option',null,v);o.value=v;sy.appendChild(o)});
+  const sy=E('select'); YS.slice().reverse().forEach(v=>{const o=E('option',null,v);o.value=v;sy.appendChild(o)});
   sy.value=y; sy.onchange=()=>{STATE=Object.assign({},STATE,{apy:+sy.value}); render()};
   ctl.appendChild(sy); out.appendChild(ctl);
-  // a season still being played has a team that changes every week
-  const lastW=Math.max(...G.filter(g=>g.y===y&&g.br===BR_REG).map(g=>g.w));
-  if(y===SEASONS[SEASONS.length-1]) out.appendChild(E('p','lede',
-    'The '+y+' season is still being played \u2014 this is where it stands through week '+lastW+'.'));
   const g=E('div','ap');
   (A.teams[y]||[]).forEach((side,i)=>{
     const col=E('div','card');
