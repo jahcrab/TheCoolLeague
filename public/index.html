@@ -1611,15 +1611,6 @@ function playerProfile(id){
     ys.length>1?ys[0]+'–'+ys[ys.length-1]:String(ys[0])));
   out.appendChild(g1);
 
-  if(C&&C.seasons.length){
-    out.appendChild(secH('MVP ladder, season by season'));
-    out.appendChild(tbl([
-      {h:'Season',f:r=>String(r.y)},
-      {h:'Finish',f:r=>r.rank===1?'<strong>Season MVP</strong>':ord(r.rank)},
-      {h:'MVP points',r:true,n:true,f:r=>f2(r.score)}
-    ],C.seasons.slice().sort((a,b)=>b.y-a.y)));
-  }
-
   out.appendChild(secH('Every week on a roster'));
   out.appendChild(E('p','lede','Highest scoring first. Consolation weeks are left out, as they are everywhere else. Click a week to open that game.'));
   out.appendChild(tbl([
@@ -1644,10 +1635,11 @@ const BOARDS=[
    v:s=>s.best,  f:s=>f2(s.best),               ok:s=>s.weeks>0},
   {k:'st',  t:'Weeks started',     n:'Availability, which is its own skill.',
    v:s=>s.starts, f:s=>String(s.starts),        ok:s=>s.starts>0},
-  {k:'ring',t:'Ring Counter',       n:'', full:true},
+  {k:'ring',t:'Ring Counter',       n:'', full:()=>ringCounter()},
+  {k:'allpro',t:'All-Pro',          n:'', full:()=>allProBlock()},
   {k:'jny', t:'Most managers',     n:'Passed around the most.',
    v:s=>s.mgrs.size*1000+s.weeks, f:s=>String(s.mgrs.size),
-   ok:s=>s.mgrs.size>1}
+   ok:s=>s.mgrs.size>1&&(STATE.pos==='D/ST'||s.pos!=='D/ST')}
 ];
 function ringsOf(nm){ const r=(D.rings||[]).find(x=>sameName(x[0],nm)); return r?r[3]:0 }
 
@@ -1678,7 +1670,7 @@ VIEWS.players=()=>{
     btn.setAttribute('aria-pressed',b===bk?'true':'false');
     btn.onclick=()=>set({b:b.k}); bar.appendChild(btn)});
   boards.appendChild(bar);
-  if(bk.full){ boards.appendChild(ringCounter()); renderHits(); return out; }
+  if(bk.full){ boards.appendChild(bk.full()); renderHits(); return out; }
   boards.appendChild(E('p','lede',bk.n+(STATE.pos?'  ·  '+STATE.pos+' only.':'')));
   const rows=S.all.filter(x=>bk.ok(x)&&(!STATE.pos||x.pos===STATE.pos))
                   .sort((a,b)=>bk.v(b)-bk.v(a)).slice(0,30);
@@ -1744,8 +1736,6 @@ function allProBlock(){
 
 VIEWS.records=()=>{
   const M=D.mgrs, out=E('div'), e=elig();
-  out.appendChild(allProBlock());
-  out.appendChild(E('hr','hr'));
   out.appendChild(secH('The Awards'));
   out.appendChild(E('p','lede','Every piece of hardware the league hands out, by season.'));
   const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
