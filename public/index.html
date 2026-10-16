@@ -790,7 +790,7 @@ VIEWS.overview=()=>{
   out.appendChild(mvpTable(L.rows.slice(0,10),true,mvpMoves(L)));
   const ml=E('button','back'); ml.style.margin='12px 0 0';
   ml.textContent='Full formula, replacement values and every qualifier →';
-  ml.onclick=()=>go('mvp',{}); out.appendChild(ml);
+  ml.onclick=()=>go('players',{b:'ladder'}); out.appendChild(ml);
 
   out.appendChild(secH('Inside the Archive'));
   const p=E('p','lede');
@@ -1646,6 +1646,7 @@ const BOARDS=[
    v:s=>s.best,  f:s=>f2(s.best),               ok:s=>s.weeks>0},
   {k:'st',  t:'Weeks started',     n:'Availability, which is its own skill.',
    v:s=>s.starts, f:s=>String(s.starts),        ok:s=>s.starts>0},
+  {k:'ladder',t:'MVP Ladder',       n:'', full:()=>mvpBlock()},
   {k:'ring',t:'Ring Counter',       n:'', full:()=>ringCounter()},
   {k:'allpro',t:'All-Pro',          n:'', full:()=>allProBlock()},
   {k:'jny', t:'Most managers',     n:'Passed around the most.',
@@ -1939,7 +1940,7 @@ function mvpTable(rows,compact,mv){
 /* Ladders are browsable from the first season calculated with this version of
    the formula. Earlier awards are listed, not re-ranked. */
 const LADDER_FROM=2023;
-VIEWS.mvp=()=>{
+function mvpBlock(){
   const out=E('div'), cur=SEASONS[SEASONS.length-1];
   const YRS=SEASONS.filter(y=>y>=LADDER_FROM);
   const Y=YRS.includes(STATE.my)?STATE.my:cur, live=Y===cur;
@@ -1982,7 +1983,7 @@ VIEWS.mvp=()=>{
     {h:'GP',r:true,n:true,sm:false,f:r=>(r.row||r.lead).gp},
     {h:'WAR',r:true,n:true,f:r=>(r.row||r.lead).war},
     {h:'Score',r:true,n:true,f:r=>f2((r.row||r.lead).score)}
-  ],past,{click:r=>{ if(r.y>=LADDER_FROM) go('mvp',{my:r.y}); }}));
+  ],past,{click:r=>{ if(r.y>=LADDER_FROM) go('players',{b:'ladder',my:r.y}); }}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
   out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: the average points per game of this league’s QB2s, RB3s, WR4s and TE2s. Rebuilt every week, so they move with the season.'));
@@ -2035,7 +2036,7 @@ VIEWS.mvp=()=>{
   ].forEach(t=>note.appendChild(E('p',null,t)));
   out.appendChild(note);
   return out;
-};
+}
 
 VIEWS.about=()=>{
   const out=E('div');
@@ -2157,10 +2158,11 @@ VIEWS.newsletters=()=>{
 
 /* ---------- shell ---------- */
 const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['players','Players'],['records','Records'],
-  ['mvp','MVP'],['managers','Managers'],['newsletters','Newsletters'],
+  ['managers','Managers'],['newsletters','Newsletters'],
   ['about','About']];
 function go(v,st){
-  if(v==='rings'){ v='players'; st=Object.assign({b:'ring'},st); }   // the tab it used to be
+  if(v==='rings'){ v='players'; st=Object.assign({b:'ring'},st); }     // tabs these used to be
+  if(v==='mvp'){ v='players'; st=Object.assign({b:'ladder'},st); }
   CUR=v; STATE=st||{}; try{location.hash=v}catch(e){} render(); scrollTo({top:0,behavior:'smooth'});
 }
 function render(){
