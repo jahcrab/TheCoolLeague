@@ -354,6 +354,13 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
+.ap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
+.ap .card{padding:14px 16px 4px}
+.ap .card h3{margin:0 0 4px}
+.ap table{font-size:14px}
+.ap .sl{font-family:var(--f-mono,ui-monospace,monospace);font-size:11px;letter-spacing:.06em;
+  color:var(--muted);text-transform:uppercase}
+@media(max-width:860px){.ap{grid-template-columns:1fr}}
 .faq .card{overflow:hidden}
 .plink{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 .plink:hover{color:var(--accent);text-decoration:underline}
@@ -1170,6 +1177,51 @@ function mvpCareer(){
   return (MVPCAR={by,all});
 }
 
+/* All-Pro. One QB, two RB, two WR, one TE, one K, then a FLEX — the best
+   remaining RB, WR or TE. Second and third teams carry straight on down the
+   same list, so nobody is picked twice. Regular season only, and only points
+   a player scored while he was actually in someone's starting lineup. */
+const AP_SLOTS=[['QB',1],['RB',2],['WR',2],['TE',1],['K',1]];
+const AP_FLEX=new Set(['RB','WR','TE']);
+const AP_TEAM=['First Team','Second Team','Third Team'];
+let APRO=null;
+function allPro(){
+  if(APRO)return APRO;
+  const by={};
+  D.tw.forEach(t=>{
+    if(t[2]!==BR_REG)return;
+    t[7].forEach(e=>{
+      if(!e[1])return;                       // bench weeks do not count
+      const nm=D.players[e[2]], p=D.pos[e[3]]||'';
+      const yr=by[t[0]]||(by[t[0]]={});
+      const r=yr[nm]||(yr[nm]={name:nm,pos:p,id:e[2],pts:0,st:0});
+      if(!r.pos)r.pos=p;
+      r.pts+=e[4]; r.st++;
+    });
+  });
+  const teams={}, byPlayer=new Map();
+  SEASONS.forEach(y=>{
+    const pool=Object.values(by[y]||{}).sort((a,b)=>b.pts-a.pts);
+    const used=new Set(), sides=[];
+    for(let t=0;t<3;t++){
+      const side=[];
+      const take=(test,slot)=>{
+        const p=pool.find(x=>!used.has(x.name)&&test(x));
+        if(!p)return;
+        used.add(p.name);
+        side.push(Object.assign({},p,{slot}));
+        if(!byPlayer.has(p.name))byPlayer.set(p.name,[]);
+        byPlayer.get(p.name).push({y,team:t,slot,pts:p.pts});
+      };
+      AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
+      take(x=>AP_FLEX.has(x.pos),'FLEX');
+      sides.push(side);
+    }
+    teams[y]=sides;
+  });
+  return (APRO={teams,byPlayer});
+}
+
 /* Career lines for every player in the archive, ranked once and kept. */
 const PPS_MIN=5;
 /* Nicknames the league gave them, which outrank anything a reference book says. */
@@ -1227,6 +1279,14 @@ function playerHonours(s){
   }
   const mvp=Object.keys(AWARDED).filter(y=>sameName(AWARDED[y],s.name));
   if(mvp.length) line('Season MVP',mvp.join(', '));
+  const ap=allPro().byPlayer.get(s.name);
+  if(ap&&ap.length){
+    const by=[[],[],[]];
+    ap.slice().sort((a,b)=>a.y-b.y).forEach(r=>by[r.team].push(r.y+' <span style="opacity:.6">'+r.slot+'</span>'));
+    line(ap.length===1?'All-Pro':'All-Pro \u00d7'+ap.length,
+      by.map((v,i)=>v.length?'<strong>'+AP_TEAM[i]+'</strong> '+v.join(', '):'')
+        .filter(Boolean).join('<br>'), by[0].length>0);
+  }
   return hon;
 }
 const RING_LVL={1:'On the roster',2:'Bench in the final',3:'Started the final',4:'Agholor MVP'};
@@ -1653,8 +1713,39 @@ VIEWS.players=()=>{
   }
 };
 
+function allProBlock(){
+  const A=allPro(), out=E('div');
+  out.appendChild(secH('All-Pro Teams'));
+  out.appendChild(E('p','lede','One QB, two RB, two WR, a TE, a K and a FLEX, taken in that order off the season\u2019s scoring list \u2014 then the second and third teams carry on down it. Regular season only, and only what a player scored while somebody had him in a starting lineup.'));
+  const y=SEASONS.indexOf(STATE.apy)>=0?STATE.apy:SEASONS[SEASONS.length-1];
+  const ctl=E('div','ctl');
+  ctl.appendChild(E('span','pill','Season'));
+  const sy=E('select'); SEASONS.slice().reverse().forEach(v=>{const o=E('option',null,v);o.value=v;sy.appendChild(o)});
+  sy.value=y; sy.onchange=()=>{STATE=Object.assign({},STATE,{apy:+sy.value}); render()};
+  ctl.appendChild(sy); out.appendChild(ctl);
+  // a season still being played has a team that changes every week
+  const lastW=Math.max(...G.filter(g=>g.y===y&&g.br===BR_REG).map(g=>g.w));
+  if(y===SEASONS[SEASONS.length-1]) out.appendChild(E('p','lede',
+    'The '+y+' season is still being played \u2014 this is where it stands through week '+lastW+'.'));
+  const g=E('div','ap');
+  (A.teams[y]||[]).forEach((side,i)=>{
+    const col=E('div','card');
+    col.appendChild(E('h3',null,AP_TEAM[i]));
+    col.appendChild(tbl([
+      {h:'',f:r=>'<span class="sl">'+r.slot+'</span>'},
+      {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
+      {h:'Pts',r:true,n:true,f:r=>f2(r.pts)}
+    ],side,{click:r=>go('players',{p:r.id})}));
+    g.appendChild(col);
+  });
+  out.appendChild(g);
+  return out;
+}
+
 VIEWS.records=()=>{
   const M=D.mgrs, out=E('div'), e=elig();
+  out.appendChild(allProBlock());
+  out.appendChild(E('hr','hr'));
   out.appendChild(secH('The Awards'));
   out.appendChild(E('p','lede','Every piece of hardware the league hands out, by season.'));
   const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
