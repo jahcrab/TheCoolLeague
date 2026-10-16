@@ -1224,6 +1224,60 @@ function allPro(){
   return (APRO={teams,byPlayer,seasons:done});
 }
 
+/* The Pro Bowl: the same eight slots, three teams deep, chosen separately out
+   of each conference. A player belongs to whichever side his manager (or the
+   manager he scored most of his points for) sat in that year, so East and West
+   never name the same man twice. Regular season and started points, as above. */
+const PB_TEAM=['First Team','Second Team','Third Team'];
+const PB_SIDE=['East','West'];
+let PBOWL=null;
+function proBowl(){
+  if(PBOWL)return PBOWL;
+  const by={};
+  D.tw.forEach(t=>{
+    if(t[2]!==BR_REG)return;
+    const conf=((D.div||{})[t[0]]||{})[t[3]]||'';
+    t[7].forEach(e=>{
+      if(!e[1])return;
+      const nm=D.players[e[2]], p=D.pos[e[3]]||'';
+      const yr=by[t[0]]||(by[t[0]]={});
+      const r=yr[nm]||(yr[nm]={name:nm,pos:p,id:e[2],pts:0,st:0,East:0,West:0});
+      if(!r.pos)r.pos=p;
+      r.pts+=e[4]; r.st++;
+      if(conf)r[conf]+=e[4];
+    });
+  });
+  const teams={}, byPlayer=new Map();
+  const done=SEASONS.filter(y=>CHAMP[y]);
+  done.forEach(y=>{
+    const all=Object.values(by[y]||{});
+    const sides={};
+    PB_SIDE.forEach(side=>{
+      // a tie goes East, so nobody can be picked by both conferences
+      const pool=all.filter(x=>x[side]>0&&(side==='East'?x.East>=x.West:x.West>x.East))
+                    .sort((a,b)=>b.pts-a.pts);
+      const used=new Set(), out=[];
+      for(let t=0;t<3;t++){
+        const team=[];
+        const take=(test,slot)=>{
+          const p=pool.find(x=>!used.has(x.name)&&test(x));
+          if(!p)return;
+          used.add(p.name);
+          team.push(Object.assign({},p,{slot}));
+          if(!byPlayer.has(p.name))byPlayer.set(p.name,[]);
+          byPlayer.get(p.name).push({y,side,team:t,slot,pts:p.pts});
+        };
+        AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
+        take(x=>AP_FLEX.has(x.pos),'FLEX');
+        out.push(team);
+      }
+      sides[side]=out;
+    });
+    teams[y]=sides;
+  });
+  return (PBOWL={teams,byPlayer,seasons:done});
+}
+
 /* Career lines for every player in the archive, ranked once and kept. */
 const PPS_MIN=5;
 /* Nicknames the league gave them, which outrank anything a reference book says. */
@@ -1310,6 +1364,12 @@ function playerHonours(s){
     line(ap.length===1?'All-Pro':'All-Pro \u00d7'+ap.length,
       by.map((v,i)=>v.length?'<strong>'+AP_TEAM[i]+'</strong> '+v.join(', '):'')
         .filter(Boolean).join('<br>'), by[0].length>0);
+  }
+  const pb=proBowl().byPlayer.get(s.name);
+  if(pb&&pb.length){
+    const yrs=pb.slice().sort((a,b)=>a.y-b.y).map(r=>r.y+
+      ' <span style="opacity:.55">'+r.side+' '+ord(r.team+1)+'</span>');
+    line(pb.length===1?'Pro Bowl':'Pro Bowl \u00d7'+pb.length, yrs.join(',\u2003'));
   }
   return hon;
 }
