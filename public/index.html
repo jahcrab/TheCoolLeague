@@ -1368,7 +1368,7 @@ function playerHonours(s){
   const pb=proBowl().byPlayer.get(s.name);
   if(pb&&pb.length){
     const yrs=pb.slice().sort((a,b)=>a.y-b.y).map(r=>r.y+
-      ' <span style="opacity:.55">'+r.side+' '+ord(r.team+1)+'</span>');
+      ' <span style="opacity:.55">'+r.side+'</span>');
     line(pb.length===1?'Pro Bowl':'Pro Bowl \u00d7'+pb.length, yrs.join(',\u2003'));
   }
   return hon;
