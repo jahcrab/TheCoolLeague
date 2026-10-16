@@ -355,6 +355,11 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
 .faq .card{overflow:hidden}
+.plink{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.plink:hover{color:var(--accent);text-decoration:underline}
+.back{background:none;border:0;padding:0;margin:0 0 2px;font-family:var(--f-disp);font-size:12px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--accent);cursor:pointer}
+.back:hover{text-decoration:underline}
 .side{float:right;width:198px;max-width:46%;margin:3px 0 12px 18px}
 .side img{display:block;width:100%;height:auto;border:1px solid var(--line)}
 .side figcaption{font-size:12.5px;line-height:1.45;color:var(--muted);margin-top:7px}
@@ -649,7 +654,10 @@ function boxOnly(g,first){
     const tb=E('table'); const body=E('tbody');
     const row=(e,cls)=>{const r=E('tr',cls);
       r.appendChild(E('td','sl',D.slots[e[0]]));
-      const p=E('td','p'); p.textContent=D.players[e[2]]||'—';
+      const p=E('td','p');
+      if(D.players[e[2]]){ const a=E('button','plink',D.players[e[2]]);
+        a.onclick=ev=>{ev.stopPropagation(); go('players',{p:e[2]})}; p.appendChild(a); }
+      else p.textContent='—';
       r.appendChild(p); r.appendChild(E('td','n r',f2(e[4]))); body.appendChild(r)};
     st.forEach(e=>row(e));
     if(be.length){const sep=E('tr');const c=E('td','sl');c.colSpan=3;c.textContent='BENCH';c.style.paddingTop='8px';sep.appendChild(c);body.appendChild(sep);}
@@ -792,6 +800,7 @@ VIEWS.overview=()=>{
    ['managers','Managers','17 careers, head-to-head records, and '+champs.length+' Garrison winners.'],
    ['rings','Ring Counter','Every player who has won one, plus the six Agholor MVPs.'],
    ['newsletters','Past Issues','Every Scorigami Report from this season.'],
+   ['players','Players','Career lines, all-time boards, and everyone who has ever been rostered.'],
    ['about','About the League','Where it came from, how it works, and what the trophy actually is.']
   ].forEach(([v,t,d])=>{
     const a=E('button','door'); a.appendChild(E('div','dt',t)); a.appendChild(E('div','dd',d));
@@ -1139,6 +1148,28 @@ function mvpMoves(L){
   return mv;
 }
 
+/* Every season's ladder added up, so a career can be read off it. A player
+   scores nothing for a season he was not eligible in — too few games, or a
+   position the award does not cover. */
+let MVPCAR=null;
+function mvpCareer(){
+  if(MVPCAR)return MVPCAR;
+  const by=new Map();
+  SEASONS.forEach(y=>{
+    const L=mvpLadder(y);
+    L.rows.forEach((r,i)=>{
+      if(!by.has(r.name)) by.set(r.name,{name:r.name,pos:r.pos,total:0,best:0,wins:0,seasons:[]});
+      const c=by.get(r.name);
+      c.total+=r.score; c.seasons.push({y,score:r.score,rank:i+1});
+      if(r.score>c.best) c.best=r.score;
+      if(i===0) c.wins++;
+    });
+  });
+  const all=[...by.values()].sort((a,b)=>b.total-a.total);
+  all.forEach((c,i)=>c.rank=i+1);
+  return (MVPCAR={by,all});
+}
+
 /* Career lines for every player in the archive, ranked once and kept. */
 const PPS_MIN=5;
 let PSTATS=null;
@@ -1330,9 +1361,6 @@ VIEWS.games=()=>{
   roster.forEach(m=>{const o=E('option',null,m);o.value=m;stm.appendChild(o)});
   stm.value=team||''; stm.onchange=()=>set({team:stm.value||null,w:null,focus:null});
   ctl.appendChild(stm);
-  const ps=E('input'); ps.type='search'; ps.placeholder='or search a player…'; ps.value=STATE.q||'';
-  ps.oninput=()=>{STATE.q=ps.value; renderPlayer()};
-  ctl.appendChild(ps);
   out.appendChild(ctl);
 
   /* the week rail: one tap per week, the way a schedule page should move */
@@ -1349,10 +1377,8 @@ VIEWS.games=()=>{
     out.appendChild(bar);
   }
 
-  const pres=E('div'); pres.id='p-res'; out.appendChild(pres);
   const list=E('div'); list.id='g-list'; out.appendChild(list);
-  if((STATE.q||'').trim().length>=3) setTimeout(renderPlayer,0);
-  else if(team) teamList(list); else weekList(list);
+  if(team) teamList(list); else weekList(list);
   return out;
 
   /* running record through each week, so a schedule reads like a season */
@@ -1455,65 +1481,168 @@ VIEWS.games=()=>{
     setTimeout(()=>hit.scrollIntoView({behavior:'smooth',block:'center'}),60);
   }
 
-  function renderPlayer(){
-    const r=$('#p-res'), L=$('#g-list'); if(!r)return;
-    const q=(STATE.q||'').trim().toLowerCase(); r.innerHTML='';
-    if(q.length<3){ if(L&&!L.children.length){ team?teamList(L):weekList(L); } return }
-    L.innerHTML='';
-    const hits=D.players.map((p,i)=>[p,i]).filter(([p])=>p.toLowerCase().includes(q));
-    if(!hits.length){r.appendChild(E('p','empty','No player in the archive matches “'+STATE.q+'”.'));return}
-    const ids=new Set(hits.map(h=>h[1]));
-    const lines=[];
-    D.tw.forEach(t=>t[7].forEach(e=>{ if(ids.has(e[2])) lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],p:D.players[e[2]],
-      sl:D.slots[e[0]],st:e[1],pts:e[4]}); }));
-    lines.sort((a,b)=>b.pts-a.pts);
-    const names=[...new Set(lines.map(l=>l.p))];
-    r.appendChild(secH((names.length===1?names[0]:names.length+' players matched')+' · '+lines.length+' weeks on a roster'));
-    if(names.length>1) r.appendChild(E('p','lede',names.slice(0,14).join(' · ')+(names.length>14?' …':'')));
-    const st=lines.filter(l=>l.st);
-    const one=names.length===1?playerStats().by.get(hits.find(h=>h[0]===names[0])[1]):null;
-    if(one) r.appendChild(playerHonours(one));
-    const g1=E('div','grid-auto'); g1.style.marginBottom='14px';
-    if(one){
-      const S=playerStats(), pps=one.starts?one.spts/one.starts:0;
-      g1.appendChild(tile(f2(pps),'Points per start',
-        one.ppsRank?ord(one.ppsRank)+' of '+S.qual+' with '+PPS_MIN+'+ starts · '+
-                    ord(one.ppsPosRank)+' of '+S.posQual[one.pos]+' at '+one.pos
-                   :'needs '+PPS_MIN+' starts to rank'));
-      g1.appendChild(tile(f2(one.best),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
-      g1.appendChild(tile(one.starts,'Weeks started','of '+one.weeks+' on a roster'));
-      g1.appendChild(tile(f2(one.spts),'Points started',
-        ord(one.ptsRank)+' all time · '+ord(one.ptsPosRank)+' of '+S.posAll[one.pos]+' at '+one.pos));
-      const dr=(D.draft||{})[one.id];
-      if(dr&&dr.length){
-        // going first overall twice is the sort of thing that should say so
-        const b0=dr[0], same=dr.filter(r=>r[0]===b0[0]);
-        g1.appendChild(tile(ord(b0[0])+(same.length>1?' ×'+same.length:''),'Highest drafted',
-          'Round '+b0[1]+', pick '+b0[2]+' · '+same.map(r=>r[3]+' '+(D.mgrs[r[4]]||'—')).join(', ')+
-          (dr.length>1?' · taken '+dr.length+'×':'')));
-      }
-      g1.appendChild(tile(one.mgrs.size,one.mgrs.size===1?'Manager':'Managers',[...one.mgrs].join(' · ')));
-      const top=[...one.byMgr.values()].sort((a,b)=>b.starts-a.starts||b.spts-a.spts)[0];
-      if(top&&top.starts){
-        const tied=[...one.byMgr.values()].filter(x=>x.starts===top.starts);
-        g1.appendChild(tile(tied.length>1?tied.length+' tied':top.m,'Started him most',
-          tied.length>1?tied.map(x=>x.m).join(' · ')+' · '+top.starts+' each'
-                       :top.starts+' of '+one.starts+' starts · '+f2(top.spts)+' pts'));
-      }
-      const ys=[...one.seasons].sort();
-      g1.appendChild(tile(ys.length,ys.length===1?'Season':'Seasons',
-        ys.length>1?ys[0]+'–'+ys[ys.length-1]:String(ys[0])));
-    }else{
-      g1.appendChild(tile(f2(lines[0].pts),'Best week',lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br)));
-      g1.appendChild(tile(st.length,'Weeks started','of '+lines.length+' on a roster'));
-      g1.appendChild(tile(f2(st.reduce((s,l)=>s+l.pts,0)/(st.length||1)),'Points per start'));
-    }
-    r.appendChild(g1);
-    r.appendChild(tbl([
-      {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
-      {h:'Player',f:l=>l.p},{h:'Manager',f:l=>l.m},{h:'Slot',f:l=>l.st?l.sl:'<span style="opacity:.6">'+l.sl+'</span>'},
-      {h:'Season',r:true,f:l=>whenLab(l.y,l.w,l.br)}
-    ],lines.slice(0,60),{click:l=>go('games',{y:l.y,w:l.w,focus:l.m,q:''})}));
+
+};
+
+/* One player, everything the archive knows about him. */
+function playerProfile(id){
+  const M=D.mgrs, S=playerStats(), one=S.by.get(id);
+  const out=E('div');
+  if(!one){ out.appendChild(E('p','empty','Nobody by that name has been on a roster.')); return out }
+  const back=E('button','back','← All players'); back.onclick=()=>go('players',{});
+  out.appendChild(back);
+  out.appendChild(secH(one.name));
+
+  const lines=[];
+  D.tw.forEach(t=>t[7].forEach(e=>{ if(e[2]===id) lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],
+    sl:D.slots[e[0]],st:e[1],pts:e[4]}); }));
+  lines.sort((a,b)=>b.pts-a.pts);
+  const META=(window.PMETA||{})[one.name];
+  if(META){
+    const bits=[];
+    if(META.nick) bits.push('“'+META.nick+'”');
+    if(META.col) bits.push(META.col);
+    if(META.hw) bits.push(META.hw);
+    if(META.born) bits.push(META.born);
+    if(bits.length) out.appendChild(E('p','lede',bits.join('  ·  ')));
+  }
+  out.appendChild(playerHonours(one));
+
+  const g1=E('div','grid-auto'); g1.style.marginBottom='14px';
+  const pps=one.starts?one.spts/one.starts:0;
+  g1.appendChild(tile(f2(pps),'Points per start',
+    one.ppsRank?ord(one.ppsRank)+' of '+S.qual+' with '+PPS_MIN+'+ starts · '+
+                ord(one.ppsPosRank)+' of '+S.posQual[one.pos]+' at '+one.pos
+               :'needs '+PPS_MIN+' starts to rank'));
+  g1.appendChild(tile(f2(one.best),'Best week',lines.length?lines[0].m+', '+whenLab(lines[0].y,lines[0].w,lines[0].br):''));
+  g1.appendChild(tile(one.starts,'Weeks started','of '+one.weeks+' on a roster'));
+  g1.appendChild(tile(f2(one.spts),'Points started',
+    ord(one.ptsRank)+' all time · '+ord(one.ptsPosRank)+' of '+S.posAll[one.pos]+' at '+one.pos));
+  const C=mvpCareer().by.get(one.name);
+  if(C) g1.appendChild(tile(f2(C.total),'MVP points, career',
+    ord(C.rank)+' all time · best season '+f2(C.best)+
+    (C.wins?' · '+C.wins+'× Season MVP':'')));
+  const dr=(D.draft||{})[id];
+  if(dr&&dr.length){
+    const b0=dr[0], same=dr.filter(r=>r[0]===b0[0]);
+    g1.appendChild(tile(ord(b0[0])+(same.length>1?' ×'+same.length:''),'Highest drafted',
+      'Round '+b0[1]+', pick '+b0[2]+' · '+same.map(r=>r[3]+' '+(D.mgrs[r[4]]||'—')).join(', ')+
+      (dr.length>1?' · taken '+dr.length+'×':'')));
+  } else g1.appendChild(tile('Undrafted','In this league','never taken in a draft'));
+  g1.appendChild(tile(one.mgrs.size,one.mgrs.size===1?'Manager':'Managers',[...one.mgrs].join(' · ')));
+  const top=[...one.byMgr.values()].sort((a,b)=>b.starts-a.starts||b.spts-a.spts)[0];
+  if(top&&top.starts){
+    const tied=[...one.byMgr.values()].filter(x=>x.starts===top.starts);
+    g1.appendChild(tile(tied.length>1?tied.length+' tied':top.m,'Started him most',
+      tied.length>1?tied.map(x=>x.m).join(' · ')+' · '+top.starts+' each'
+                   :top.starts+' of '+one.starts+' starts · '+f2(top.spts)+' pts'));
+  }
+  const ys=[...one.seasons].sort();
+  g1.appendChild(tile(ys.length,ys.length===1?'Season':'Seasons',
+    ys.length>1?ys[0]+'–'+ys[ys.length-1]:String(ys[0])));
+  out.appendChild(g1);
+
+  if(C&&C.seasons.length){
+    out.appendChild(secH('MVP ladder, season by season'));
+    out.appendChild(tbl([
+      {h:'Season',f:r=>String(r.y)},
+      {h:'Finish',f:r=>r.rank===1?'<strong>Season MVP</strong>':ord(r.rank)},
+      {h:'MVP points',r:true,n:true,f:r=>f2(r.score)}
+    ],C.seasons.slice().sort((a,b)=>b.y-a.y)));
+  }
+
+  out.appendChild(secH('Every week on a roster'));
+  out.appendChild(E('p','lede','Highest scoring first. Click a week to open that game.'));
+  out.appendChild(tbl([
+    {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
+    {h:'Manager',f:l=>l.m},
+    {h:'Slot',f:l=>l.st?l.sl:'<span style="opacity:.6">'+l.sl+'</span>'},
+    {h:'Week',r:true,f:l=>whenLab(l.y,l.w,l.br)}
+  ],lines,{click:l=>go('games',{y:l.y,w:l.w,focus:l.m})}));
+  return out;
+}
+
+/* The all-time boards. Each is a way of sorting the same career rows. */
+const BOARDS=[
+  {k:'pts', t:'Points started',    n:'Every point a player has put up in a starting lineup.',
+   v:s=>s.spts,   f:s=>f2(s.spts),              ok:s=>s.starts>0},
+  {k:'pps', t:'Points per start',  n:'Minimum 10 starts.',
+   v:s=>s.spts/s.starts, f:s=>f2(s.spts/s.starts), ok:s=>s.starts>=10},
+  {k:'mvp', t:'MVP points',        n:'Every season’s MVP ladder added together.',
+   v:s=>(mvpCareer().by.get(s.name)||{total:0}).total,
+   f:s=>f2((mvpCareer().by.get(s.name)||{total:0}).total), ok:s=>mvpCareer().by.has(s.name)},
+  {k:'wk',  t:'Best single week',  n:'The biggest week anyone has ever got out of him.',
+   v:s=>s.best,  f:s=>f2(s.best),               ok:s=>s.weeks>0},
+  {k:'st',  t:'Weeks started',     n:'Availability, which is its own skill.',
+   v:s=>s.starts, f:s=>String(s.starts),        ok:s=>s.starts>0},
+  {k:'ring',t:'Rings',             n:'On a championship roster at any point that season.',
+   v:s=>ringsOf(s.name), f:s=>String(ringsOf(s.name)), ok:s=>ringsOf(s.name)>0},
+  {k:'jny', t:'Most managers',     n:'Passed around the most.',
+   v:s=>s.mgrs.size*1000+s.weeks, f:s=>String(s.mgrs.size),
+   ok:s=>s.mgrs.size>1}
+];
+function ringsOf(nm){ const r=(D.rings||[]).find(x=>sameName(x[0],nm)); return r?r[3]:0 }
+
+VIEWS.players=()=>{
+  if(STATE.p!=null) return playerProfile(+STATE.p);
+  const S=playerStats(), out=E('div');
+  out.appendChild(secH('Players'));
+  out.appendChild(E('p','lede','Every player who has ever been on a roster in this league, and how they rank against each other.'));
+
+  const set=o=>{ STATE=Object.assign({},STATE,o); render(); };
+  const ctl=E('div','ctl');
+  const ps=E('input'); ps.type='search'; ps.placeholder='Search a player…'; ps.value=STATE.q||'';
+  ps.oninput=()=>{STATE.q=ps.value; renderHits()};
+  ctl.appendChild(ps);
+  ctl.appendChild(E('span','pill','Position'));
+  const sp=E('select'); ['','QB','RB','WR','TE','K','D/ST'].forEach(p=>{
+    const o=E('option',null,p||'Every position'); o.value=p; sp.appendChild(o)});
+  sp.value=STATE.pos||''; sp.onchange=()=>set({pos:sp.value||null});
+  ctl.appendChild(sp);
+  out.appendChild(ctl);
+
+  const hits=E('div'); hits.id='p-hits'; out.appendChild(hits);
+  const boards=E('div'); boards.id='p-boards'; out.appendChild(boards);
+
+  const bk=BOARDS.find(b=>b.k===STATE.b)||BOARDS[0];
+  const bar=E('div','wkbar');
+  BOARDS.forEach(b=>{const btn=E('button',null,b.t);
+    btn.setAttribute('aria-pressed',b===bk?'true':'false');
+    btn.onclick=()=>set({b:b.k}); bar.appendChild(btn)});
+  boards.appendChild(bar);
+  boards.appendChild(E('p','lede',bk.n+(STATE.pos?'  ·  '+STATE.pos+' only.':'')));
+  const rows=S.all.filter(x=>bk.ok(x)&&(!STATE.pos||x.pos===STATE.pos))
+                  .sort((a,b)=>bk.v(b)-bk.v(a)).slice(0,30);
+  rows.forEach((r,i)=>r._i=i+1);
+  boards.appendChild(tbl([
+    {h:'#',n:true,f:r=>'<span style="opacity:.55">'+r._i+'</span>'},
+    {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
+    {h:'Pos',f:r=>r.pos||'—'},
+    {h:'Starts',r:true,n:true,f:r=>String(r.starts)},
+    {h:bk.t,r:true,n:true,f:r=>'<strong>'+bk.f(r)+'</strong>'+
+      (bk.k==='jny'?' <span style="opacity:.5;font-size:12px">'+[...r.mgrs].slice(0,6).join(', ')+(r.mgrs.size>6?'\u2026':'')+'</span>':'')}
+  ],rows,{click:r=>go('players',{p:r.id})}));
+
+  renderHits();
+  return out;
+
+  function renderHits(){
+    const h=$('#p-hits'), b=$('#p-boards'); if(!h)return;
+    const q=(STATE.q||'').trim().toLowerCase(); h.innerHTML='';
+    if(q.length<2){ if(b)b.hidden=false; return }
+    if(b)b.hidden=true;
+    const m=S.all.filter(x=>x.name.toLowerCase().includes(q)&&(!STATE.pos||x.pos===STATE.pos))
+                 .sort((a,b2)=>b2.spts-a.spts);
+    if(!m.length){ h.appendChild(E('p','empty','No player in the archive matches “'+STATE.q+'”.')); return }
+    if(m.length===1){ h.appendChild(playerProfile(m[0].id)); return }
+    h.appendChild(E('p','lede',m.length+' players match.'));
+    h.appendChild(tbl([
+      {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
+      {h:'Pos',f:r=>r.pos||'—'},
+      {h:'Seasons',f:r=>{const y=[...r.seasons].sort(); return y.length>1?y[0]+'–'+y[y.length-1]:String(y[0])}},
+      {h:'Starts',r:true,n:true,f:r=>String(r.starts)},
+      {h:'Points started',r:true,n:true,f:r=>f2(r.spts)}
+    ],m.slice(0,40),{click:r=>go('players',{p:r.id})}));
   }
 };
 
@@ -1927,7 +2056,7 @@ VIEWS.newsletters=()=>{
 };
 
 /* ---------- shell ---------- */
-const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['records','Records'],
+const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['players','Players'],['records','Records'],
   ['mvp','MVP'],['managers','Managers'],['rings','Rings'],['newsletters','Newsletters'],
   ['about','About']];
 function go(v,st){ CUR=v; STATE=st||{}; try{location.hash=v}catch(e){} render(); scrollTo({top:0,behavior:'smooth'}); }
