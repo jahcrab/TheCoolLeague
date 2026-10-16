@@ -1176,7 +1176,7 @@ let PSTATS=null;
 function playerStats(){
   if(PSTATS)return PSTATS;
   const M=D.mgrs, by=new Map();
-  D.tw.forEach(t=>t[7].forEach(e=>{
+  D.tw.forEach(t=>{ if(t[2]===BR_CON)return; t[7].forEach(e=>{
     let s=by.get(e[2]);
     if(!s){s={id:e[2],name:D.players[e[2]],weeks:0,starts:0,spts:0,best:0,
               mgrs:new Set(),seasons:new Set(),byMgr:new Map(),pos:D.pos[e[3]]||''};by.set(e[2],s)}
@@ -1188,7 +1188,7 @@ function playerStats(){
       if(!s.byMgr.has(mg))s.byMgr.set(mg,{m:mg,starts:0,spts:0});
       if(e[1]){const u=s.byMgr.get(mg); u.starts++; u.spts+=e[4]}
     });
-  }));
+  })});
   const all=[...by.values()];
   const q=all.filter(s=>s.starts>=PPS_MIN).sort((a,b)=>b.spts/b.starts-a.spts/a.starts);
   q.forEach((s,i)=>s.ppsRank=i+1);
@@ -1494,8 +1494,8 @@ function playerProfile(id){
   out.appendChild(secH(one.name));
 
   const lines=[];
-  D.tw.forEach(t=>t[7].forEach(e=>{ if(e[2]===id) lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],
-    sl:D.slots[e[0]],st:e[1],pts:e[4]}); }));
+  D.tw.forEach(t=>{ if(t[2]===BR_CON)return; t[7].forEach(e=>{ if(e[2]===id)
+    lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],sl:D.slots[e[0]],st:e[1],pts:e[4]}); })});
   lines.sort((a,b)=>b.pts-a.pts);
   const META=(window.PMETA||{})[one.name];
   if(META){
@@ -1552,7 +1552,7 @@ function playerProfile(id){
   }
 
   out.appendChild(secH('Every week on a roster'));
-  out.appendChild(E('p','lede','Highest scoring first. Click a week to open that game.'));
+  out.appendChild(E('p','lede','Highest scoring first. Consolation weeks are left out, as they are everywhere else. Click a week to open that game.'));
   out.appendChild(tbl([
     {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
     {h:'Manager',f:l=>l.m},
