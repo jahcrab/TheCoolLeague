@@ -1714,7 +1714,7 @@ const BOARDS=[
   {k:'allpro',t:'All-Pro',     full:()=>allProBlock()}
 ];
 function careerTable(){
-  const S=playerStats(), C=mvpCareer().by, out=E('div');
+  const S=playerStats(), C=mvpCareer().by, PB=proBowl().byPlayer, out=E('div');
   const rings=new Map((D.rings||[]).map(r=>[String(r[0]).replace(/[’']/g,"'"),r[3]]));
   const ringOf=n=>rings.get(String(n).replace(/[’']/g,"'"))||0;
   const min=MIN_ST.indexOf(STATE.min)>=0?STATE.min:10;
@@ -1739,6 +1739,8 @@ function careerTable(){
     {h:'MVP pts',r:true,n:true,filter:false,
      f:r=>C.has(r.name)?f2(C.get(r.name).total):'<span style="opacity:.35">—</span>'},
     {h:'Best week',r:true,n:true,f:r=>f2(r.best),filter:false},
+    {h:'Pro Bowls',r:true,n:true,filter:false,
+     f:r=>(PB.get(r.name)||[]).length||'<span style="opacity:.35">\u2014</span>'},
     {h:'Rings',r:true,n:true,f:r=>ringOf(r.name)||'<span style="opacity:.35">\u2014</span>',filter:false},
     {h:'Mgrs',r:true,n:true,f:r=>String(r.mgrs.size),filter:false}
   ],rows,{click:r=>go('players',{p:r.id})}));
