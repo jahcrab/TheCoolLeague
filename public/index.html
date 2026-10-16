@@ -1633,26 +1633,46 @@ function playerProfile(id){
   return out;
 }
 
-/* The all-time boards. Each is a way of sorting the same career rows. */
+/* One row per player, every career measure as a column — the table sorts and
+   filters itself, so these no longer need to be separate boards. */
+const MIN_ST=[1,5,10,25,50];
 const BOARDS=[
-  {k:'pts', t:'Points started',    n:'Every point a player has put up in a starting lineup.',
-   v:s=>s.spts,   f:s=>f2(s.spts),              ok:s=>s.starts>0},
-  {k:'pps', t:'Points per start',  n:'Minimum 10 starts.',
-   v:s=>s.spts/s.starts, f:s=>f2(s.spts/s.starts), ok:s=>s.starts>=10},
-  {k:'mvp', t:'MVP points',        n:'Every season’s MVP ladder added together.',
-   v:s=>(mvpCareer().by.get(s.name)||{total:0}).total,
-   f:s=>f2((mvpCareer().by.get(s.name)||{total:0}).total), ok:s=>mvpCareer().by.has(s.name)},
-  {k:'wk',  t:'Best single week',  n:'The biggest week anyone has ever got out of him.',
-   v:s=>s.best,  f:s=>f2(s.best),               ok:s=>s.weeks>0},
-  {k:'st',  t:'Weeks started',     n:'Availability, which is its own skill.',
-   v:s=>s.starts, f:s=>String(s.starts),        ok:s=>s.starts>0},
-  {k:'ladder',t:'MVP Ladder',       n:'', full:()=>mvpBlock()},
-  {k:'ring',t:'Ring Counter',       n:'', full:()=>ringCounter()},
-  {k:'allpro',t:'All-Pro',          n:'', full:()=>allProBlock()},
-  {k:'jny', t:'Most managers',     n:'Passed around the most.',
-   v:s=>s.mgrs.size*1000+s.weeks, f:s=>String(s.mgrs.size),
-   ok:s=>s.mgrs.size>1&&(STATE.pos==='D/ST'||s.pos!=='D/ST')}
+  {k:'all',   t:'All-time',    full:()=>careerTable()},
+  {k:'ladder',t:'MVP Ladder',  full:()=>mvpBlock()},
+  {k:'ring',  t:'Ring Counter',full:()=>ringCounter()},
+  {k:'allpro',t:'All-Pro',     full:()=>allProBlock()}
 ];
+function careerTable(){
+  const S=playerStats(), C=mvpCareer().by, out=E('div');
+  const rings=new Map((D.rings||[]).map(r=>[String(r[0]).replace(/[’']/g,"'"),r[3]]));
+  const ringOf=n=>rings.get(String(n).replace(/[’']/g,"'"))||0;
+  const min=MIN_ST.indexOf(STATE.min)>=0?STATE.min:10;
+
+  const ctl=E('div','ctl');
+  ctl.appendChild(E('span','pill','Minimum starts'));
+  const ms=E('select'); MIN_ST.forEach(v=>{const o=E('option',null,v);o.value=v;ms.appendChild(o)});
+  ms.value=min; ms.onchange=()=>{STATE=Object.assign({},STATE,{min:+ms.value}); render()};
+  ctl.appendChild(ms);
+  out.appendChild(ctl);
+
+  const rows=S.all.filter(x=>x.starts>=min&&(!STATE.pos||x.pos===STATE.pos))
+                  .sort((a,b)=>b.spts-a.spts);
+  out.appendChild(E('p','lede',rows.length+' players with '+min+'+ career starts'+
+    (STATE.pos?' at '+STATE.pos:'')+'. Click any heading to sort by it, or a row to open that player.'));
+  out.appendChild(tbl([
+    {h:'Player',f:r=>'<strong>'+r.name+'</strong>',filter:false},
+    {h:'Pos',f:r=>r.pos||'\u2014'},
+    {h:'Starts',r:true,n:true,f:r=>String(r.starts),filter:false},
+    {h:'Points',r:true,n:true,f:r=>f2(r.spts),filter:false},
+    {h:'Per start',r:true,n:true,f:r=>f2(r.starts?r.spts/r.starts:0),filter:false},
+    {h:'MVP pts',r:true,n:true,filter:false,
+     f:r=>C.has(r.name)?f2(C.get(r.name).total):'<span style="opacity:.35">—</span>'},
+    {h:'Best week',r:true,n:true,f:r=>f2(r.best),filter:false},
+    {h:'Rings',r:true,n:true,f:r=>ringOf(r.name)||'<span style="opacity:.35">\u2014</span>',filter:false},
+    {h:'Mgrs',r:true,n:true,f:r=>String(r.mgrs.size),filter:false}
+  ],rows,{click:r=>go('players',{p:r.id})}));
+  return out;
+}
 function ringsOf(nm){ const r=(D.rings||[]).find(x=>sameName(x[0],nm)); return r?r[3]:0 }
 
 VIEWS.players=()=>{
@@ -1682,20 +1702,7 @@ VIEWS.players=()=>{
     btn.setAttribute('aria-pressed',b===bk?'true':'false');
     btn.onclick=()=>set({b:b.k}); bar.appendChild(btn)});
   boards.appendChild(bar);
-  if(bk.full){ boards.appendChild(bk.full()); renderHits(); return out; }
-  boards.appendChild(E('p','lede',bk.n+(STATE.pos?'  ·  '+STATE.pos+' only.':'')));
-  const rows=S.all.filter(x=>bk.ok(x)&&(!STATE.pos||x.pos===STATE.pos))
-                  .sort((a,b)=>bk.v(b)-bk.v(a)).slice(0,30);
-  rows.forEach((r,i)=>r._i=i+1);
-  boards.appendChild(tbl([
-    {h:'#',n:true,f:r=>'<span style="opacity:.55">'+r._i+'</span>'},
-    {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
-    {h:'Pos',f:r=>r.pos||'—'},
-    {h:'Starts',r:true,n:true,f:r=>String(r.starts)},
-    {h:bk.t,r:true,n:true,f:r=>'<strong>'+bk.f(r)+'</strong>'+
-      (bk.k==='jny'?' <span style="opacity:.5;font-size:12px">'+[...r.mgrs].slice(0,6).join(', ')+(r.mgrs.size>6?'\u2026':'')+'</span>':'')}
-  ],rows,{click:r=>go('players',{p:r.id})}));
-
+  boards.appendChild(bk.full());
   renderHits();
   return out;
 
