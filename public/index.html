@@ -2057,7 +2057,9 @@ VIEWS.players=()=>{
   return out;
 
   function renderHits(){
-    const h=$('#p-hits'), b=$('#p-boards'); if(!h)return;
+    // the nodes themselves, not a document lookup: a re-render builds this view
+    // before it is attached, and a search would come back empty
+    const h=hits, b=boards;
     const q=(STATE.q||'').trim().toLowerCase(); h.innerHTML='';
     if(q.length<2){ if(b)b.hidden=false; return }
     if(b)b.hidden=true;
