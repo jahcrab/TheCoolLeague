@@ -1246,6 +1246,11 @@ function allPro(){
    whoever started him in his last regular season game that year, so East and
    West never name the same man. Regular season, started points. */
 const PB_ORDER={QB:0,RB:1,WR:2,TE:3,K:4};
+const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
+  const r=i<0?null:(D.rings||[]).find(x=>x[2][i]===4); return r?r[0]:null};
+/* whoever started him in that season's final */
+const heldBy=(y,nm)=>{const t=D.tw.find(t=>t[0]===y&&t[1]===PO_FINAL[y]&&t[2]===BR_PO
+  &&t[7].some(e=>sameName(D.players[e[2]],nm))); return t?D.mgrs[t[3]]:null};
 const PB_SIDE=['East','West'];
 let PBOWL=null;
 function proBowl(){
@@ -1897,6 +1902,27 @@ function honorsBlock(){
   sy.value=y; sy.onchange=()=>{STATE=Object.assign({},STATE,{apy:+sy.value}); render()};
   ctl.appendChild(sy); out.appendChild(ctl);
 
+  out.appendChild(secH('The Awards'));
+  const idOf=nm=>{const i=D.players.findIndex(p=>sameName(p,nm)); return i};
+  const acard=(h,nm,note)=>{
+    const c=E('div','card');
+    c.appendChild(E('h3',null,h));
+    if(!nm){ c.appendChild(E('p','lede','\u2014')); return c }
+    const i=idOf(nm), line=E('p'); line.style.margin='2px 0 4px';
+    if(i>=0){ const btn=E('button','plink',nm); btn.onclick=()=>go('players',{p:i}); line.appendChild(btn); }
+    else line.textContent=nm;
+    c.appendChild(line);
+    if(note) c.appendChild(E('p','lede',note));
+    return c;
+  };
+  const mvpNm=AWARDED[y], mvpRow=mvpNm?(mvpLadder(y).rows||[]).find(x=>sameName(x.name,mvpNm)):null;
+  const agh=agholor(y), roy=ROY[y];
+  const aw=E('div','ap');
+  aw.appendChild(acard('Season MVP',mvpNm,mvpRow&&mvpRow.mgr?'Started by '+mvpRow.mgr:''));
+  aw.appendChild(acard('Agholor MVP',agh,agh?(heldBy(y,agh)?'Started in the final by '+heldBy(y,agh):'On the winning roster'):''));
+  aw.appendChild(acard('Rookie of the Year',roy&&roy[0],roy?f2(roy[1])+' points as a rookie':''));
+  out.appendChild(aw);
+
   out.appendChild(secH('All-Pro Teams'));
   out.appendChild(E('p','lede','One QB, two RB, two WR, a TE, a K and a FLEX, taken in that order off the season\u2019s scoring list \u2014 then the second and third teams carry on down it. Regular season only, and only what a player scored while somebody had him in a starting lineup.'));
   out.appendChild(teamCards(A.teams[y]||[]));
@@ -1911,11 +1937,6 @@ VIEWS.records=()=>{
   const M=D.mgrs, out=E('div'), e=elig();
   out.appendChild(secH('The Awards'));
   out.appendChild(E('p','lede','Every piece of hardware the league hands out, by season.'));
-  const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
-    const r=i<0?null:(D.rings||[]).find(x=>x[2][i]===4); return r?r[0]:null};
-  // whoever started him in that season's final
-  const heldBy=(y,nm)=>{const t=D.tw.find(t=>t[0]===y&&t[1]===PO_FINAL[y]&&t[2]===BR_PO
-    &&t[7].some(e=>D.players[e[2]]===nm)); return t?D.mgrs[t[3]]:null};
   const withMgr=(nm,mgr)=>nm+(mgr?' <span style="color:var(--muted)">('+mgr+')</span>':'');
   const champs=Object.keys(CHAMP).map(Number).sort((a,b)=>b-a);
   out.appendChild(tbl([
