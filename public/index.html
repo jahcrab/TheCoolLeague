@@ -2429,13 +2429,17 @@ VIEWS.newsletters=()=>{
    sheet is missing a handful of late picks, so the board shows the empty slot
    rather than pretending the round was shorter. */
 let DSEAS=null;
-function startedBy(){                 // regular season started points, by season and player
-  if(DSEAS)return DSEAS;
+function startedBy(){     // regular season started points, by season and player, and
+  if(DSEAS)return DSEAS;  // again split by the manager who did the starting
   const m=new Map();
   D.tw.forEach(t=>{ if(t[2]!==BR_REG)return;
-    t[7].forEach(e=>{ if(!e[1])return;
-      const k=t[0]+':'+e[2], r=m.get(k)||{pts:0,st:0};
-      r.pts+=e[4]; r.st++; m.set(k,r); })});
+    const mg=D.mgrs[t[3]];
+    t[7].forEach(e=>{
+      m.set('had:'+t[0]+':'+e[2]+':'+mg,true);        // on his roster, started or not
+      if(!e[1])return;
+      [t[0]+':'+e[2], t[0]+':'+e[2]+':'+mg].forEach(k=>{
+        const r=m.get(k)||{pts:0,st:0}; r.pts+=e[4]; r.st++; m.set(k,r); });
+    })});
   return (DSEAS=m);
 }
 const DRAFT_RD=16, STEAL_FROM=9;
@@ -2445,9 +2449,12 @@ function draftBoard(y){
   const SP=startedBy(), S=playerStats().by, dr=D.draft||{}, picks=[];
   Object.keys(dr).forEach(k=>dr[k].forEach(e=>{
     if(e[3]!==y)return;
-    const id=+k, sp=SP.get(y+':'+id)||{pts:0,st:0}, ps=S.get(id);
-    picks.push({ov:e[0],rd:e[1],pk:e[2],mgr:D.mgrs[e[4]],id,
-                name:D.players[id],pos:ps?ps.pos:'',pts:sp.pts,st:sp.st});
+    const id=+k, mgr=D.mgrs[e[4]], ps=S.get(id);
+    // what he gave the man who drafted him, and what he did for everybody that year
+    const mine=SP.get(y+':'+id+':'+mgr)||{pts:0,st:0}, all=SP.get(y+':'+id)||{pts:0,st:0};
+    picks.push({ov:e[0],rd:e[1],pk:e[2],mgr,id,
+                name:D.players[id],pos:ps?ps.pos:'',pts:mine.pts,st:mine.st,
+                allPts:all.pts,allSt:all.st,kept:!!SP.get('had:'+y+':'+id+':'+mgr)});
   }));
   picks.sort((a,b)=>a.ov-b.ov);
   const order=[]; picks.forEach(p=>{ if(p.rd===1)order[p.pk-1]=p.mgr });
@@ -2456,7 +2463,7 @@ function draftBoard(y){
   // no profile to link to — the board still names them
   (D.draftx||[]).forEach(r=>{ if(r[0]!==y)return;
     picks.push({ov:(r[1]-1)*n+r[2],rd:r[1],pk:r[2],mgr:D.mgrs[r[3]],id:null,
-                name:r[4],pos:'',pts:0,st:0}); });
+                name:r[4],pos:'',pts:0,st:0,allPts:0,allSt:0}); });
   picks.sort((a,b)=>a.ov-b.ov);
   picks.slice().sort((a,b)=>b.pts-a.pts).forEach((p,i)=>p.fin=i+1);
   const got=new Map(picks.map(p=>[p.rd+'.'+p.pk,p]));
@@ -2471,7 +2478,7 @@ function draftBoard(y){
 VIEWS.draft=()=>{
   const out=E('div');
   out.appendChild(secH('The Draft'));
-  out.appendChild(E('p','lede','Sixteen rounds, snake order, full PPR, and everyone in the same room \u2014 the league has drafted in person every year since 2020. Points are what each pick went on to score in that season\u2019s regular season while somebody had him started.'));
+  out.appendChild(E('p','lede','Sixteen rounds, snake order, full PPR, and everyone in the same room \u2014 the league has drafted in person every year since 2020. A pick is credited with what he scored for the manager who drafted him, in that season\u2019s regular season, while actually in his lineup. Draft a man and cut him and the pick is worth nothing, however well he did elsewhere.'));
   const YS=SEASONS.slice().sort((a,b)=>a-b);
   const y=YS.indexOf(STATE.dy)>=0?STATE.dy:YS[YS.length-1];
   const ctl=E('div','ctl');
@@ -2497,7 +2504,7 @@ VIEWS.draft=()=>{
   // simply the biggest score out of the back half of the draft.
   const best=(arr,f)=>arr.length?arr.reduce((a,b)=>f(b)>f(a)?b:a):null;
   const steal=best(B.picks.filter(p=>p.rd>=STEAL_FROM),p=>p.pts);
-  const bust=best(B.picks.filter(p=>p.ov<=B.n*3),p=>p.fin-p.ov);
+  const bust=best(B.picks.filter(p=>p.ov<=B.n*3&&p.kept),p=>p.fin-p.ov);
   const lastSlot=[...B.slots].reverse().find(sl=>sl.p);
   const card=(h,p,note)=>{
     const c=E('div','card');
@@ -2516,8 +2523,8 @@ VIEWS.draft=()=>{
   g.appendChild(card('Draft-day bust'+sofar,bust));
   g.appendChild(card('Mr. Irrelevant',lastSlot&&lastSlot.p));
   out.appendChild(g);
-  out.appendChild(E('p','lede','The steal is the most points anyone got out of round '+
-    STEAL_FROM+' or later; the bust is the first-three-rounds pick who finished furthest below his slot.'));
+  out.appendChild(E('p','lede','The steal is the most points any manager got out of his own round '+
+    STEAL_FROM+'-or-later pick. The bust is the first-three-rounds pick who finished furthest below his slot, counting only men who spent a week on the roster of the manager who took them \u2014 trading a pick away on the night is a deal, not a bust.'));
 
   // one row, whichever way the board is sliced: the slot, the man, and the
   // thing the other column already tells you (his manager, or what he scored)
@@ -2571,6 +2578,8 @@ VIEWS.draft=()=>{
     {h:'Pos',f:p=>p.pos||'\u2014'},
     {h:'Starts',r:true,n:true,f:p=>String(p.st),filter:false},
     {h:'Points',r:true,n:true,f:p=>f2(p.pts),filter:false},
+    {h:'All managers',r:true,n:true,sm:false,filter:false,
+     f:p=>p.allPts>p.pts+0.001?'<span style="opacity:.6">'+f2(p.allPts)+'</span>':'<span style="opacity:.3">\u2014</span>'},
     {h:'Class rank',r:true,n:true,f:p=>ord(p.fin),filter:false}
   ],B.picks,{click:p=>{ if(p.id!==null) go('players',{p:p.id}) }}));
   return out;
