@@ -107,10 +107,26 @@ h2.sec:first-child{margin-top:0}
 .tile .k{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .tile .n{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.35}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.ylink{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer;
+  font-variant-numeric:tabular-nums}
+.ylink:after{content:' \25be';font-size:9px;opacity:.5}
+.ylink.on:after{content:' \25b4';opacity:.9}
+tr.glog{display:none}
+tr.glog.on{display:table-row}
+tr.glog>td{padding:0 0 10px;border-top:0}
+table.glg{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel)}
+table.glg td{padding:4px 10px;border-top:1px solid var(--line);white-space:nowrap}
+table.glg tr:hover td{background:var(--bg)}
+.htag{font-family:var(--f-disp);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--line);padding:1px 5px;color:var(--muted);white-space:nowrap}
+.htag.g{border-color:var(--accent);color:var(--accent)}
+tr.tot td{border-top:2px solid var(--fg);background:var(--panel)}
+.wn{color:var(--accent);font-weight:600}
+.ls{opacity:.5}
 tr.more td{text-align:center;padding:10px 0 2px}
 .mb{font-family:var(--f-disp);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted);background:none;border:1px solid var(--line);padding:6px 14px;cursor:pointer}
-.mb:hover{color:var(--ink);border-color:var(--ink)}
+.mb:hover{color:var(--fg);border-color:var(--fg)}
 /* hint that a table runs wider than the screen */
 .scroll{background:linear-gradient(to right,var(--bg) 30%,transparent) left/40px 100% no-repeat,
   linear-gradient(to left,var(--bg) 30%,transparent) right/40px 100% no-repeat,
@@ -1761,7 +1777,8 @@ function playerProfile(id){
 
   const lines=[];
   D.tw.forEach(t=>{ if(t[2]===BR_CON)return; t[7].forEach(e=>{ if(e[2]===id)
-    lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],sl:D.slots[e[0]],st:e[1],pts:e[4]}); })});
+    lines.push({y:t[0],w:t[1],br:t[2],m:M[t[3]],opp:M[t[4]],win:t[5]===1,
+                tot:t[6],sl:D.slots[e[0]],st:e[1],pts:e[4]}); })});
   lines.sort((a,b)=>b.pts-a.pts);
   const META=PMETA[one.name]||{}, nick=LEAGUE_NICK[one.name]||META.nick;
   if(nick||META.col){
@@ -1806,15 +1823,96 @@ function playerProfile(id){
     ys.length>1?ys[0]+'–'+ys[ys.length-1]:String(ys[0])));
   out.appendChild(g1);
 
-  out.appendChild(secH('Every week on a roster'));
-  out.appendChild(E('p','lede','Highest scoring first. Consolation weeks are left out, as they are everywhere else. Click a week to open that game.'));
-  out.appendChild(tbl([
-    {h:'Pts',n:true,f:l=>'<strong>'+f2(l.pts)+'</strong>'},
-    {h:'Manager',f:l=>l.m},
-    {h:'Slot',f:l=>l.st?l.sl:'<span style="opacity:.6">'+l.sl+'</span>'},
-    {h:'Week',r:true,f:l=>whenLab(l.y,l.w,l.br)}
-  ],lines,{click:l=>go('games',{y:l.y,w:l.w,focus:l.m})}));
+  out.appendChild(secH('Season by season'));
+  out.appendChild(E('p','lede','Click a season to open that year\u2019s game log. Consolation weeks are left out, as they are everywhere else.'));
+  out.appendChild(seasonTable(one,lines));
   return out;
+}
+
+/* What a man did in one season here, and the honours that came with it. */
+function seasonLine(name,y){
+  const tags=[];
+  if(sameName(AWARDED[y]||'',name)) tags.push(['MVP','g']);
+  if(ROY[y]&&sameName(ROY[y][0],name)) tags.push(['ROY','g']);
+  const ap=(allPro().byPlayer.get(name)||[]).find(r=>r.y===y);
+  if(ap) tags.push(['AP'+(ap.team+1),ap.team===0?'g':'']);
+  const pb=(proBowl().byPlayer.get(name)||[]).find(r=>r.y===y);
+  if(pb) tags.push(['PB','']);
+  if((allRookie()[y]||[]).some(p=>sameName(p.name,name))) tags.push(['All-Rk','']);
+  const YRS=D.ringYears||[], rr=(D.rings||[]).find(x=>sameName(x[0],name)), i=YRS.indexOf(y);
+  if(rr&&i>=0&&rr[2][i]) tags.push([RING_LVL[rr[2][i]]==='Agholor MVP'?'Agholor':'Ring','g']);
+  return tags;
+}
+function seasonTable(one,lines){
+  const sc=E('div','scroll'), t=E('table','seas'), th=E('thead'), tb=E('tbody');
+  const cols=[['Season',''],['Managers',''],['G','r'],['GS','r'],['Pts','r'],
+              ['P/GS','r'],['Best','r'],['W\u2013L','r'],['Honours','']];
+  const hr=E('tr');
+  cols.forEach(([h,c])=>{const x=E('th',(c?c+' ':'')+'hd'); x.appendChild(E('span','hl',h)); hr.appendChild(x)});
+  th.appendChild(hr); t.appendChild(th); t.appendChild(tb);
+
+  const by=new Map();
+  lines.forEach(l=>{
+    let r=by.get(l.y);
+    if(!r){r={y:l.y,g:0,gs:0,pts:0,best:0,w:0,l:0,mgrs:[],rows:[]};by.set(l.y,r)}
+    r.g++; r.rows.push(l);
+    if(l.pts>r.best)r.best=l.pts;
+    if(l.st){ r.gs++; r.pts+=l.pts; r[l.win?'w':'l']++; }
+    if(r.mgrs.indexOf(l.m)<0)r.mgrs.push(l.m);
+  });
+  const years=[...by.keys()].sort((a,b)=>b-a);
+  const tot={g:0,gs:0,pts:0,best:0,w:0,l:0};
+  const open=new Set();
+
+  years.forEach(y=>{
+    const r=by.get(y);
+    tot.g+=r.g; tot.gs+=r.gs; tot.pts+=r.pts; tot.w+=r.w; tot.l+=r.l;
+    if(r.best>tot.best)tot.best=r.best;
+    const tr=E('tr','clk');
+    const yc=E('td'); const yb=E('button','ylink',String(y)); yc.appendChild(yb); tr.appendChild(yc);
+    const cell=(v,c)=>{const d=E('td',c||null); d.innerHTML=v; tr.appendChild(d)};
+    cell(r.mgrs.join(' \u00b7 '));
+    cell(String(r.g),'r n'); cell(String(r.gs),'r n');
+    cell('<strong>'+f2(r.pts)+'</strong>','r n');
+    cell(r.gs?f2(r.pts/r.gs):'<span style="opacity:.35">\u2014</span>','r n');
+    cell(f2(r.best),'r n');
+    cell(r.gs?r.w+'\u2013'+r.l:'<span style="opacity:.35">\u2014</span>','r n');
+    cell(seasonLine(one.name,y).map(([tg,g])=>'<span class="htag'+(g?' g':'')+'">'+tg+'</span>').join(' '));
+    tb.appendChild(tr);
+
+    // the game log, folded away until the year is clicked
+    const log=E('tr','glog'), td=E('td'); td.colSpan=cols.length;
+    const inner=E('table','glg'), ib=E('tbody');
+    r.rows.slice().sort((a,b)=>a.y-b.y||a.w-b.w).forEach(l=>{
+      const x=E('tr','clk');
+      const c=(v,cl)=>{const d=E('td',cl||null); d.innerHTML=v; x.appendChild(d)};
+      c(whenLab(l.y,l.w,l.br));
+      c(l.st?l.sl:'<span style="opacity:.55">'+l.sl+'</span>');
+      c('<strong>'+f2(l.pts)+'</strong>','r n');
+      c(l.m+' <span style="opacity:.55">vs '+l.opp+'</span>');
+      c('<span class="'+(l.win?'wn':'ls')+'">'+(l.win?'W':'L')+'</span> '+
+        '<span style="opacity:.55">'+f2(l.tot)+'</span>','r n');
+      x.onclick=()=>go('games',{y:l.y,w:l.w,focus:l.m});
+      ib.appendChild(x);
+    });
+    inner.appendChild(ib); td.appendChild(inner); log.appendChild(td); tb.appendChild(log);
+    const flip=()=>{ const on=open.has(y); on?open.delete(y):open.add(y);
+      log.classList.toggle('on',!on); yb.classList.toggle('on',!on); };
+    tr.onclick=flip;
+  });
+
+  const tr=E('tr','tot');
+  const c=(v,cl)=>{const d=E('td',cl||null); d.innerHTML=v; tr.appendChild(d)};
+  c('<strong>'+years.length+(years.length===1?' season':' seasons')+'</strong>');
+  c('<span style="opacity:.6">'+one.mgrs.size+' manager'+(one.mgrs.size===1?'':'s')+'</span>');
+  c(String(tot.g),'r n'); c(String(tot.gs),'r n');
+  c('<strong>'+f2(tot.pts)+'</strong>','r n');
+  c(tot.gs?f2(tot.pts/tot.gs):'\u2014','r n');
+  c(f2(tot.best),'r n');
+  c(tot.gs?tot.w+'\u2013'+tot.l:'\u2014','r n');
+  c('');
+  tb.appendChild(tr);
+  sc.appendChild(t); return sc;
 }
 
 /* One row per player, every career measure as a column — the table sorts and
