@@ -354,6 +354,8 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
+h3.conf{font-family:var(--f-disp);font-size:13px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
 .ap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
 .ap .card{padding:14px 16px 4px}
 .ap .card h3{margin:0 0 4px}
@@ -1711,7 +1713,7 @@ const BOARDS=[
   {k:'all',   t:'All-time',    full:()=>careerTable()},
   {k:'ladder',t:'MVP Ladder',  full:()=>mvpBlock()},
   {k:'ring',  t:'Ring Counter',full:()=>ringCounter()},
-  {k:'allpro',t:'All-Pro',     full:()=>allProBlock()}
+  {k:'allpro',t:'Honors',      full:()=>honorsBlock()}
 ];
 function careerTable(){
   const S=playerStats(), C=mvpCareer().by, PB=proBowl().byPlayer, out=E('div');
@@ -1799,10 +1801,24 @@ VIEWS.players=()=>{
   }
 };
 
-function allProBlock(){
-  const A=allPro(), out=E('div');
-  out.appendChild(secH('All-Pro Teams'));
-  out.appendChild(E('p','lede','One QB, two RB, two WR, a TE, a K and a FLEX, taken in that order off the season\u2019s scoring list \u2014 then the second and third teams carry on down it. Regular season only, and only what a player scored while somebody had him in a starting lineup.'));
+/* One season's hardware: the league-wide All-Pro teams, then the Pro Bowl
+   rosters each conference picks out of its own managers' lineups. */
+function teamCards(sides, label){
+  const g=E('div','ap');
+  sides.forEach((side,i)=>{
+    const col=E('div','card');
+    col.appendChild(E('h3',null,(label?label+' ':'')+AP_TEAM[i]));
+    col.appendChild(tbl([
+      {h:'',f:r=>'<span class="sl">'+r.slot+'</span>'},
+      {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
+      {h:'Pts',r:true,n:true,f:r=>f2(r.pts)}
+    ],side,{click:r=>go('players',{p:r.id})}));
+    g.appendChild(col);
+  });
+  return g;
+}
+function honorsBlock(){
+  const A=allPro(), B=proBowl(), out=E('div');
   const YS=A.seasons;
   if(!YS.length){ out.appendChild(E('p','empty','No season has finished yet.')); return out }
   const y=YS.indexOf(STATE.apy)>=0?STATE.apy:YS[YS.length-1];
@@ -1811,18 +1827,17 @@ function allProBlock(){
   const sy=E('select'); YS.slice().reverse().forEach(v=>{const o=E('option',null,v);o.value=v;sy.appendChild(o)});
   sy.value=y; sy.onchange=()=>{STATE=Object.assign({},STATE,{apy:+sy.value}); render()};
   ctl.appendChild(sy); out.appendChild(ctl);
-  const g=E('div','ap');
-  (A.teams[y]||[]).forEach((side,i)=>{
-    const col=E('div','card');
-    col.appendChild(E('h3',null,AP_TEAM[i]));
-    col.appendChild(tbl([
-      {h:'',f:r=>'<span class="sl">'+r.slot+'</span>'},
-      {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
-      {h:'Pts',r:true,n:true,f:r=>f2(r.pts)}
-    ],side,{click:r=>go('players',{p:r.id})}));
-    g.appendChild(col);
+
+  out.appendChild(secH('All-Pro Teams'));
+  out.appendChild(E('p','lede','One QB, two RB, two WR, a TE, a K and a FLEX, taken in that order off the season\u2019s scoring list \u2014 then the second and third teams carry on down it. Regular season only, and only what a player scored while somebody had him in a starting lineup.'));
+  out.appendChild(teamCards(A.teams[y]||[]));
+
+  out.appendChild(secH('Pro Bowl'));
+  out.appendChild(E('p','lede','The same eight slots, picked twice \u2014 once out of each conference. A player belongs to the side he scored most of his points for, so East and West never name the same man.'));
+  PB_SIDE.forEach(side=>{
+    out.appendChild(E('h3','conf',side));
+    out.appendChild(teamCards(((B.teams[y]||{})[side])||[]));
   });
-  out.appendChild(g);
   return out;
 }
 
