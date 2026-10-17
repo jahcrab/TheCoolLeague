@@ -1704,6 +1704,36 @@ function playerProfile(id){
 
 /* One row per player, every career measure as a column — the table sorts and
    filters itself, so these no longer need to be separate boards. */
+/* Regular season and the playoffs are different careers, so the table keeps
+   them apart. Each scope carries its own sensible minimum: eight playoff starts
+   is the most anyone has ever had, so ten would empty the table. */
+const SCOPES={
+  reg:{t:'Regular season',br:BR_REG,mins:[1,5,10,25,50],def:10,lab:'regular season'},
+  po :{t:'Playoffs',      br:BR_PO, mins:[1,2,3,5],     def:1, lab:'playoff'},
+  all:{t:'All games',     br:null,  mins:[1,5,10,25,50],def:10,lab:'career'}
+};
+const SCOPE_K=['reg','po','all'];
+const SCOPED=new Map();
+function careerRows(k){
+  if(SCOPED.has(k))return SCOPED.get(k);
+  const br=SCOPES[k].br, M=D.mgrs, by=new Map();
+  D.tw.forEach(t=>{
+    if(t[2]===BR_CON)return;
+    if(br!==null&&t[2]!==br)return;
+    t[7].forEach(e=>{
+      let r=by.get(e[2]);
+      if(!r){r={id:e[2],name:D.players[e[2]],pos:D.pos[e[3]]||'',
+                starts:0,spts:0,best:0,mgrs:new Set()};by.set(e[2],r)}
+      if(!r.pos)r.pos=D.pos[e[3]]||'';
+      if(e[4]>r.best)r.best=e[4];            // best week counts bench ones too
+      if(e[1]){ r.starts++; r.spts+=e[4]; }
+      credits(M[t[3]]).forEach(mg=>r.mgrs.add(mg));
+    });
+  });
+  const out=[...by.values()];
+  SCOPED.set(k,out);
+  return out;
+}
 const MIN_ST=[1,5,10,25,50];
 const BOARDS=[
   {k:'all',   t:'All-time',    full:()=>careerTable()},
@@ -1712,21 +1742,28 @@ const BOARDS=[
   {k:'allpro',t:'Honors',      full:()=>honorsBlock()}
 ];
 function careerTable(){
-  const S=playerStats(), C=mvpCareer().by, PB=proBowl().byPlayer, out=E('div');
+  const C=mvpCareer().by, PB=proBowl().byPlayer, out=E('div');
   const rings=new Map((D.rings||[]).map(r=>[String(r[0]).replace(/[’']/g,"'"),r[3]]));
   const ringOf=n=>rings.get(String(n).replace(/[’']/g,"'"))||0;
-  const min=MIN_ST.indexOf(STATE.min)>=0?STATE.min:10;
+  const sk=SCOPES[STATE.sc]?STATE.sc:'reg', SC=SCOPES[sk];
+  const min=SC.mins.indexOf(STATE.min)>=0?STATE.min:SC.def;
 
   const ctl=E('div','ctl');
+  ctl.appendChild(E('span','pill','Games'));
+  const gs=E('select'); SCOPE_K.forEach(k=>{const o=E('option',null,SCOPES[k].t);o.value=k;gs.appendChild(o)});
+  gs.value=sk;
+  // each scope has its own floor, so switching never lands you on an empty table
+  gs.onchange=()=>{STATE=Object.assign({},STATE,{sc:gs.value,min:SCOPES[gs.value].def}); render()};
+  ctl.appendChild(gs);
   ctl.appendChild(E('span','pill','Minimum starts'));
-  const ms=E('select'); MIN_ST.forEach(v=>{const o=E('option',null,v);o.value=v;ms.appendChild(o)});
+  const ms=E('select'); SC.mins.forEach(v=>{const o=E('option',null,v);o.value=v;ms.appendChild(o)});
   ms.value=min; ms.onchange=()=>{STATE=Object.assign({},STATE,{min:+ms.value}); render()};
   ctl.appendChild(ms);
   out.appendChild(ctl);
 
-  const rows=S.all.filter(x=>x.starts>=min&&(!STATE.pos||x.pos===STATE.pos))
+  const rows=careerRows(sk).filter(x=>x.starts>=min&&(!STATE.pos||x.pos===STATE.pos))
                   .sort((a,b)=>b.spts-a.spts);
-  out.appendChild(E('p','lede',rows.length+' players with '+min+'+ career starts'+
+  out.appendChild(E('p','lede',rows.length+' players with '+min+'+ '+SC.lab+' start'+(min===1?'':'s')+
     (STATE.pos?' at '+STATE.pos:'')+'. Click any heading to sort by it, or a row to open that player.'));
   out.appendChild(tbl([
     {h:'Player',f:r=>'<strong>'+r.name+'</strong>',filter:false},
