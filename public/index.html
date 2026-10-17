@@ -1225,10 +1225,11 @@ function allPro(){
   return (APRO={teams,byPlayer,seasons:done});
 }
 
-/* The Pro Bowl: the same eight slots as an All-Pro team, chosen separately out
-   of each conference: one East team and one West team, eight men apiece. A
-   player belongs to whichever side he scored most of his points for that year,
-   so East and West never name the same man. Regular season, started points. */
+/* The Pro Bowl: one squad per conference, filled the way the All-Pro teams are
+   but three times over \u2014 24 men a side. A player belongs to the conference of
+   whoever started him in his last regular season game that year, so East and
+   West never name the same man. Regular season, started points. */
+const PB_ORDER={QB:0,RB:1,WR:2,TE:3,K:4,FLEX:5};
 const PB_SIDE=['East','West'];
 let PBOWL=null;
 function proBowl(){
@@ -1241,10 +1242,10 @@ function proBowl(){
       if(!e[1])return;
       const nm=D.players[e[2]], p=D.pos[e[3]]||'';
       const yr=by[t[0]]||(by[t[0]]={});
-      const r=yr[nm]||(yr[nm]={name:nm,pos:p,id:e[2],pts:0,st:0,East:0,West:0});
+      const r=yr[nm]||(yr[nm]={name:nm,pos:p,id:e[2],pts:0,st:0,last:-1,side:''});
       if(!r.pos)r.pos=p;
       r.pts+=e[4]; r.st++;
-      if(conf)r[conf]+=e[4];
+      if(conf&&t[1]>=r.last){ r.last=t[1]; r.side=conf; }   // whoever started him last
     });
   });
   const teams={}, byPlayer=new Map();
@@ -1253,9 +1254,7 @@ function proBowl(){
     const all=Object.values(by[y]||{});
     const sides={};
     PB_SIDE.forEach(side=>{
-      // a tie goes East, so nobody can be picked by both conferences
-      const pool=all.filter(x=>x[side]>0&&(side==='East'?x.East>=x.West:x.West>x.East))
-                    .sort((a,b)=>b.pts-a.pts);
+      const pool=all.filter(x=>x.side===side).sort((a,b)=>b.pts-a.pts);
       const used=new Set(), team=[];
       const take=(test,slot)=>{
         const p=pool.find(x=>!used.has(x.name)&&test(x));
@@ -1265,8 +1264,11 @@ function proBowl(){
         if(!byPlayer.has(p.name))byPlayer.set(p.name,[]);
         byPlayer.get(p.name).push({y,side,slot,pts:p.pts});
       };
-      AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
-      take(x=>AP_FLEX.has(x.pos),'FLEX');
+      for(let pass=0;pass<3;pass++){                       // three times down the list
+        AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
+        take(x=>AP_FLEX.has(x.pos),'FLEX');
+      }
+      team.sort((a,b)=>PB_ORDER[a.slot]-PB_ORDER[b.slot]||b.pts-a.pts);
       sides[side]=team;
     });
     teams[y]=sides;
@@ -1827,7 +1829,7 @@ function honorsBlock(){
   out.appendChild(teamCards(A.teams[y]||[]));
 
   out.appendChild(secH('Pro Bowl'));
-  out.appendChild(E('p','lede','The same eight slots, picked twice \u2014 once out of each conference. A player belongs to the side he scored most of his points for, so East and West never name the same man.'));
+  out.appendChild(E('p','lede','One squad a conference, 24 men apiece \u2014 the same slots as an All-Pro team, filled three times over. A player plays for the conference of whoever started him in his last regular season game, so East and West never name the same man.'));
   out.appendChild(teamCards(PB_SIDE.map(sd=>((B.teams[y]||{})[sd])||[]), PB_SIDE));
   return out;
 }
