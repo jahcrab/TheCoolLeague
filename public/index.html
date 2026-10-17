@@ -365,6 +365,7 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .dpick .plink{text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dpick .dp{font-family:var(--f-mono,ui-monospace,monospace);font-size:11px;color:var(--muted);flex:none}
 .dpick .dmiss{color:var(--muted);opacity:.5;font-style:italic}
+.dpick .dcut{color:var(--muted);cursor:default;text-decoration:none}
 .ap .card{padding:14px 16px 4px}
 .ap .card h3{margin:0 0 4px}
 .ap table{font-size:14px}
@@ -2327,6 +2328,12 @@ function draftBoard(y){
   picks.sort((a,b)=>a.ov-b.ov);
   const order=[]; picks.forEach(p=>{ if(p.rd===1)order[p.pk-1]=p.mgr });
   const n=order.filter(Boolean).length||14;
+  // men who were drafted and cut before week 1 are in no boxscore, so they have
+  // no profile to link to — the board still names them
+  (D.draftx||[]).forEach(r=>{ if(r[0]!==y)return;
+    picks.push({ov:(r[1]-1)*n+r[2],rd:r[1],pk:r[2],mgr:D.mgrs[r[3]],id:null,
+                name:r[4],pos:'',pts:0,st:0}); });
+  picks.sort((a,b)=>a.ov-b.ov);
   picks.slice().sort((a,b)=>b.pts-a.pts).forEach((p,i)=>p.fin=i+1);
   const got=new Map(picks.map(p=>[p.rd+'.'+p.pk,p]));
   const slots=[];
@@ -2361,7 +2368,8 @@ VIEWS.draft=()=>{
     const c=E('div','card');
     c.appendChild(E('h3',null,h));
     if(!p){ c.appendChild(E('p','lede','\u2014')); return c }
-    const nm=E('button','plink',p.name); nm.onclick=()=>go('players',{p:p.id});
+    const nm=p.id===null?E('span','plink dcut',p.name):E('button','plink',p.name);
+    if(p.id!==null) nm.onclick=()=>go('players',{p:p.id});
     const line=E('p'); line.style.margin='2px 0 4px'; line.appendChild(nm);
     c.appendChild(line);
     c.appendChild(E('p','lede','Round '+p.rd+', pick '+p.pk+' to '+p.mgr+'  \u00b7  '+
@@ -2385,10 +2393,13 @@ VIEWS.draft=()=>{
     mine.forEach(sl=>{
       const r=E('div','dpick');
       r.appendChild(E('span','sl',sl.rd+'.'+String(sl.pk).padStart(2,'0')));
-      if(sl.p){
+      if(sl.p&&sl.p.id!==null){
         const b=E('button','plink',sl.p.name); b.onclick=()=>go('players',{p:sl.p.id});
         r.appendChild(b);
         r.appendChild(E('span','dp',f2(sl.p.pts)));
+      } else if(sl.p){
+        const t=E('span','plink dcut',sl.p.name); r.appendChild(t);
+        r.appendChild(E('span','dp','\u2014'));
       } else r.appendChild(E('span','dmiss','not recorded'));
       c.appendChild(r);
     });
@@ -2403,12 +2414,13 @@ VIEWS.draft=()=>{
     {h:'Pick',r:true,n:true,f:p=>String(p.ov),filter:false},
     {h:'Rd',r:true,n:true,f:p=>String(p.rd)},
     {h:'Manager',f:p=>p.mgr},
-    {h:'Player',f:p=>'<strong>'+p.name+'</strong>',filter:false},
+    {h:'Player',filter:false,
+     f:p=>p.id===null?'<span style="opacity:.6">'+p.name+'</span>':'<strong>'+p.name+'</strong>'},
     {h:'Pos',f:p=>p.pos||'\u2014'},
     {h:'Starts',r:true,n:true,f:p=>String(p.st),filter:false},
     {h:'Points',r:true,n:true,f:p=>f2(p.pts),filter:false},
     {h:'Class rank',r:true,n:true,f:p=>ord(p.fin),filter:false}
-  ],B.picks,{click:p=>go('players',{p:p.id})}));
+  ],B.picks,{click:p=>{ if(p.id!==null) go('players',{p:p.id}) }}));
   return out;
 };
 
