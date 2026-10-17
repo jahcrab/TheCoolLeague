@@ -1229,7 +1229,7 @@ function allPro(){
    but three times over \u2014 24 men a side. A player belongs to the conference of
    whoever started him in his last regular season game that year, so East and
    West never name the same man. Regular season, started points. */
-const PB_ORDER={QB:0,RB:1,WR:2,TE:3,K:4,FLEX:5};
+const PB_ORDER={QB:0,RB:1,WR:2,TE:3,K:4};
 const PB_SIDE=['East','West'];
 let PBOWL=null;
 function proBowl(){
@@ -1256,17 +1256,17 @@ function proBowl(){
     PB_SIDE.forEach(side=>{
       const pool=all.filter(x=>x.side===side).sort((a,b)=>b.pts-a.pts);
       const used=new Set(), team=[];
-      const take=(test,slot)=>{
+      const take=test=>{
         const p=pool.find(x=>!used.has(x.name)&&test(x));
         if(!p)return;
         used.add(p.name);
-        team.push(Object.assign({},p,{slot}));
+        team.push(Object.assign({},p,{slot:p.pos}));       // flex picks list at their own position
         if(!byPlayer.has(p.name))byPlayer.set(p.name,[]);
-        byPlayer.get(p.name).push({y,side,slot,pts:p.pts});
+        byPlayer.get(p.name).push({y,side,slot:p.pos,pts:p.pts});
       };
       for(let pass=0;pass<3;pass++){                       // three times down the list
-        AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
-        take(x=>AP_FLEX.has(x.pos),'FLEX');
+        AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos); });
+        take(x=>AP_FLEX.has(x.pos));
       }
       team.sort((a,b)=>PB_ORDER[a.slot]-PB_ORDER[b.slot]||b.pts-a.pts);
       sides[side]=team;
@@ -1829,7 +1829,7 @@ function honorsBlock(){
   out.appendChild(teamCards(A.teams[y]||[]));
 
   out.appendChild(secH('Pro Bowl'));
-  out.appendChild(E('p','lede','One squad a conference, 24 men apiece \u2014 the same slots as an All-Pro team, filled three times over. A player plays for the conference of whoever started him in his last regular season game, so East and West never name the same man.'));
+  out.appendChild(E('p','lede','One squad a conference, 24 men apiece \u2014 the same slots as an All-Pro team, filled three times over, everybody listed at the position he plays. A player belongs to the conference of whoever started him in his last regular season game, so East and West never name the same man.'));
   out.appendChild(teamCards(PB_SIDE.map(sd=>((B.teams[y]||{})[sd])||[]), PB_SIDE));
   return out;
 }
