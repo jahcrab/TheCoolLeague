@@ -387,6 +387,10 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .dpick .plink{text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dpick .dp{font-family:var(--f-mono,ui-monospace,monospace);font-size:11px;color:var(--muted);flex:none}
 .dpick .dmiss{color:var(--muted);opacity:.5;font-style:italic}
+.dtrade{font-size:13px;color:var(--muted);border-left:2px solid var(--accent);
+  padding:2px 0 2px 10px;margin:-2px 0 14px}
+.dpick .dfrom{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);
+  border:1px solid var(--line2);padding:0 4px;flex:none;white-space:nowrap}
 .dpick .dcut{color:var(--muted);cursor:default;text-decoration:none}
 .ap .card{padding:14px 16px 4px}
 .ap .card h3{margin:0 0 4px}
@@ -2576,8 +2580,14 @@ function draftBoard(y){
                 allPts:all.pts,allSt:all.st,kept:!!SP.get('had:'+y+':'+id+':'+mgr)});
   }));
   picks.sort((a,b)=>a.ov-b.ov);
-  const order=[]; picks.forEach(p=>{ if(p.rd===1)order[p.pk-1]=p.mgr });
-  const n=order.filter(Boolean).length||14;
+  // Seats come from the whole board, not from round one: picks change hands.
+  // Before the 2025 draft Jon and Guzman swapped firsts, so round one alone
+  // would put each man in the other's seat for the fifteen rounds after it.
+  const n=Math.max(new Set(picks.map(p=>p.mgr)).size,...picks.map(p=>p.pk),1);
+  const seatOf=p=>(p.rd%2?p.pk:n+1-p.pk)-1;
+  const votes=[]; picks.forEach(p=>{ const s=seatOf(p), v=votes[s]||(votes[s]={});
+    v[p.mgr]=(v[p.mgr]||0)+1 });
+  const order=[]; votes.forEach((v,i)=>{ order[i]=Object.keys(v).sort((a,b)=>v[b]-v[a])[0] });
   // men who were drafted and cut before week 1 are in no boxscore, so they have
   // no profile to link to — the board still names them
   (D.draftx||[]).forEach(r=>{ if(r[0]!==y)return;
@@ -2588,8 +2598,10 @@ function draftBoard(y){
   const got=new Map(picks.map(p=>[p.rd+'.'+p.pk,p]));
   const slots=[];
   for(let rd=1;rd<=DRAFT_RD;rd++) for(let pk=1;pk<=n;pk++){
-    const mgr=order[(rd%2?pk:n+1-pk)-1];
-    slots.push({rd,pk,mgr,ov:(rd-1)*n+pk,p:got.get(rd+'.'+pk)});
+    const seat=order[(rd%2?pk:n+1-pk)-1], p=got.get(rd+'.'+pk);
+    // a traded pick belongs to the man who used it, with the seat it came from
+    slots.push({rd,pk,seat,mgr:p?p.mgr:seat,ov:(rd-1)*n+pk,p,
+                from:p&&p.mgr!==seat?seat:null});
   }
   const out={picks,slots,order:order.filter(Boolean),n};
   DBOARD.set(y,out); return out;
@@ -2617,6 +2629,19 @@ VIEWS.draft=()=>{
 
   const B=draftBoard(y);
   if(!B.picks.length){ out.appendChild(E('p','empty','No draft on file for '+y+'.')); return out }
+
+  // picks that changed hands before the draft, which the seats alone would hide
+  const moved=B.slots.filter(sl=>sl.from);
+  if(moved.length){
+    const grp=new Map();
+    moved.forEach(sl=>{ const k=sl.from+'\u0001'+sl.mgr;
+      (grp.get(k)||grp.set(k,[]).get(k)).push(sl.rd+'.'+String(sl.pk).padStart(2,'0')) });
+    const leg=[...grp.entries()].map(([k,v])=>{ const [f,t]=k.split('\u0001');
+      return v.join(' and ')+' from '+f+' to '+t }).join('  ·  ');
+    const only=SEASONS.filter(yy=>draftBoard(yy).slots.some(sl=>sl.from)).length===1;
+    out.appendChild(E('p','dtrade','Picks that changed hands: '+leg+'.'+
+      (only?' The only draft-pick trade in league history.':'')));
+  }
 
   // the three picks people still bring up. Measuring the steal by how far a man
   // outran his slot just crowns the best sixteenth-rounder every time, so it is
@@ -2658,6 +2683,7 @@ VIEWS.draft=()=>{
       r.appendChild(b);
     } else if(sl.p) r.appendChild(E('span','plink dcut',sl.p.name));
     else r.appendChild(E('span','dmiss','not recorded'));
+    if(sl.from){ const t=E('span','dfrom','from '+sl.from); t.title='Acquired from '+sl.from; r.appendChild(t) }
     r.appendChild(E('span','dp',sl.p?tail:'\u2014'));
     return r;
   };
