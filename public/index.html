@@ -1298,6 +1298,13 @@ function allRookie(){
   });
   return (AROOK=teams);
 }
+/* how many different managers put him in a lineup that year */
+const starterCount=(y,nm)=>{
+  const c=new Set();
+  D.tw.forEach(t=>{ if(t[0]!==y||t[2]!==BR_REG)return;
+    t[7].forEach(e=>{ if(e[1]&&sameName(D.players[e[2]],nm)) c.add(D.mgrs[t[3]]); })});
+  return c.size;
+};
 const startedMost=(y,nm)=>{
   const c=new Map();
   D.tw.forEach(t=>{ if(t[0]!==y||t[2]!==BR_REG)return;
@@ -1989,8 +1996,10 @@ function honorsBlock(){
   const aw=E('div','ap');
   aw.appendChild(acard('Season MVP',mvpNm,mvpRow&&mvpRow.mgr?'Started by '+mvpRow.mgr:''));
   aw.appendChild(acard('Agholor MVP',agh,agh?(heldBy(y,agh)?'Started in the final by '+heldBy(y,agh):'On the winning roster'):''));
+  const royMgr=roy?startedMost(y,roy[0]):null;
   aw.appendChild(acard('Rookie of the Year',roy&&roy[0],
-    roy?f2(roy[1])+' points as a rookie'+(startedMost(y,roy[0])?', mostly for '+startedMost(y,roy[0]):''):''));
+    roy?f2(roy[1])+' points as a rookie'+(royMgr?
+      (starterCount(y,roy[0])>1?', mostly for ':', started by ')+royMgr:''):''));
   out.appendChild(aw);
 
   out.appendChild(secH('All-Pro Teams'));
