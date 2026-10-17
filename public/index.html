@@ -356,6 +356,15 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
 .ap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
 .ap.two{grid-template-columns:repeat(2,1fr)}
+.dteams{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:14px;margin-top:4px}
+.dteams .card{padding:13px 15px 12px}
+.dteams .card h3{margin:0}
+.dteams .lede{margin:2px 0 8px;font-size:13px}
+.dpick{display:flex;align-items:baseline;gap:8px;padding:2px 0;font-size:13px;border-top:1px solid var(--line)}
+.dpick .sl{font-family:var(--f-mono,ui-monospace,monospace);font-size:11px;color:var(--muted);width:34px;flex:none}
+.dpick .plink{text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dpick .dp{font-family:var(--f-mono,ui-monospace,monospace);font-size:11px;color:var(--muted);flex:none}
+.dpick .dmiss{color:var(--muted);opacity:.5;font-style:italic}
 .ap .card{padding:14px 16px 4px}
 .ap .card h3{margin:0 0 4px}
 .ap table{font-size:14px}
@@ -805,6 +814,7 @@ VIEWS.overview=()=>{
    ['games','Games','Every scoreboard and full boxscore back to 2020, plus a player search.'],
    ['records','Records','Highest, lowest, closest, biggest blowouts, best seasons.'],
    ['mvp','MVP Ladder','Wins above replacement, and the formula behind the award.'],
+   ['draft','The Draft','Every pick of every year, the steals and the busts.'],
    ['managers','Managers','17 careers, head-to-head records, and '+champs.length+' Garrison winners.'],
    ['rings','Ring Counter','Every player who has won one, plus the six Agholor MVPs.'],   // go() maps this onto Players
    ['newsletters','Past Issues','Every Scorigami Report from this season.'],
@@ -1086,6 +1096,11 @@ const ABOUT={
 /* Manager of the Year. Regular season only. */
 const COTY={2020:'Owen',2021:'Michael',2022:'James D',2023:'Ayush',2024:'Jon',2025:'Ayush'};
 
+/* Rookie of the Year: the most regular season points started by anyone in his
+   first NFL season. Drafted classes come off the league's own records; James
+   Robinson came into 2020 undrafted and still outscored the lot. */
+const ROY={2020:['James Robinson',170.70],2021:['Najee Harris',241.00],2022:['Dameon Pierce',166.40],2023:['Puka Nacua',200.50],2024:['Jayden Daniels',239.52],2025:['Ashton Jeanty',183.40]};
+
 /* Roster moves made after the last week in the archive, so no boxscore shows
    them yet. Clear each entry once the week it happened in has been pulled.
    Bobby <-> Alex, the night Week 5 closed. */
@@ -1355,6 +1370,8 @@ function playerHonours(s){
   }
   const mvp=Object.keys(AWARDED).filter(y=>sameName(AWARDED[y],s.name));
   if(mvp.length) line('Season MVP',mvp.join(', '));
+  const roy=Object.keys(ROY).filter(y=>sameName(ROY[y][0],s.name));
+  if(roy.length) line('Rookie of the Year',roy.join(', '));
   const ap=allPro().byPlayer.get(s.name);
   if(ap&&ap.length){
     const by=[[],[],[]];
@@ -1888,7 +1905,8 @@ VIEWS.records=()=>{
     {h:'Manager of the Year',f:y=>COTY[y]||'<span style="opacity:.5">—</span>'},
     {h:'Season MVP',f:y=>{const nm=AWARDED[y]; if(!nm)return '<span style="opacity:.5">—</span>';
       const r=mvpLadder(y).rows.find(x=>x.name===nm); return withMgr(nm,r&&r.mgr)}},
-    {h:'Agholor MVP',f:y=>{const nm=agholor(y); return nm?withMgr(nm,heldBy(y,nm)):'<span style="opacity:.5">—</span>'}}
+    {h:'Agholor MVP',f:y=>{const nm=agholor(y); return nm?withMgr(nm,heldBy(y,nm)):'<span style="opacity:.5">—</span>'}},
+    {h:'Rookie of the Year',f:y=>ROY[y]?ROY[y][0]+' <span style="color:var(--muted)">'+f2(ROY[y][1])+'</span>':'<span style="opacity:.5">—</span>'}
   ],champs,{click:y=>go('managers',{m:CHAMP[y]})}));
   const cn=E('div','note'); cn.style.marginTop='9px';
   cn.textContent='Manager of the Year is judged on the regular season. The Agholor MVP goes to the best player on the Garrison winner’s roster in the final.';
@@ -2281,9 +2299,122 @@ VIEWS.newsletters=()=>{
   return out;
 };
 
+/* ---------- the draft ---------- */
+/* Sixteen rounds, fourteen teams, snake order, in a basement every August. The
+   sheet is missing a handful of late picks, so the board shows the empty slot
+   rather than pretending the round was shorter. */
+let DSEAS=null;
+function startedBy(){                 // regular season started points, by season and player
+  if(DSEAS)return DSEAS;
+  const m=new Map();
+  D.tw.forEach(t=>{ if(t[2]!==BR_REG)return;
+    t[7].forEach(e=>{ if(!e[1])return;
+      const k=t[0]+':'+e[2], r=m.get(k)||{pts:0,st:0};
+      r.pts+=e[4]; r.st++; m.set(k,r); })});
+  return (DSEAS=m);
+}
+const DRAFT_RD=16;
+const DBOARD=new Map();
+function draftBoard(y){
+  if(DBOARD.has(y))return DBOARD.get(y);
+  const SP=startedBy(), S=playerStats().by, dr=D.draft||{}, picks=[];
+  Object.keys(dr).forEach(k=>dr[k].forEach(e=>{
+    if(e[3]!==y)return;
+    const id=+k, sp=SP.get(y+':'+id)||{pts:0,st:0}, ps=S.get(id);
+    picks.push({ov:e[0],rd:e[1],pk:e[2],mgr:D.mgrs[e[4]],id,
+                name:D.players[id],pos:ps?ps.pos:'',pts:sp.pts,st:sp.st});
+  }));
+  picks.sort((a,b)=>a.ov-b.ov);
+  const order=[]; picks.forEach(p=>{ if(p.rd===1)order[p.pk-1]=p.mgr });
+  const n=order.filter(Boolean).length||14;
+  picks.slice().sort((a,b)=>b.pts-a.pts).forEach((p,i)=>p.fin=i+1);
+  const got=new Map(picks.map(p=>[p.rd+'.'+p.pk,p]));
+  const slots=[];
+  for(let rd=1;rd<=DRAFT_RD;rd++) for(let pk=1;pk<=n;pk++){
+    const mgr=order[(rd%2?pk:n+1-pk)-1];
+    slots.push({rd,pk,mgr,ov:(rd-1)*n+pk,p:got.get(rd+'.'+pk)});
+  }
+  const out={picks,slots,order:order.filter(Boolean),n};
+  DBOARD.set(y,out); return out;
+}
+VIEWS.draft=()=>{
+  const out=E('div');
+  out.appendChild(secH('The Draft'));
+  out.appendChild(E('p','lede','Sixteen rounds, snake order, full PPR, and everyone in the same room \u2014 the league has drafted in person every year since 2020. Points are what each pick went on to score in that season\u2019s regular season while somebody had him started.'));
+  const YS=SEASONS.slice().sort((a,b)=>a-b);
+  const y=YS.indexOf(STATE.dy)>=0?STATE.dy:YS[YS.length-1];
+  const ctl=E('div','ctl');
+  ctl.appendChild(E('span','pill','Season'));
+  const sy=E('select'); YS.slice().reverse().forEach(v=>{const o=E('option',null,v);o.value=v;sy.appendChild(o)});
+  sy.value=y; sy.onchange=()=>{STATE=Object.assign({},STATE,{dy:+sy.value}); render()};
+  ctl.appendChild(sy); out.appendChild(ctl);
+
+  const B=draftBoard(y), has=B.picks.filter(p=>p.pts>0);
+  if(!B.picks.length){ out.appendChild(E('p','empty','No draft on file for '+y+'.')); return out }
+
+  // the three picks people still bring up
+  const best=(arr,f)=>arr.length?arr.reduce((a,b)=>f(b)>f(a)?b:a):null;
+  const steal=best(has,p=>p.ov-p.fin);
+  const bust=best(B.picks.filter(p=>p.ov<=B.n*3),p=>p.fin-p.ov);
+  const lastSlot=[...B.slots].reverse().find(sl=>sl.p);
+  const card=(h,p,note)=>{
+    const c=E('div','card');
+    c.appendChild(E('h3',null,h));
+    if(!p){ c.appendChild(E('p','lede','\u2014')); return c }
+    const nm=E('button','plink',p.name); nm.onclick=()=>go('players',{p:p.id});
+    const line=E('p'); line.style.margin='2px 0 4px'; line.appendChild(nm);
+    c.appendChild(line);
+    c.appendChild(E('p','lede','Round '+p.rd+', pick '+p.pk+' to '+p.mgr+'  \u00b7  '+
+      f2(p.pts)+' pts, '+ord(p.fin)+' of the class'+(note?'  \u00b7  '+note:'')));
+    return c;
+  };
+  const g=E('div','ap'), sofar=CHAMP[y]?'':' so far';   // a season still running has no verdict yet
+  g.appendChild(card('Steal of the draft'+sofar,steal));
+  g.appendChild(card('Draft-day bust'+sofar,bust));
+  g.appendChild(card('Mr. Irrelevant',lastSlot&&lastSlot.p));
+  out.appendChild(g);
+
+  // what each manager came away with, in pick order
+  out.appendChild(secH('By manager'));
+  const teams=E('div','dteams');
+  B.order.forEach(mg=>{
+    const c=E('div','card'), mine=B.slots.filter(sl=>sl.mgr===mg);
+    const tot=mine.reduce((a,sl)=>a+(sl.p?sl.p.pts:0),0);
+    const h=E('h3',null,mg); c.appendChild(h);
+    c.appendChild(E('p','lede',f2(tot)+' points off the board'));
+    mine.forEach(sl=>{
+      const r=E('div','dpick');
+      r.appendChild(E('span','sl',sl.rd+'.'+String(sl.pk).padStart(2,'0')));
+      if(sl.p){
+        const b=E('button','plink',sl.p.name); b.onclick=()=>go('players',{p:sl.p.id});
+        r.appendChild(b);
+        r.appendChild(E('span','dp',f2(sl.p.pts)));
+      } else r.appendChild(E('span','dmiss','not recorded'));
+      c.appendChild(r);
+    });
+    teams.appendChild(c);
+  });
+  out.appendChild(teams);
+
+  // and the whole board, sortable
+  out.appendChild(secH('Every pick'));
+  out.appendChild(E('p','lede','Click a heading to sort \u2014 by points to find the steals, by round to walk the board.'));
+  out.appendChild(tbl([
+    {h:'Pick',r:true,n:true,f:p=>String(p.ov),filter:false},
+    {h:'Rd',r:true,n:true,f:p=>String(p.rd)},
+    {h:'Manager',f:p=>p.mgr},
+    {h:'Player',f:p=>'<strong>'+p.name+'</strong>',filter:false},
+    {h:'Pos',f:p=>p.pos||'\u2014'},
+    {h:'Starts',r:true,n:true,f:p=>String(p.st),filter:false},
+    {h:'Points',r:true,n:true,f:p=>f2(p.pts),filter:false},
+    {h:'Class rank',r:true,n:true,f:p=>ord(p.fin),filter:false}
+  ],B.picks,{click:p=>go('players',{p:p.id})}));
+  return out;
+};
+
 /* ---------- shell ---------- */
 const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],['players','Players'],['records','Records'],
-  ['managers','Managers'],['newsletters','Newsletters'],
+  ['draft','Draft'],['managers','Managers'],['newsletters','Newsletters'],
   ['about','About']];
 function go(v,st){
   if(v==='rings'){ v='players'; st=Object.assign({b:'ring'},st); }     // tabs these used to be
