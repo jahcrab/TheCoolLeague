@@ -107,6 +107,10 @@ h2.sec:first-child{margin-top:0}
 .tile .k{font-family:var(--f-disp);font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .tile .n{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.35}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+tr.more td{text-align:center;padding:10px 0 2px}
+.mb{font-family:var(--f-disp);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);background:none;border:1px solid var(--line);padding:6px 14px;cursor:pointer}
+.mb:hover{color:var(--ink);border-color:var(--ink)}
 /* hint that a table runs wider than the screen */
 .scroll{background:linear-gradient(to right,var(--bg) 30%,transparent) left/40px 100% no-repeat,
   linear-gradient(to left,var(--bg) 30%,transparent) right/40px 100% no-repeat,
@@ -567,6 +571,7 @@ function tbl(cols,rows,opt){
       const x=num(a),y=num(b); return isNaN(x)||isNaN(y)?a.localeCompare(b):x-y}) : null;
   });
   const pick={}, sort={ci:null,dir:1};
+  let cap=opt.cap||0;                      // 0 means show everything
   const sc=E('div','scroll'), t=E('table'), th=E('thead'), tr=E('tr'), tb=E('tbody');
 
   cols.forEach((c,ci)=>{
@@ -618,20 +623,33 @@ function tbl(cols,rows,opt){
         return d*sort.dir;
       });
     }
+    // sorting by a column a narrow screen hides is useless if you cannot see it,
+    // so it comes back and the columns marked 'dim' step aside to make room
+    const extra=sort.ci!=null&&cols[sort.ci].sm===false;
     [...th.querySelectorAll('th')].forEach((h,ci)=>{
       h.classList.toggle('srt',sort.ci===ci);
       h.classList.toggle('dn',sort.ci===ci&&sort.dir<0);
+      if(cols[ci].sm===false) h.classList.toggle('h-sm',sort.ci!==ci);
+      else if(cols[ci].dim) h.classList.toggle('h-sm',extra);
       const b=h.querySelector('.fb'); if(b)b.classList.toggle('on',pick[ci]!=null);
     });
-    view.forEach(({r,i})=>{
+    const shown=cap?view.slice(0,cap):view;
+    shown.forEach(({r,i})=>{
       const x=E('tr',opt.click?'clk':null);
-      cols.forEach((c,ci)=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n ':'')+(c.sm===false?'h-sm':''));
+      cols.forEach((c,ci)=>{ const td=E('td',(c.r?'r ':'')+(c.n?'n ':'')+
+        ((c.sm===false?sort.ci!==ci:c.dim&&extra)?'h-sm':''));
         const v=c.f(r,i);
         if(v instanceof Node)td.appendChild(v); else td.innerHTML=v==null?'':String(v);
         x.appendChild(td); });
       if(opt.click)x.onclick=()=>opt.click(r);
       tb.appendChild(x);
     });
+    if(cap&&view.length>cap){
+      const x=E('tr','more'), td=E('td'); td.colSpan=cols.length;
+      const b=E('button','mb','Show all '+view.length);
+      b.onclick=()=>{cap=0;draw()};
+      td.appendChild(b); x.appendChild(td); tb.appendChild(x);
+    }
     if(!view.length){ const x=E('tr'), td=E('td',null,'Nothing matches those filters.');
       td.colSpan=cols.length; td.style.cssText='color:var(--muted);font-style:italic;padding:14px 0';
       x.appendChild(td); tb.appendChild(x); }
@@ -1828,7 +1846,7 @@ const BOARDS=[
   {k:'allpro',t:'Honors',      full:()=>honorsBlock()}
 ];
 function careerTable(){
-  const C=mvpCareer().by, PB=proBowl().byPlayer, out=E('div');
+  const C=mvpCareer().by, PB=proBowl().byPlayer, AP=allPro().byPlayer, out=E('div');
   const rings=new Map((D.rings||[]).map(r=>[String(r[0]).replace(/[’']/g,"'"),r[3]]));
   const ringOf=n=>rings.get(String(n).replace(/[’']/g,"'"))||0;
   const sk=SCOPES[STATE.sc]?STATE.sc:'reg', SC=SCOPES[sk];
@@ -1853,18 +1871,20 @@ function careerTable(){
     (STATE.pos?' at '+STATE.pos:'')+'. Click any heading to sort by it, or a row to open that player.'));
   out.appendChild(tbl([
     {h:'Player',f:r=>'<strong>'+r.name+'</strong>',filter:false},
-    {h:'Pos',f:r=>r.pos||'\u2014'},
-    {h:'Starts',r:true,n:true,f:r=>String(r.starts),filter:false},
+    {h:'Pos',sm:false,f:r=>r.pos||'\u2014'},
+    {h:'Starts',r:true,n:true,dim:true,f:r=>String(r.starts),filter:false},
     {h:'Points',r:true,n:true,f:r=>f2(r.spts),filter:false},
-    {h:'Per start',r:true,n:true,f:r=>f2(r.starts?r.spts/r.starts:0),filter:false},
-    {h:'MVP pts',r:true,n:true,filter:false,
+    {h:'Per start',r:true,n:true,sm:false,f:r=>f2(r.starts?r.spts/r.starts:0),filter:false},
+    {h:'MVP pts',r:true,n:true,sm:false,filter:false,
      f:r=>C.has(r.name)?f2(C.get(r.name).total):'<span style="opacity:.35">—</span>'},
-    {h:'Best week',r:true,n:true,f:r=>f2(r.best),filter:false},
-    {h:'Pro Bowls',r:true,n:true,filter:false,
+    {h:'Best week',r:true,n:true,sm:false,f:r=>f2(r.best),filter:false},
+    {h:'All-Pro',r:true,n:true,sm:false,filter:false,
+     f:r=>(AP.get(r.name)||[]).length||'<span style="opacity:.35">\u2014</span>'},
+    {h:'Pro Bowls',r:true,n:true,sm:false,filter:false,
      f:r=>(PB.get(r.name)||[]).length||'<span style="opacity:.35">\u2014</span>'},
-    {h:'Rings',r:true,n:true,f:r=>ringOf(r.name)||'<span style="opacity:.35">\u2014</span>',filter:false},
-    {h:'Mgrs',r:true,n:true,f:r=>String(r.mgrs.size),filter:false}
-  ],rows,{click:r=>go('players',{p:r.id})}));
+    {h:'Rings',r:true,n:true,sm:false,f:r=>ringOf(r.name)||'<span style="opacity:.35">\u2014</span>',filter:false},
+    {h:'Mgrs',r:true,n:true,sm:false,f:r=>String(r.mgrs.size),filter:false}
+  ],rows,{click:r=>go('players',{p:r.id}),cap:50}));
   return out;
 }
 function ringsOf(nm){ const r=(D.rings||[]).find(x=>sameName(x[0],nm)); return r?r[3]:0 }
