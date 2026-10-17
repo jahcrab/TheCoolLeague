@@ -2552,7 +2552,7 @@ VIEWS.draft=()=>{
       c.appendChild(E('h3',null,mg));
       c.appendChild(E('p','lede',f2(tot)+' points off the board'));
       mine.forEach(sl=>c.appendChild(pickRow(sl,sl.rd+'.'+String(sl.pk).padStart(2,'0'),
-        sl.p?f2(sl.p.pts):'')));
+        sl.p?(sl.p.pos||''):'')));
       teams.appendChild(c);
     });
     out.appendChild(teams);
