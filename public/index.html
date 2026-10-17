@@ -362,6 +362,7 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .ap.two{grid-template-columns:repeat(2,1fr)}
 .ap.one{grid-template-columns:repeat(auto-fit,minmax(0,360px))}
 .dteams{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:14px;margin-top:4px}
+.dteams.wide{grid-template-columns:repeat(auto-fill,minmax(282px,1fr))}
 .dteams .card{padding:13px 15px 12px}
 .dteams .card h3{margin:0}
 .dteams .lede{margin:2px 0 8px;font-size:13px}
@@ -2478,6 +2479,15 @@ VIEWS.draft=()=>{
   const sy=E('select'); YS.slice().reverse().forEach(v=>{const o=E('option',null,v);o.value=v;sy.appendChild(o)});
   sy.value=y; sy.onchange=()=>{STATE=Object.assign({},STATE,{dy:+sy.value}); render()};
   ctl.appendChild(sy); out.appendChild(ctl);
+  const dv=STATE.dv==='team'?'team':'round';
+  const bar=E('div','wkbar');
+  [['round','By round'],['team','By team']].forEach(([k,t])=>{
+    const btn=E('button',null,t);
+    btn.setAttribute('aria-pressed',k===dv?'true':'false');
+    btn.onclick=()=>{STATE=Object.assign({},STATE,{dv:k}); render()};
+    bar.appendChild(btn);
+  });
+  out.appendChild(bar);
 
   const B=draftBoard(y);
   if(!B.picks.length){ out.appendChild(E('p','empty','No draft on file for '+y+'.')); return out }
@@ -2509,30 +2519,45 @@ VIEWS.draft=()=>{
   out.appendChild(E('p','lede','The steal is the most points anyone got out of round '+
     STEAL_FROM+' or later; the bust is the first-three-rounds pick who finished furthest below his slot.'));
 
-  // what each manager came away with, in pick order
-  out.appendChild(secH('By manager'));
-  const teams=E('div','dteams');
-  B.order.forEach(mg=>{
-    const c=E('div','card'), mine=B.slots.filter(sl=>sl.mgr===mg);
-    const tot=mine.reduce((a,sl)=>a+(sl.p?sl.p.pts:0),0);
-    const h=E('h3',null,mg); c.appendChild(h);
-    c.appendChild(E('p','lede',f2(tot)+' points off the board'));
-    mine.forEach(sl=>{
-      const r=E('div','dpick');
-      r.appendChild(E('span','sl',sl.rd+'.'+String(sl.pk).padStart(2,'0')));
-      if(sl.p&&sl.p.id!==null){
-        const b=E('button','plink',sl.p.name); b.onclick=()=>go('players',{p:sl.p.id});
-        r.appendChild(b);
-        r.appendChild(E('span','dp',f2(sl.p.pts)));
-      } else if(sl.p){
-        const t=E('span','plink dcut',sl.p.name); r.appendChild(t);
-        r.appendChild(E('span','dp','\u2014'));
-      } else r.appendChild(E('span','dmiss','not recorded'));
-      c.appendChild(r);
+  // one row, whichever way the board is sliced: the slot, the man, and the
+  // thing the other column already tells you (his manager, or what he scored)
+  const pickRow=(sl,lab,tail)=>{
+    const r=E('div','dpick');
+    r.appendChild(E('span','sl',lab));
+    if(sl.p&&sl.p.id!==null){
+      const b=E('button','plink',sl.p.name); b.onclick=()=>go('players',{p:sl.p.id});
+      r.appendChild(b);
+    } else if(sl.p) r.appendChild(E('span','plink dcut',sl.p.name));
+    else r.appendChild(E('span','dmiss','not recorded'));
+    r.appendChild(E('span','dp',sl.p?tail:'\u2014'));
+    return r;
+  };
+
+  if(dv==='team'){
+    out.appendChild(secH('By team'));
+    const teams=E('div','dteams');
+    B.order.forEach(mg=>{
+      const c=E('div','card'), mine=B.slots.filter(sl=>sl.mgr===mg);
+      const tot=mine.reduce((a,sl)=>a+(sl.p?sl.p.pts:0),0);
+      c.appendChild(E('h3',null,mg));
+      c.appendChild(E('p','lede',f2(tot)+' points off the board'));
+      mine.forEach(sl=>c.appendChild(pickRow(sl,sl.rd+'.'+String(sl.pk).padStart(2,'0'),
+        sl.p?f2(sl.p.pts):'')));
+      teams.appendChild(c);
     });
-    teams.appendChild(c);
-  });
-  out.appendChild(teams);
+    out.appendChild(teams);
+  } else {
+    out.appendChild(secH('By round'));
+    const rounds=E('div','dteams wide');
+    for(let rd=1;rd<=DRAFT_RD;rd++){
+      const c=E('div','card'), mine=B.slots.filter(sl=>sl.rd===rd);
+      c.appendChild(E('h3',null,'Round '+rd));
+      c.appendChild(E('p','lede','Picks '+((rd-1)*B.n+1)+'\u2013'+(rd*B.n)));
+      mine.forEach(sl=>c.appendChild(pickRow(sl,String(sl.pk),sl.mgr)));
+      rounds.appendChild(c);
+    }
+    out.appendChild(rounds);
+  }
 
   // and the whole board, sortable
   out.appendChild(secH('Every pick'));
