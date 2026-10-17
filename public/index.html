@@ -1824,7 +1824,7 @@ function playerProfile(id){
   out.appendChild(g1);
 
   out.appendChild(secH('Season by season'));
-  out.appendChild(E('p','lede','Click a season to open that year\u2019s game log. Consolation weeks are left out, as they are everywhere else.'));
+  out.appendChild(E('p','lede','Click a season to open that year\u2019s game log. Consolation weeks are left out, as they are everywhere else.'+(lines.some(l=>l.br===BR_PO)&&lines.some(l=>l.br===BR_REG)?' The chips split the regular season from the playoffs.':'')));
   out.appendChild(seasonTable(one,lines));
   return out;
 }
@@ -1843,7 +1843,27 @@ function seasonLine(name,y){
   if(rr&&i>=0&&rr[2][i]) tags.push([RING_LVL[rr[2][i]]==='Agholor MVP'?'Agholor':'Ring','g']);
   return tags;
 }
-function seasonTable(one,lines){
+/* Regular season and the playoffs are two different careers, so a chip keeps
+   them apart. A man with no January football gets no chips at all. */
+const PS_SCOPE=[['reg','Regular season',BR_REG],['po','Playoffs',BR_PO],['all','All games',null]];
+function seasonTable(one,all){
+  const wrap=E('div');
+  const has=k=>PS_SCOPE.find(x=>x[0]===k)[2]===null||all.some(l=>l.br===PS_SCOPE.find(x=>x[0]===k)[2]);
+  let k=PS_SCOPE.some(x=>x[0]===STATE.ps)?STATE.ps:'reg';
+  if(!has(k))k='reg';
+  const br=PS_SCOPE.find(x=>x[0]===k)[2];
+  const lines=br===null?all:all.filter(l=>l.br===br);
+  if(all.some(l=>l.br===BR_PO)&&all.some(l=>l.br===BR_REG)){
+    const bar=E('div','wkbar');
+    PS_SCOPE.forEach(([key,lab])=>{
+      const b=E('button',null,lab);
+      b.setAttribute('aria-pressed',key===k?'true':'false');
+      b.onclick=()=>{STATE=Object.assign({},STATE,{ps:key}); render()};
+      bar.appendChild(b);
+    });
+    wrap.appendChild(bar);
+  }
+  if(!lines.length){ wrap.appendChild(E('p','empty','No '+(k==='po'?'playoff':'regular season')+' games.')); return wrap }
   const sc=E('div','scroll'), t=E('table','seas'), th=E('thead'), tb=E('tbody');
   const cols=[['Season',''],['Managers',''],['G','r'],['GS','r'],['Pts','r'],
               ['P/GS','r'],['Best','r'],['W\u2013L','r'],['Honours','']];
@@ -1904,7 +1924,8 @@ function seasonTable(one,lines){
   const tr=E('tr','tot');
   const c=(v,cl)=>{const d=E('td',cl||null); d.innerHTML=v; tr.appendChild(d)};
   c('<strong>'+years.length+(years.length===1?' season':' seasons')+'</strong>');
-  c('<span style="opacity:.6">'+one.mgrs.size+' manager'+(one.mgrs.size===1?'':'s')+'</span>');
+  const nm=new Set(lines.map(l=>l.m)).size;
+  c('<span style="opacity:.6">'+nm+' manager'+(nm===1?'':'s')+'</span>');
   c(String(tot.g),'r n'); c(String(tot.gs),'r n');
   c('<strong>'+f2(tot.pts)+'</strong>','r n');
   c(tot.gs?f2(tot.pts/tot.gs):'\u2014','r n');
@@ -1912,7 +1933,7 @@ function seasonTable(one,lines){
   c(tot.gs?tot.w+'\u2013'+tot.l:'\u2014','r n');
   c('');
   tb.appendChild(tr);
-  sc.appendChild(t); return sc;
+  sc.appendChild(t); wrap.appendChild(sc); return wrap;
 }
 
 /* One row per player, every career measure as a column — the table sorts and
