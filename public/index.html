@@ -1828,10 +1828,10 @@ function careerRows(k){
     t[7].forEach(e=>{
       let r=by.get(e[2]);
       if(!r){r={id:e[2],name:D.players[e[2]],pos:D.pos[e[3]]||'',
-                starts:0,spts:0,best:0,mgrs:new Set()};by.set(e[2],r)}
+                starts:0,spts:0,best:0,won:0,mgrs:new Set()};by.set(e[2],r)}
       if(!r.pos)r.pos=D.pos[e[3]]||'';
       if(e[4]>r.best)r.best=e[4];            // best week counts bench ones too
-      if(e[1]){ r.starts++; r.spts+=e[4]; }
+      if(e[1]){ r.starts++; r.spts+=e[4]; if(t[5]===1)r.won++; }
       credits(M[t[3]]).forEach(mg=>r.mgrs.add(mg));
     });
   });
@@ -1879,6 +1879,8 @@ function careerTable(){
     {h:'MVP pts',r:true,n:true,sm:false,filter:false,
      f:r=>C.has(r.name)?f2(C.get(r.name).total):'<span style="opacity:.35">—</span>'},
     {h:'Best week',r:true,n:true,sm:false,f:r=>f2(r.best),filter:false},
+    {h:'Win %',r:true,n:true,sm:false,filter:false,
+     f:r=>r.starts?(100*r.won/r.starts).toFixed(1)+'<span style="opacity:.45">%</span>':'<span style="opacity:.35">\u2014</span>'},
     {h:'All-Pro',r:true,n:true,sm:false,filter:false,
      f:r=>(AP.get(r.name)||[]).length||'<span style="opacity:.35">\u2014</span>'},
     {h:'Pro Bowls',r:true,n:true,sm:false,filter:false,
