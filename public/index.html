@@ -1167,7 +1167,7 @@ function mvpLadder(year,upto){
     const opp=byw[t[1]+'|'+t[4]];
     t[7].forEach(([slot,started,pid,pos,pts])=>{
       const nm=D.players[pid], pn=D.pos[pos]||'';
-      if(!pl[nm]) pl[nm]={name:nm,pos:pn,wk:[]};
+      if(!pl[nm]) pl[nm]={name:nm,id:pid,pos:pn,wk:[]};
       if(!pl[nm].pos) pl[nm].pos=pn;
       pl[nm].wk.push({w:t[1],pts,started:started===1,mgr:M[t[3]],pf:t[6],
                       pa:opp?opp[6]:null,won:t[5]===1});
@@ -2327,7 +2327,8 @@ function mvpTable(rows,compact,mv){
   ];
   const keep=cols.filter(Boolean);
   return tbl(compact?keep.filter(c=>['','Player','Pos','Manager','PF/G','WAR','LBR','MVP'].includes(c.h)):keep,
-             rows,{click:r=>go('games',{q:r.name})});
+             rows,{click:r=>{ const i=r.id!=null?r.id:D.players.indexOf(r.name);
+               if(i>=0) go('players',{p:i}); else go('games',{q:r.name}); }});
 }
 
 /* Ladders are browsable from the first season calculated with this version of
