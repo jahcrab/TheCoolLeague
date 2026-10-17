@@ -356,6 +356,7 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
 .ap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
 .ap.two{grid-template-columns:repeat(2,1fr)}
+.ap.one{grid-template-columns:repeat(auto-fit,minmax(0,360px))}
 .dteams{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:14px;margin-top:4px}
 .dteams .card{padding:13px 15px 12px}
 .dteams .card h3{margin:0}
@@ -1246,6 +1247,43 @@ function allPro(){
    whoever started him in his last regular season game that year, so East and
    West never name the same man. Regular season, started points. */
 const PB_ORDER={QB:0,RB:1,WR:2,TE:3,K:4};
+
+/* Everyone in his first NFL season who started a game here, by season. The
+   classes come off the league's own draft records, plus James Robinson, who
+   went undrafted in 2020 and led his class anyway. */
+const ROOKIES={2020:["AJ Dillon","Anthony McFarland Jr.","Antonio Gibson","Brandon Aiyuk","Cam Akers","CeeDee Lamb","Chase Claypool","Clyde Edwards-Helaire","D'Andre Swift","DeeJay Dallas","Henry Ruggs III","J.K. Dobbins","Jalen Reagor","James Robinson","Jerry Jeudy","Joe Burrow","Jonathan Taylor","Joshua Kelley","Justin Jefferson","La'Mical Perine","Laviska Shenault Jr.","Sam Sloman","Tee Higgins","Tua Tagovailoa","Tyler Bass"],2021:["Amon-Ra St. Brown","Brevin Jordan","Chuba Hubbard","DeVonta Smith","Elijah Mitchell","Elijah Moore","Evan McPherson","Ja'Marr Chase","Javonte Williams","Jaylen Waddle","Jermar Jefferson","Kadarius Toney","Kenneth Gainwell","Khalil Herbert","Kyle Pitts","Michael Carter","Najee Harris","Pat Freiermuth","Rhamondre Stevenson","Rondale Moore","Trey Lance"],2022:["Alec Pierce","Breece Hall","Brian Robinson Jr.","Cade Otton","Cade York","Chigoziem Okonkwo","Chris Olave","Christian Watson","Dameon Pierce","Daniel Bellinger","Drake London","Garrett Wilson","George Pickens","Greg Dulcich","Isaiah Likely","Isiah Pacheco","Jake Ferguson","James Cook","Kenneth Walker III","Kyren Williams","Rachaad White","Romeo Doubs","Treylon Burks","Tyler Allgeier"],2023:["Anders Carlson","Anthony Richardson","Bijan Robinson","Bryce Young","C.J. Stroud","Dalton Kincaid","De'Von Achane","DeMario Douglas","Jahmyr Gibbs","Jake Moody","Jaxon Smith-Njigba","Jayden Reed","Jonathan Mingo","Jordan Addison","Josh Downs","Kendre Miller","Luke Musgrave","Puka Nacua","Quentin Johnston","Rashee Rice","Sam LaPorta","Tank Dell","Tyjae Spears","Will Levis","Zay Flowers"],2024:["Audric Estime","Bo Nix","Braelon Allen","Brian Thomas Jr.","Brock Bowers","Bucky Irving","Caleb Williams","Devaughn Vele","Drake Maye","Isaac Guerendo","Isaiah Davis","Ja'Tavion Sanders","Jayden Daniels","Jaylen Wright","Jonathon Brooks","Joshua Karty","Kimani Vidal","Ladd McConkey","Malik Nabers","Marvin Harrison Jr.","Ricky Pearsall","Rome Odunze","Trey Benson","Tyrone Tracy Jr.","Will Reichard","Xavier Worthy"],2025:["Andy Borregales","Ashton Jeanty","Bhayshul Tuten","Brashard Smith","Cam Skattebo","Cam Ward","Chimere Dike","Colston Loveland","Devin Neal","Elic Ayomanor","Emeka Egbuka","Harold Fannin Jr.","Jacory Croskey-Merritt","Jaxson Dart","Jayden Higgins","Kyle Monangai","Mason Taylor","Matthew Golden","Omarion Hampton","Oronde Gadsden","Quinshon Judkins","RJ Harvey","Shedeur Sanders","Tetairoa McMillan","Tez Johnson","Travis Hunter","TreVeyon Henderson","Tyler Loop","Tyler Shough","Tyler Warren","Woody Marks"],2026:["Carnell Tate","Denzel Boston","Jadarian Price","Jeremiyah Love","Kenyon Sadiq"]};
+let AROOK=null;
+function allRookie(){
+  if(AROOK)return AROOK;
+  const by={};
+  D.tw.forEach(t=>{
+    if(t[2]!==BR_REG)return;
+    const set=ROOKIES[t[0]]; if(!set)return;
+    t[7].forEach(e=>{
+      if(!e[1])return;
+      const nm=D.players[e[2]];
+      if(!set.some(x=>sameName(x,nm)))return;
+      const yr=by[t[0]]||(by[t[0]]={});
+      const r=yr[nm]||(yr[nm]={name:nm,pos:D.pos[e[3]]||'',id:e[2],pts:0,st:0});
+      if(!r.pos)r.pos=D.pos[e[3]]||'';
+      r.pts+=e[4]; r.st++;
+    });
+  });
+  const teams={};
+  SEASONS.filter(y=>CHAMP[y]).forEach(y=>{
+    const pool=Object.values(by[y]||{}).sort((a,b)=>b.pts-a.pts);
+    const used=new Set(), team=[];
+    const take=(test,slot)=>{
+      const p=pool.find(x=>!used.has(x.name)&&test(x));
+      if(!p)return;                       // some classes have no rookie at that spot
+      used.add(p.name); team.push(Object.assign({},p,{slot}));
+    };
+    AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
+    take(x=>AP_FLEX.has(x.pos),'FLEX');
+    teams[y]=team;
+  });
+  return (AROOK=teams);
+}
 const startedMost=(y,nm)=>{
   const c=new Map();
   D.tw.forEach(t=>{ if(t[0]!==y||t[2]!==BR_REG)return;
@@ -1886,7 +1924,7 @@ VIEWS.players=()=>{
 /* One season's hardware: the league-wide All-Pro teams, then the Pro Bowl
    rosters each conference picks out of its own managers' lineups. */
 function teamCards(sides, labels){
-  const g=E('div','ap'+(sides.length===2?' two':''));
+  const g=E('div','ap'+(sides.length===2?' two':sides.length===1?' one':''));
   sides.forEach((side,i)=>{
     const col=E('div','card');
     col.appendChild(E('h3',null,(labels||AP_TEAM)[i]));
@@ -1935,6 +1973,10 @@ function honorsBlock(){
   out.appendChild(secH('All-Pro Teams'));
   out.appendChild(E('p','lede','One QB, two RB, two WR, a TE, a K and a FLEX, taken in that order off the season\u2019s scoring list \u2014 then the second and third teams carry on down it. Regular season only, and only what a player scored while somebody had him in a starting lineup.'));
   out.appendChild(teamCards(A.teams[y]||[]));
+
+  out.appendChild(secH('All-Rookie Team'));
+  out.appendChild(E('p','lede','The same eight slots out of that season\u2019s rookie class alone \u2014 first NFL year, league regular season, started points. A class with nobody at a position simply leaves the slot out.'));
+  out.appendChild(teamCards([allRookie()[y]||[]],['All-Rookie']));
 
   out.appendChild(secH('Pro Bowl'));
   out.appendChild(E('p','lede','One squad a conference, 24 men apiece \u2014 the same slots as an All-Pro team, filled three times over, everybody listed at the position he plays. A player belongs to the conference of whoever started him in his last regular season game, so East and West never name the same man.'));
