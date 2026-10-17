@@ -1246,6 +1246,14 @@ function allPro(){
    whoever started him in his last regular season game that year, so East and
    West never name the same man. Regular season, started points. */
 const PB_ORDER={QB:0,RB:1,WR:2,TE:3,K:4};
+const startedMost=(y,nm)=>{
+  const c=new Map();
+  D.tw.forEach(t=>{ if(t[0]!==y||t[2]!==BR_REG)return;
+    t[7].forEach(e=>{ if(e[1]&&sameName(D.players[e[2]],nm)){
+      const m=D.mgrs[t[3]]; c.set(m,(c.get(m)||0)+e[4]); }})});
+  let best=null; c.forEach((v,k)=>{ if(!best||v>best[1]) best=[k,v] });
+  return best?best[0]:null;
+};
 const agholor=y=>{const i=(D.ringYears||[]).indexOf(y);
   const r=i<0?null:(D.rings||[]).find(x=>x[2][i]===4); return r?r[0]:null};
 /* whoever started him in that season's final */
@@ -1920,7 +1928,8 @@ function honorsBlock(){
   const aw=E('div','ap');
   aw.appendChild(acard('Season MVP',mvpNm,mvpRow&&mvpRow.mgr?'Started by '+mvpRow.mgr:''));
   aw.appendChild(acard('Agholor MVP',agh,agh?(heldBy(y,agh)?'Started in the final by '+heldBy(y,agh):'On the winning roster'):''));
-  aw.appendChild(acard('Rookie of the Year',roy&&roy[0],roy?f2(roy[1])+' points as a rookie':''));
+  aw.appendChild(acard('Rookie of the Year',roy&&roy[0],
+    roy?f2(roy[1])+' points as a rookie'+(startedMost(y,roy[0])?', mostly for '+startedMost(y,roy[0]):''):''));
   out.appendChild(aw);
 
   out.appendChild(secH('All-Pro Teams'));
@@ -1946,7 +1955,7 @@ VIEWS.records=()=>{
     {h:'Season MVP',f:y=>{const nm=AWARDED[y]; if(!nm)return '<span style="opacity:.5">—</span>';
       const r=mvpLadder(y).rows.find(x=>x.name===nm); return withMgr(nm,r&&r.mgr)}},
     {h:'Agholor MVP',f:y=>{const nm=agholor(y); return nm?withMgr(nm,heldBy(y,nm)):'<span style="opacity:.5">—</span>'}},
-    {h:'Rookie of the Year',f:y=>ROY[y]?ROY[y][0]+' <span style="color:var(--muted)">'+f2(ROY[y][1])+'</span>':'<span style="opacity:.5">—</span>'}
+    {h:'Rookie of the Year',f:y=>ROY[y]?withMgr(ROY[y][0],startedMost(y,ROY[y][0])):'<span style="opacity:.5">—</span>'}
   ],champs,{click:y=>go('managers',{m:CHAMP[y]})}));
   const cn=E('div','note'); cn.style.marginTop='9px';
   cn.textContent='Manager of the Year is judged on the regular season. The Agholor MVP goes to the best player on the Garrison winner’s roster in the final.';
