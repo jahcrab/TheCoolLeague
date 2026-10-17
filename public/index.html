@@ -354,9 +354,8 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .issue .cap{padding:11px 14px}
 .issue .cap .wk{font-family:var(--f-disp);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent)}
 .issue .cap .hl{font-family:var(--f-disp);font-size:19px;margin-top:3px;line-height:1.15}
-h3.conf{font-family:var(--f-disp);font-size:13px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
 .ap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
+.ap.two{grid-template-columns:repeat(2,1fr)}
 .ap .card{padding:14px 16px 4px}
 .ap .card h3{margin:0 0 4px}
 .ap table{font-size:14px}
@@ -1226,11 +1225,10 @@ function allPro(){
   return (APRO={teams,byPlayer,seasons:done});
 }
 
-/* The Pro Bowl: the same eight slots, three teams deep, chosen separately out
-   of each conference. A player belongs to whichever side his manager (or the
-   manager he scored most of his points for) sat in that year, so East and West
-   never name the same man twice. Regular season and started points, as above. */
-const PB_TEAM=['First Team','Second Team','Third Team'];
+/* The Pro Bowl: the same eight slots as an All-Pro team, chosen separately out
+   of each conference: one East team and one West team, eight men apiece. A
+   player belongs to whichever side he scored most of his points for that year,
+   so East and West never name the same man. Regular season, started points. */
 const PB_SIDE=['East','West'];
 let PBOWL=null;
 function proBowl(){
@@ -1258,22 +1256,18 @@ function proBowl(){
       // a tie goes East, so nobody can be picked by both conferences
       const pool=all.filter(x=>x[side]>0&&(side==='East'?x.East>=x.West:x.West>x.East))
                     .sort((a,b)=>b.pts-a.pts);
-      const used=new Set(), out=[];
-      for(let t=0;t<3;t++){
-        const team=[];
-        const take=(test,slot)=>{
-          const p=pool.find(x=>!used.has(x.name)&&test(x));
-          if(!p)return;
-          used.add(p.name);
-          team.push(Object.assign({},p,{slot}));
-          if(!byPlayer.has(p.name))byPlayer.set(p.name,[]);
-          byPlayer.get(p.name).push({y,side,team:t,slot,pts:p.pts});
-        };
-        AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
-        take(x=>AP_FLEX.has(x.pos),'FLEX');
-        out.push(team);
-      }
-      sides[side]=out;
+      const used=new Set(), team=[];
+      const take=(test,slot)=>{
+        const p=pool.find(x=>!used.has(x.name)&&test(x));
+        if(!p)return;
+        used.add(p.name);
+        team.push(Object.assign({},p,{slot}));
+        if(!byPlayer.has(p.name))byPlayer.set(p.name,[]);
+        byPlayer.get(p.name).push({y,side,slot,pts:p.pts});
+      };
+      AP_SLOTS.forEach(([pos,n])=>{ for(let i=0;i<n;i++) take(x=>x.pos===pos,pos); });
+      take(x=>AP_FLEX.has(x.pos),'FLEX');
+      sides[side]=team;
     });
     teams[y]=sides;
   });
@@ -1803,11 +1797,11 @@ VIEWS.players=()=>{
 
 /* One season's hardware: the league-wide All-Pro teams, then the Pro Bowl
    rosters each conference picks out of its own managers' lineups. */
-function teamCards(sides, label){
-  const g=E('div','ap');
+function teamCards(sides, labels){
+  const g=E('div','ap'+(sides.length===2?' two':''));
   sides.forEach((side,i)=>{
     const col=E('div','card');
-    col.appendChild(E('h3',null,(label?label+' ':'')+AP_TEAM[i]));
+    col.appendChild(E('h3',null,(labels||AP_TEAM)[i]));
     col.appendChild(tbl([
       {h:'',f:r=>'<span class="sl">'+r.slot+'</span>'},
       {h:'Player',f:r=>'<strong>'+r.name+'</strong>'},
@@ -1834,10 +1828,7 @@ function honorsBlock(){
 
   out.appendChild(secH('Pro Bowl'));
   out.appendChild(E('p','lede','The same eight slots, picked twice \u2014 once out of each conference. A player belongs to the side he scored most of his points for, so East and West never name the same man.'));
-  PB_SIDE.forEach(side=>{
-    out.appendChild(E('h3','conf',side));
-    out.appendChild(teamCards(((B.teams[y]||{})[side])||[]));
-  });
+  out.appendChild(teamCards(PB_SIDE.map(sd=>((B.teams[y]||{})[sd])||[]), PB_SIDE));
   return out;
 }
 
