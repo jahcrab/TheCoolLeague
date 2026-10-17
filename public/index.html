@@ -1440,8 +1440,7 @@ function playerHonours(s){
   if(roy.length) line('Rookie of the Year',roy.join(', '));
   const AR=allRookie();
   const ar=Object.keys(AR).filter(y=>AR[y].some(p=>sameName(p.name,s.name)));
-  if(ar.length) line('All-Rookie',ar.map(y=>y+' <span style="opacity:.55">'+
-    ord(AR[y].findIndex(p=>sameName(p.name,s.name))+1)+' in his class</span>').join(',\u2003'));
+  if(ar.length) line('All-Rookie',ar.join(',\u2003'));
   const ap=allPro().byPlayer.get(s.name);
   if(ap&&ap.length){
     const by=[[],[],[]];
