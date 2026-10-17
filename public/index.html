@@ -2504,7 +2504,10 @@ VIEWS.draft=()=>{
   // simply the biggest score out of the back half of the draft.
   const best=(arr,f)=>arr.length?arr.reduce((a,b)=>f(b)>f(a)?b:a):null;
   const steal=best(B.picks.filter(p=>p.rd>=STEAL_FROM),p=>p.pts);
-  const bust=best(B.picks.filter(p=>p.ov<=B.n*3&&p.kept),p=>p.fin-p.ov);
+  // simply the fewest points out of the first three rounds; a tie goes to whoever
+  // was taken earlier, since more was expected of him
+  const bust=B.picks.filter(p=>p.ov<=B.n*3&&p.kept)
+    .sort((a,b)=>a.pts-b.pts||a.ov-b.ov)[0]||null;
   const lastSlot=[...B.slots].reverse().find(sl=>sl.p);
   const card=(h,p,note)=>{
     const c=E('div','card');
@@ -2524,7 +2527,7 @@ VIEWS.draft=()=>{
   g.appendChild(card('Mr. Irrelevant',lastSlot&&lastSlot.p));
   out.appendChild(g);
   out.appendChild(E('p','lede','The steal is the most points any manager got out of his own round '+
-    STEAL_FROM+'-or-later pick. The bust is the first-three-rounds pick who finished furthest below his slot, counting only men who spent a week on the roster of the manager who took them \u2014 trading a pick away on the night is a deal, not a bust.'));
+    STEAL_FROM+'-or-later pick; the bust is the fewest out of his first three rounds. Both count only men who spent a week on the roster of the manager who took them \u2014 trading a pick away on draft night is a deal, not a bust.'));
 
   // one row, whichever way the board is sliced: the slot, the man, and the
   // thing the other column already tells you (his manager, or what he scored)
