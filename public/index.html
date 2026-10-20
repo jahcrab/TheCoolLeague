@@ -893,7 +893,7 @@ const ISSUES=Object.assign({},ISSUE_PAST,{[ISSUE.wk]:ISSUE});
 
 /* An issue's article on its own, without the live boards the front page wraps
    round it: standings, the slate and the game-by-game cards are this week's
-   machinery, and two weeks later they report the wrong week. The written
+   machinery, and a fortnight later they report the wrong week. The written
    stories keep. */
 VIEWS.issue=()=>{
   const out=E('div'), w=+STATE.iw, I=ISSUES[w];
@@ -2750,7 +2750,7 @@ function mvpBlock(){
   note.appendChild(E('h3',null,'Where this version bends the method'));
   ['A player qualifies at '+L.minG+' games, 60% of the weeks played so far. Without a cut-off, one big week off the waiver wire would top the ladder on points per game alone.',
    'Games played is counted as weeks the player scored anything while rostered in this league, since the archive holds fantasy rosters rather than NFL inactives. A genuine zero in a game he played is counted as a week off.',
-   'Replacement values come from this league only, and from every man rostered two weeks or more \u2014 scored over every week he was held, blank weeks included, because that is what the wire actually pays. This early the QB and TE bands run shallower than fourteen deep, so those two are noisier than the RB and WR ones.'
+   'Replacement values come from this league only, and from every man rostered a fortnight or more \u2014 scored over every week he was held, blank weeks included, because that is what the wire actually pays. This early the QB and TE bands run shallower than fourteen deep, so those two are noisier than the RB and WR ones.'
   ].forEach(t=>note.appendChild(E('p',null,t)));
   out.appendChild(note);
   return out;
