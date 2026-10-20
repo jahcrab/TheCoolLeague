@@ -56,7 +56,7 @@ img{max-width:100%}
   --sg-old:#2c3f2d;
   color-scheme:dark;
 }
-/* Colour-blind mode. The season ramp runs blue through yellow to red, and at
+/* Color-blind mode. The season ramp runs blue through yellow to red, and at
    the hot end a deuteranope reads three shades of the same mud; the red and
    green in the tables have the same trouble. These palettes carry their
    meaning in lightness instead of hue — every ramp climbs steadily from dark
@@ -803,7 +803,7 @@ const ISSUE={
     cap:'Guzman\u2019s statement in full, issued in place of comment: the Cat in the Hat, strung up, Week 6.'},
   lead:[
    'Guzman met the press on Sunday evening and opened with a confession. \u201cI meant to start the Caleb Williams guy,\u201d he said. Asked how a man comes to forget his own quarterback, he reached not for an excuse but for a recipe: \u201cI was making cinnamon rolls.\u201d',
-   'The man he started instead was Kirk Cousins, who threw for 313 yards and two touchdowns and scored <strong>18.52</strong>. Caleb Williams sat on the bench and scored <strong>16.50</strong>. The mistake was worth two points and change, in Guzman\u2019s favour.',
+   'The man he started instead was Kirk Cousins, who threw for 313 yards and two touchdowns and scored <strong>18.52</strong>. Caleb Williams sat on the bench and scored <strong>16.50</strong>. The mistake was worth two points and change, in Guzman\u2019s favor.',
    'The rest of the roster needed no supervision at all. Jaxon Smith-Njigba 25.40, Bhayshul Tuten 24.70, Kyle Pitts 23.00, DeVonta Smith 20.50 \u2014 <strong>147.42</strong> altogether, the highest score of the week, and a number that would have beaten all thirteen other teams in the league.',
    'It landed, as these things do, on James V. Guzman is now <strong>7\u20130</strong> against him and has never once scored under 125 in the series: 141.36, 133.48, 125.78, 138.08, 134.48, 126.48, and now 147.42. The average is 135.3 to 87.3. James V\u2019s 100.50 was the second-best game he has ever managed against the man, and would have beaten seven other teams this week. It lost by 47.',
    'James V, for his part, blamed the fixture list. \u201cCursed matchup,\u201d he told reporters. \u201cI\u2019ll get u next year.\u201d Guzman, offered a right of reply, declined to use words at all: he submitted a video of the Cat in the Hat being beaten with sticks by a crowd of small children, captioned \u201chow I do james every year.\u201d The record book is on Guzman\u2019s side.'
@@ -847,7 +847,7 @@ const ISSUE={
    {a:'James D',b:'Guzman',pa:106.2,pb:103.0,fav:'Guzman',pct:52,
     note:'Six meetings and never the same winner twice in a row, which by that arithmetic makes James D due. Breece Hall is out, and this is the nearest thing to a coin toss on the board.'},
    {a:'Nick',b:'Brendan',pa:114.6,pb:118.6,fav:'Brendan',pct:52,
-    note:'The pairing that opened with Brendan beating Nick in the 2020 Garrison final, and the one the injury list turned over: <strong>Lamar Jackson and Rashee Rice are both out</strong>, which takes Nick from favourite to underdog.'}
+    note:'The pairing that opened with Brendan beating Nick in the 2020 Garrison final, and the one the injury list turned over: <strong>Lamar Jackson and Rashee Rice are both out</strong>, which takes Nick from favorite to underdog.'}
   ]},
   trade:{title:'Six and Oh, Somehow', img:'news/w6b.webp',
     alt:'Jordan Love throwing for the Packers', body:[
@@ -893,7 +893,7 @@ const ISSUES=Object.assign({},ISSUE_PAST,{[ISSUE.wk]:ISSUE});
 
 /* An issue's article on its own, without the live boards the front page wraps
    round it: standings, the slate and the game-by-game cards are this week's
-   machinery, and a fortnight later they report the wrong week. The written
+   machinery, and two weeks later they report the wrong week. The written
    stories keep. */
 VIEWS.issue=()=>{
   const out=E('div'), w=+STATE.iw, I=ISSUES[w];
@@ -1188,7 +1188,7 @@ VIEWS.scorigami=()=>{
   };
 
   const ctl=E('div','ctl');
-  ctl.appendChild(E('span','pill','Colour'));
+  ctl.appendChild(E('span','pill','Color'));
   const mode=STATE.mode||'claimed';
   [['claimed','Claimed'],['week','This week'],['season','By season'],['latest','Latest'],['repeats','Repeats']].forEach(([v,t])=>{
     const b=E('button','btn',t); b.setAttribute('aria-pressed',v===mode?'true':'false');
@@ -1202,8 +1202,8 @@ VIEWS.scorigami=()=>{
       drawBoard(SQ,mode);};
     zbtns.push([b,v]); ctl.appendChild(b);
   });
-  const cb=E('button','btn','Colour-blind'); cb.style.marginLeft='4px';
-  cb.title='Swap the board, the heat ramp and the win/loss colours for palettes that read by lightness rather than hue. Remembered on this device.';
+  const cb=E('button','btn','Color-blind'); cb.style.marginLeft='4px';
+  cb.title='Swap the board, the heat ramp and the win/loss colors for palettes that read by lightness rather than hue. Remembered on this device.';
   cb.setAttribute('aria-pressed',cvdOn()?'true':'false');
   cb.onclick=()=>setCvd(!cvdOn());
   ctl.appendChild(cb);
@@ -1611,7 +1611,7 @@ function allRookie(){
   });
   const teams={};
   SEASONS.filter(y=>CHAMP[y]).forEach(y=>{
-    // No position slots. A slotted team kept honouring whoever happened to be the
+    // No position slots. A slotted team kept honoring whoever happened to be the
     // only rookie at a spot \u2014 a 14-point quarterback, a kicker \u2014 while leaving
     // Justin Jefferson off the 2020 team. The eight best are the eight best.
     teams[y]=Object.values(by[y]||{}).sort((a,b)=>b.pts-a.pts).slice(0,AROOK_N)
@@ -1783,7 +1783,7 @@ function playerStats(){
 }
 const ord=n=>{const t=['th','st','nd','rd'],v=n%100; return n+(t[(v-20)%10]||t[v]||t[0])};
 /* What a player has won: rings by season, the Agholor, the league MVP. */
-function playerHonours(s){
+function playerHonors(s){
   const hon=E('div','hon'); hon.style.margin='0 0 14px';
   const line=(lab,val,gold)=>{const d=E('div',gold?'g':null);
     d.appendChild(E('span','k',lab)); const v=E('span','v'); v.innerHTML=val; d.appendChild(v); hon.appendChild(d)};
@@ -1822,7 +1822,7 @@ function playerHonours(s){
 const RING_LVL={1:'On the roster',2:'Bench in the final',3:'Started the final',4:'Agholor MVP'};
 const sameName=(a,b)=>String(a).replace(/[’']/g,"'")===String(b).replace(/[’']/g,"'");
 
-/* Pick legible ink for a count printed on a coloured square. */
+/* Pick legible ink for a count printed on a colored square. */
 function inkOn(fill){
   let r,g,b;
   const m=String(fill).match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/);
@@ -2125,7 +2125,7 @@ function playerProfile(id){
       .filter(Boolean).join('  ·  ');
     out.appendChild(p);
   }
-  out.appendChild(playerHonours(one));
+  out.appendChild(playerHonors(one));
 
   const g1=E('div','grid-auto'); g1.style.marginBottom='14px';
   const pps=one.starts?one.spts/one.starts:0;
@@ -2167,7 +2167,7 @@ function playerProfile(id){
   return out;
 }
 
-/* What a man did in one season here, and the honours that came with it. */
+/* What a man did in one season here, and the honors that came with it. */
 function seasonLine(name,y){
   const tags=[];
   if(sameName(AWARDED[y]||'',name)) tags.push(['MVP','g']);
@@ -2204,7 +2204,7 @@ function seasonTable(one,all){
   if(!lines.length){ wrap.appendChild(E('p','empty','No '+(k==='po'?'playoff':'regular season')+' games.')); return wrap }
   const sc=E('div','scroll'), t=E('table','seas'), th=E('thead'), tb=E('tbody');
   const cols=[['Season',''],['Managers',''],['G','r'],['GS','r'],['Pts','r'],
-              ['P/GS','r'],['Best','r'],['W\u2013L','r'],['Honours','']];
+              ['P/GS','r'],['Best','r'],['W\u2013L','r'],['Honors','']];
   const hr=E('tr');
   cols.forEach(([h,c])=>{const x=E('th',(c?c+' ':'')+'hd'); x.appendChild(E('span','hl',h)); hr.appendChild(x)});
   th.appendChild(hr); t.appendChild(th); t.appendChild(tb);
@@ -2750,7 +2750,7 @@ function mvpBlock(){
   note.appendChild(E('h3',null,'Where this version bends the method'));
   ['A player qualifies at '+L.minG+' games, 60% of the weeks played so far. Without a cut-off, one big week off the waiver wire would top the ladder on points per game alone.',
    'Games played is counted as weeks the player scored anything while rostered in this league, since the archive holds fantasy rosters rather than NFL inactives. A genuine zero in a game he played is counted as a week off.',
-   'Replacement values come from this league only, and from every man rostered a fortnight or more \u2014 scored over every week he was held, blank weeks included, because that is what the wire actually pays. This early the QB and TE bands run shallower than fourteen deep, so those two are noisier than the RB and WR ones.'
+   'Replacement values come from this league only, and from every man rostered two weeks or more \u2014 scored over every week he was held, blank weeks included, because that is what the wire actually pays. This early the QB and TE bands run shallower than fourteen deep, so those two are noisier than the RB and WR ones.'
   ].forEach(t=>note.appendChild(E('p',null,t)));
   out.appendChild(note);
   return out;
