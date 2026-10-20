@@ -2578,6 +2578,24 @@ VIEWS.managers=()=>{
   return out;
 };
 
+/* The man a manager keeps writing into the lineup. Every start he has ever
+   made for him, in any bracket — a consolation week is a dead week for the
+   record book but the lineup was still set by hand, and a start is a start.
+   Ties go to the one who scored more, which is as good a tiebreak as any. */
+function favPlayer(m){
+  const M=D.mgrs, by=new Map();
+  D.tw.forEach(t=>{ if(!owns(M[t[3]],m))return;
+    t[7].forEach(e=>{
+      if(e[1]!==1||e[2]==null||!D.players[e[2]])return;
+      const r=by.get(e[2])||{id:e[2],name:D.players[e[2]],pos:'',n:0,pts:0,y0:t[0],y1:t[0]};
+      r.n++; r.pts+=e[4];
+      if(!r.pos)r.pos=D.pos[e[3]]||'';
+      if(t[0]<r.y0)r.y0=t[0]; if(t[0]>r.y1)r.y1=t[0];
+      by.set(e[2],r); });
+  });
+  return [...by.values()].sort((a,b)=>b.n-a.n||b.pts-a.pts||a.name.localeCompare(b.name))[0]||null;
+}
+
 function mgrDetail(m){
   if(!CAREER.has(m)) m=credits(m)[0];
   const M=D.mgrs, out=E('div'), c=CAREER.get(m);
@@ -2597,6 +2615,16 @@ function mgrDetail(m){
   const mvps=Object.keys(AWARDED).filter(y=>{
     const r=mvpLadder(+y).rows.find(x=>x.name===AWARDED[y]); return r&&r.mgr===m});
   if(mvps.length) line('Rostered the MVP',mvps.map(y=>y+' <span class="who">'+AWARDED[y]+'</span>').join('  ·  '));
+  const fav=favPlayer(m);
+  if(fav){
+    const d=E('div'); d.appendChild(E('span','k','Favorite Player'));
+    const v=E('span','v'), a=E('button','plink',fav.name);
+    a.onclick=()=>go('players',{p:fav.id});
+    v.appendChild(a);
+    v.appendChild(E('span','who',' '+fav.pos+'  ·  '+fav.n+' starts  ·  '+
+      (fav.y0===fav.y1?fav.y0:fav.y0+'–'+fav.y1)+'  ·  '+f2(fav.pts/fav.n)+' a start'));
+    d.appendChild(v); hon.appendChild(d);
+  }
   if(hon.children.length) card.appendChild(hon);
   if(BIO[m]) card.appendChild(E('p','bio',BIO[m]));
   out.appendChild(card);
