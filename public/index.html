@@ -857,6 +857,99 @@ const ISSUE={
   ]}
 };
 
+/* Issues that have been off the front page keep their article here. Putting a
+   week in the archive is one move: lift the object out of ISSUE and drop it in
+   under its week number. The front page always carries the newest. */
+const ISSUE_PAST={
+ 5:{
+    yr:2026, wk:5, head:'Famous Last Words',
+    deck:'Graham typed it into the group chat at 10:53 on Monday night. One minute later the season had answered him.',
+    photo:{src:'news/nacua.webp',alt:'Puka Nacua catching a touchdown in the end zone against a Buffalo defender',
+      cap:'Nacua’s two-yard touchdown paid Graham 7.20 and Owen 4.08. The next throw went to Adams, and paid only Owen.'},
+    lead:[
+     '“Owen hope ur nervous.” Graham sent that at 10:53, trailing by under four with Puka Nacua still on the field. At 10:54 he sent a second message: “I deserve that.” In between, Matthew Stafford found Davante Adams in the end zone for the second time, and the last door closed.',
+     'Owen 144.32, Graham 140.46 — a new square at 144–140, the tightest game of the week by eleven points, and the win that leaves Owen the only undefeated team in the league.',
+     'The cruelty is in the details. Stafford is <em>Owen’s</em> quarterback, and he spent the fourth quarter throwing touchdowns to both sides: a two-yarder to Nacua that paid Graham 7.20 and Owen 4.08, then a five-yarder to Adams that paid only Owen. Graham’s best player of the week, 37.70 from Nacua, was being fed by the man he was trying to beat.',
+     'Which is the Graham experience in one night. He has the third-most points in the league, sits 2–3, and has been scored on more than anyone. Monday’s 140.46 would have beaten ten of the other thirteen teams. It beat nobody.',
+     'And it is not new. In 2022 he led the league in points for — 1,710.70 — and led it in points against, 1,722.36. He finished 6–8, seventh of fourteen, and watched six lower-scoring teams reach the playoffs without him. Graham is not unlucky. Graham is cursed.'
+    ],
+    watch:{title:'Week 6 · The One to Watch', body:[
+     '<strong>Owen at Jon.</strong> The only undefeated team against the only winless one, which the league has never staged this deep into a year. It has happened once — Week 4 of last season, 3–0 against 0–3 — and the undefeated team was Jon.',
+     'Two teams have started 5–0: James D in 2020 and Guzman in 2021. Both won in Week 6. Two have started 0–5: Bill in 2020 and James V in 2021. Both lost in Week 6, and Bill did not stop there, opening that season 0–12. The league is 2-for-2 both ways, and on Sunday the two precedents are the same game.',
+     'Owen should enjoy it while it lasts. Five teams have started 4–0 or better and not one has hoisted the Garrison. No champion in seven seasons has opened better than 2–0 — and the worst start any champion has survived is 1–4, Alex in 2022, the sus year.',
+     'Elsewhere, James V visits Guzman, who has historically put belt to ass in this matchup: Guzman is 6–0 against him by an average of 47.7, the most lopsided series in league history.'
+    ]},
+    fall:{title:'The Fall', body:[
+     'Brendan set the all-time record at 188.36 in Week 4, then posted 77.94 — a drop of 110.42, the largest between two regular-season weeks ever.',
+     'The 187.70 that Max fell from in 2021 is the record Brendan broke. So the two highest scores in league history are each followed by a top-three collapse.'
+    ]},
+    trade:{title:'The Trade Desk', img:'news/trade.webp',
+      alt:'Trade graphic: Ceedis Johnston and The Doubblin Hut swap five players each', body:[
+     'Monday, 11:34 PM. Hours after losing by 93, Bobby sent CeeDee Lamb, Terry McLaurin, Chase Brown, Noah Fant and Dalton Schultz to Alex for Travis Kelce, Kyren Williams, Mike Evans, KC Concepcion and Romeo Doubs.',
+     'Alex’s second blockbuster in thirteen days. The two teams he has traded with are 0–5 and 1–4.'
+    ]}}
+};
+const ISSUES=Object.assign({},ISSUE_PAST,{[ISSUE.wk]:ISSUE});
+
+/* An issue's article on its own, without the live boards the front page wraps
+   round it: standings, the slate and the game-by-game cards are this week's
+   machinery, and a fortnight later they report the wrong week. The written
+   stories keep. */
+VIEWS.issue=()=>{
+  const out=E('div'), w=+STATE.iw, I=ISSUES[w];
+  if(!I){ out.appendChild(E('p','empty','That issue has no article behind it.')); return out; }
+  const bk=E('button','btn','\u2190 All issues'); bk.style.marginBottom='16px';
+  bk.onclick=()=>go('newsletters'); out.appendChild(bk);
+
+  const hero=E('div','hero'), eb=E('div','eyebrow');
+  eb.innerHTML='<span>Scorigami Report</span><span class="dot"></span><span>Week '+I.wk+' \u00b7 '+I.yr+'</span>'+
+    (w===ISSUE.wk?'<span class="dot"></span><span>Latest Issue</span>':'');
+  hero.appendChild(eb);
+  hero.appendChild(E('h1',null,I.head));
+  hero.appendChild(E('p','deck',I.deck));
+  const hb=E('div','hero-body'), txt=E('div');
+  I.lead.forEach(t=>{const p=E('p');p.innerHTML=t;txt.appendChild(p)});
+  const fig=E('figure'), im=E('img');
+  im.src=I.photo.src; im.alt=I.photo.alt; im.width=1400; im.height=896;
+  fig.appendChild(im); fig.appendChild(E('figcaption',null,I.photo.cap));
+  if(I.photo2){
+    const f2x=E('figure','fig2'), i2=E('img');
+    i2.src=I.photo2.src; i2.alt=I.photo2.alt; i2.loading='lazy';
+    i2.width=1400; i2.height=800;
+    f2x.appendChild(i2); f2x.appendChild(E('figcaption',null,I.photo2.cap));
+    txt.insertBefore(f2x, txt.lastChild);
+  }
+  hb.appendChild(fig); hb.appendChild(txt); hero.appendChild(hb);
+  out.appendChild(hero);
+
+  const col=[I.watch,I.fall].filter(Boolean);
+  if(col.length){
+    const faq=E('div','faq'), a=E('div'), b=E('div');
+    col.forEach((sec,n)=>{
+      const c=E('div','card'); c.appendChild(E('h3',null,sec.title));
+      sec.body.forEach(t=>{const p=E('p');p.innerHTML=t;c.appendChild(p)});
+      (n%2?b:a).appendChild(c);
+    });
+    faq.appendChild(a); faq.appendChild(b); out.appendChild(faq);
+  }
+  [I.trade,I.ladder].filter(Boolean).forEach(sec=>{
+    const d=E('div','card wide'); d.style.marginTop='18px';
+    d.appendChild(E('h3',null,sec.title));
+    if(sec.img){const g=E('img'); g.src=sec.img; g.alt=sec.alt||''; g.loading='lazy';
+      g.width=1400; g.height=933; d.appendChild(g)}
+    const bd=E('div','body');
+    sec.body.forEach(t=>{const p=E('p');p.innerHTML=t;bd.appendChild(p)});
+    d.appendChild(bd); out.appendChild(d);
+  });
+
+  out.appendChild(secH('The One-Page Issue'));
+  const pg=E('img'); pg.src='news/w'+I.wk+'.webp'; pg.loading='lazy';
+  pg.alt='Scorigami Report, Week '+I.wk+' of '+I.yr+', one page';
+  pg.width=1400; pg.height=1812; pg.style.cssText='width:100%;height:auto;border:1px solid var(--line)';
+  out.appendChild(pg);
+  return out;
+};
+
 VIEWS.overview=()=>{
   const M=D.mgrs, out=E('div'), sq=squares(), Y=ISSUE.yr, W=ISSUE.wk;
   const never=[...sq.values()].filter(a=>a.length===1).length;
@@ -2768,6 +2861,14 @@ VIEWS.newsletters=()=>{
     const cap=E('div','cap');
     cap.appendChild(E('div','wk','Week '+n.w+' · 2026'));
     cap.appendChild(E('div','hl',n.hl));
+    /* only the weeks whose article survives; the early issues were the page alone */
+    if(ISSUES[n.w]){
+      const a=E('button','ylink','Read the full article →');
+      a.style.marginTop='6px';
+      a.onclick=()=>go('issue',{iw:n.w});
+      im.style.cursor='pointer'; im.onclick=a.onclick;
+      cap.appendChild(a);
+    }
     d.appendChild(im); d.appendChild(cap); g.appendChild(d);
   });
   out.appendChild(g);
@@ -3003,7 +3104,8 @@ function go(v,st){
 }
 function render(){
   const rail=$('#rail'); rail.innerHTML='';
-  TABS.forEach(([k,t])=>{const b=E('button',null,t); b.setAttribute('aria-current',k===CUR?'true':'false');
+  const tab=CUR==='issue'?'newsletters':CUR;   // an issue belongs to the archive it came from
+  TABS.forEach(([k,t])=>{const b=E('button',null,t); b.setAttribute('aria-current',k===tab?'true':'false');
     b.onclick=()=>go(k,{}); rail.appendChild(b)});
   const m=$('#main'); m.innerHTML='';
   try{ m.appendChild(VIEWS[CUR]()); }
