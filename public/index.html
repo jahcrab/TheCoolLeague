@@ -210,8 +210,12 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 @media (min-width:880px){.cols{grid-template-columns:1.5fr 1fr}}
 .faq{display:grid;gap:0 18px;grid-template-columns:1fr}
 @media (min-width:760px){.faq{grid-template-columns:1fr 1fr}}
-.card.wide::after{content:'';display:block;clear:both}
-@media (min-width:700px){.card.wide img{float:left;width:46%;margin:2px 20px 8px 0}
+.card.wide img{margin-bottom:11px}
+@media (min-width:700px){
+  .card.wide{display:grid;grid-template-columns:46% 1fr;column-gap:20px;align-items:start}
+  .card.wide h3{grid-column:1/-1}
+  .card.wide img{margin:2px 0 0}
+  .card.wide .body{min-width:0}
   .card.wide p{max-width:none}}
 .card{background:var(--panel);border:1px solid var(--line);padding:15px 17px;margin-bottom:18px}
 .card h3{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:9px}
@@ -889,7 +893,9 @@ VIEWS.overview=()=>{
   td.appendChild(E('h3',null,ISSUE.trade.title));
   const ti=E('img'); ti.src=ISSUE.trade.img; ti.alt=ISSUE.trade.alt; ti.loading='lazy';
   ti.width=1400; ti.height=933; td.appendChild(ti);
-  ISSUE.trade.body.forEach(t=>{const p=E('p');p.innerHTML=t;td.appendChild(p)});
+  const tb=E('div','body');
+  ISSUE.trade.body.forEach(t=>{const p=E('p');p.innerHTML=t;tb.appendChild(p)});
+  td.appendChild(tb);
   out.appendChild(td);
 
   /* every game of the week, for the thirteen men who were not the lead story */
@@ -956,7 +962,9 @@ VIEWS.overview=()=>{
     lc.appendChild(E('h3',null,ISSUE.ladder.title));
     const li=E('img'); li.src=ISSUE.ladder.img; li.alt=ISSUE.ladder.alt; li.loading='lazy';
     li.width=1400; li.height=700; lc.appendChild(li);
-    ISSUE.ladder.body.forEach(t=>{const p=E('p');p.innerHTML=t;lc.appendChild(p)});
+    const lb=E('div','body');
+    ISSUE.ladder.body.forEach(t=>{const p=E('p');p.innerHTML=t;lb.appendChild(p)});
+    lc.appendChild(lb);
     out.appendChild(lc);
   }
   out.appendChild(secH('The MVP Ladder · After Week '+W));
