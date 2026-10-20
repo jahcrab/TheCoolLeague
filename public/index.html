@@ -40,6 +40,7 @@ img{max-width:100%}
   --heat1:#efd9d2; --heat2:#d79a85; --heat3:#b85c3c; --heat4:#8d2a12;
   --sg-claimed:#00b050; --sg-void:#0c0c0c; --sg-cell:#ffffff; --sg-line:#e2dcd7;
   --sg-y0:#004dd6; --sg-y1:#407dd6; --sg-y2:#78aad6; --sg-y3:#ffd579; --sg-y4:#ffaf00; --sg-y5:#ff7c00; --sg-y6:#d81e00;
+  --sg-new:#d81e00; --sg-rep:#ffaf00; --sg-old:#c3d9c2;
   --f-disp:'Barlow Condensed','Helvetica Neue',Arial,sans-serif;
   --f-body:'Newsreader',Georgia,'Times New Roman',serif;
   --f-data:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
@@ -52,7 +53,25 @@ img{max-width:100%}
   --good:#5fa37d; --bad:#d46a60;
   --heat1:#3a241e; --heat2:#6d3522; --heat3:#a9492a; --heat4:#e0603f;
   --sg-void:#000000; --sg-cell:#120f0d; --sg-line:#2a2321;
+  --sg-old:#2c3f2d;
   color-scheme:dark;
+}
+/* Colour-blind mode. The season ramp runs blue through yellow to red, and at
+   the hot end a deuteranope reads three shades of the same mud; the red and
+   green in the tables have the same trouble. These palettes carry their
+   meaning in lightness instead of hue — every ramp climbs steadily from dark
+   to light — and the one pair that stays a pair is blue against orange. */
+:root[data-cvd="1"]{
+  --good:#1f6feb; --bad:#c05600;
+  --heat2:#9ecae1; --heat3:#4292c6; --heat4:#08519c;
+  --sg-claimed:#2c6fa8;
+  --sg-y0:#00224e; --sg-y1:#234a85; --sg-y2:#5c6a7d; --sg-y3:#7c7b78; --sg-y4:#a59c74; --sg-y5:#d3c164; --sg-y6:#fee838;
+  --sg-new:#d95f02; --sg-rep:#1f6feb; --sg-old:#c3ccd3;
+}
+:root[data-theme="dark"][data-cvd="1"]{
+  --heat2:#13375f; --heat3:#2b6ca3; --heat4:#79b6e2;
+  --sg-y0:#2d4f80; --sg-y1:#4a6585; --sg-y2:#677b87; --sg-y3:#86917f; --sg-y4:#a7a873; --sg-y5:#cbc266; --sg-y6:#fee838;
+  --sg-old:#2b3640;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
@@ -484,6 +503,15 @@ const TH=document.documentElement;
 try{const t=localStorage.getItem('cl-theme'); if(t)TH.setAttribute('data-theme',t);}catch(e){}
 $('#theme').onclick=()=>{const n=TH.getAttribute('data-theme')==='dark'?'light':'dark';
   TH.setAttribute('data-theme',n); try{localStorage.setItem('cl-theme',n)}catch(e){} render();};
+/* Remembered per browser, like the theme. Storage can be off or throw, so a
+   failed read just means the mode starts off. */
+try{if(localStorage.getItem('cl-cvd')==='1')TH.setAttribute('data-cvd','1');}catch(e){}
+const cvdOn=()=>TH.getAttribute('data-cvd')==='1';
+function setCvd(on){
+  if(on)TH.setAttribute('data-cvd','1'); else TH.removeAttribute('data-cvd');
+  try{localStorage.setItem('cl-cvd',on?'1':'0')}catch(e){}
+  render();
+}
 
 let D=null, G=[], BYK=new Map(), CHAMP={}, RUNUP={}, CAREER=new Map(), H2H=new Map(), SEASONS=[];
 const BR_REG=0, BR_PO=1, BR_CON=2, PO_FINAL={};
@@ -1017,7 +1045,7 @@ VIEWS.scorigami=()=>{
   const out=E('div'), M=D.mgrs;
   out.appendChild(secH('The Scorigami Board'));
   const p=E('p','lede');
-  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened; tap or hover one to see its games. Drag the dial to see the board as it stood after any season, or press play and watch it fill in.';
+  p.textContent='Each square is a final score — winner’s points across, loser’s points down, both rounded. Shaded means it has happened; tap or hover one to see its games. This week picks out what the last slate landed on, new squares against repeats. Drag the dial to see the board as it stood after any season, or press play and watch it fill in.';
   out.appendChild(p);
   /* the dial: drag a season and the board fills in as it did that year */
   let timer=null, SQ=null;
@@ -1069,7 +1097,7 @@ VIEWS.scorigami=()=>{
   const ctl=E('div','ctl');
   ctl.appendChild(E('span','pill','Colour'));
   const mode=STATE.mode||'claimed';
-  [['claimed','Claimed'],['season','By season'],['latest','Latest'],['repeats','Repeats']].forEach(([v,t])=>{
+  [['claimed','Claimed'],['week','This week'],['season','By season'],['latest','Latest'],['repeats','Repeats']].forEach(([v,t])=>{
     const b=E('button','btn',t); b.setAttribute('aria-pressed',v===mode?'true':'false');
     b.onclick=()=>{STATE.mode=v;render()}; ctl.appendChild(b);
   });
@@ -1081,6 +1109,11 @@ VIEWS.scorigami=()=>{
       drawBoard(SQ,mode);};
     zbtns.push([b,v]); ctl.appendChild(b);
   });
+  const cb=E('button','btn','Colour-blind'); cb.style.marginLeft='4px';
+  cb.title='Swap the board, the heat ramp and the win/loss colours for palettes that read by lightness rather than hue. Remembered on this device.';
+  cb.setAttribute('aria-pressed',cvdOn()?'true':'false');
+  cb.onclick=()=>setCvd(!cvdOn());
+  ctl.appendChild(cb);
   out.appendChild(ctl);
 
   const maxY=curY>=latest?null:curY;
@@ -1095,6 +1128,13 @@ VIEWS.scorigami=()=>{
   function fillLegend(mY){
     let L='';
     if(mode==='claimed') L=sw('var(--sg-claimed)','Claimed')+sw('var(--sg-cell)','Never')+sw('var(--sg-void)','Impossible');
+    else if(mode==='week'){
+      const lw=weekOf(SQ), n=lw?freshIn(SQ,lw):0, r=lw?hitIn(SQ,lw)-n:0;
+      L='<span class="i" style="letter-spacing:.1em">'+(lw?'Week '+lw[1]+' \u00b7 '+lw[0]:'No games yet')+'</span>'+
+        sw('var(--sg-new)',n+(n===1?' new square':' new squares'))+
+        sw('var(--sg-rep)',r+(r===1?' repeat':' repeats'))+
+        sw('var(--sg-old)','Claimed before')+sw('var(--sg-cell)','Never');
+    }
     else if(mode==='season'||mode==='latest')
       L='<span class="i" style="letter-spacing:.1em">'+(mode==='season'?'First claimed':'Last claimed')+'</span>'+
         SEASONS.filter(y=>!mY||y<=mY).map(y=>sw('var(--sg-y'+(y-2020)+')',y)).join('')+sw('var(--sg-void)','Impossible');
@@ -1708,6 +1748,15 @@ function squareLine(arr){
    cells where the winner scored fewer points than the loser form the black
    slope falling left-to-right. Nothing can ever land there. */
 const AX={w0:57,w1:188,l0:32,l1:161};
+/* the newest week represented on a board, and what landed on it */
+function weekOf(sq){ let y=-1,w=-1;
+  sq.forEach(arr=>arr.forEach(g=>{ if(g.y>y||(g.y===y&&g.w>w)){y=g.y;w=g.w} }));
+  return y<0?null:[y,w]; }
+function hitIn(sq,lw){ let n=0;
+  sq.forEach(arr=>{ if(arr.some(g=>g.y===lw[0]&&g.w===lw[1]))n++ }); return n; }
+function freshIn(sq,lw){ let n=0;
+  sq.forEach(arr=>{ const f=arr.reduce((a,g)=>(g.y<a.y||(g.y===a.y&&g.w<a.w))?g:a,arr[0]);
+    if(f.y===lw[0]&&f.w===lw[1])n++ }); return n; }
 function drawBoard(sq,mode){
   const cv=$('#board'); if(!cv)return;
   const {w0,w1,l0,l1}=AX, nx=w1-w0+1, ny=l1-l0+1;
@@ -1743,10 +1792,22 @@ function drawBoard(sq,mode){
   c.fillStyle=col('--sg-void');
   for(let ls=l0;ls<=l1;ls++){ const last=Math.min(w1,ls-1); if(last<w0)continue;
     c.fillRect(padL,RY(ls),RX(last+1)-padL,RY(ls+1)-RY(ls)); }
+  /* "This week" means the newest week on the board, whatever the dial is set
+     to — so it follows a drag back through the seasons, and the animation
+     lights up each week as it lands. A square is new if its first game is
+     that week and a repeat if it was already claimed. */
+  const LW=mode==='week'?weekOf(sq):null;
+  const inLW=g=>LW&&g.y===LW[0]&&g.w===LW[1];
+  const weekFill=arr=>{
+    if(!arr.some(inLW)) return col('--sg-old');
+    const first=arr.reduce((a,g)=>(g.y<a.y||(g.y===a.y&&g.w<a.w))?g:a,arr[0]);
+    return col(inLW(first)?'--sg-new':'--sg-rep');
+  };
   const fillFor=arr=>
     mode==='season' ? (yr[Math.min(...arr.map(g=>g.y))-2020]||yr[6])
   : mode==='latest' ? (yr[Math.max(...arr.map(g=>g.y))-2020]||yr[6])
   : mode==='repeats'? heat[Math.min(2,arr.length-1)]
+  : mode==='week'   ? weekFill(arr)
   : col('--sg-claimed');
   sq.forEach((arr,k)=>{ const [ws,ls]=k.split('|').map(Number);
     c.fillStyle=fillFor(arr); c.fillRect(...cell(ws,ls)); });
