@@ -2499,53 +2499,42 @@ function mvpTable(rows,compact,mv){
                if(i>=0) go('players',{p:i}); else go('games',{q:r.name}); }});
 }
 
-/* Ladders are browsable from the first season calculated with this version of
-   the formula. Earlier awards are listed, not re-ranked. */
-const LADDER_FROM=2023;
+/* Only the running season has a ladder. The awards are listed and nothing
+   else: they were decided when they were decided, and a formula sharpened
+   afterwards does not get a vote on them. */
 function mvpBlock(){
   const out=E('div'), cur=SEASONS[SEASONS.length-1];
-  const YRS=SEASONS.filter(y=>y>=LADDER_FROM);
-  const Y=YRS.includes(STATE.my)?STATE.my:cur, live=Y===cur;
-  const L=mvpLadder(Y);
+  const Y=cur, L=mvpLadder(Y);
   out.appendChild(secH('The MVP Ladder · '+Y));
-  out.appendChild(E('p','lede','The league’s season-MVP formula, run against its own regular-season numbers '+
-    (live?'after ':'across ')+L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'+
-    (live&&L.weeks>1?' The arrows are the move since the ladder stood after Week '+(L.lastWeek-1)+'; NR means he had not qualified yet.':'')));
-  const yc=E('div','ctl');
-  yc.appendChild(E('span','pill','Season'));
-  const ys=E('select'); YRS.slice().reverse().forEach(y=>{
-    const o=E('option',null,y+(y===cur?' · in progress':''));o.value=y;ys.appendChild(o)});
-  ys.value=Y; ys.onchange=()=>{STATE.my=+ys.value;render()};
-  yc.appendChild(ys); out.appendChild(yc);
+  out.appendChild(E('p','lede','The league’s season-MVP formula, run against its own regular-season numbers after '+
+    L.weeks+' weeks. It asks who was most valuable to the team that rostered them, which is not the same question as who scored the most.'+
+    (L.weeks>1?' The arrows are the move since the ladder stood after Week '+(L.lastWeek-1)+'; NR means he had not qualified yet.':'')));
 
   const g1=E('div','grid-auto'); g1.style.marginBottom='18px';
   const top=L.rows[0];
-  g1.appendChild(tile(top.name.split(' ').slice(-1)[0],live?'Leader':'Winner',top.name+' · '+f2(top.score)));
+  g1.appendChild(tile(top.name.split(' ').slice(-1)[0],'Leader',top.name+' · '+f2(top.score)));
   g1.appendChild(tile(L.rows.filter(r=>r.war>0).length,'Players with a WAR','Won a week their team would otherwise have lost'));
   g1.appendChild(tile(L.rows.filter(r=>r.lbr>0).length,'Players with an LBR','Cost a week a replacement would have won'));
   g1.appendChild(tile(L.rows.length,'Qualified','Played at least '+L.minG+' of '+L.weeks+' weeks'));
   out.appendChild(g1);
 
-  /* movement is only news while a season is running; a finished ladder is final */
-  out.appendChild(mvpTable(L.rows.slice(0,40),false,live?mvpMoves(L):null));
+  out.appendChild(mvpTable(L.rows.slice(0,40),false,mvpMoves(L)));
 
   out.appendChild(secH('Past Winners'));
-  out.appendChild(E('p','lede','Every MVP the league has awarded, with the season each one was taken from. Pick a year above to see that season’s full ladder.'));
+  out.appendChild(E('p','lede','Every MVP the league has awarded. The award is the record: each was decided on the season it was given in, and a formula sharpened since then does not get a vote on it — which is why only the running season has a ladder.'));
   const past=SEASONS.slice().reverse().map(y=>{
-    const l=mvpLadder(y), lead=l.rows[0], won=AWARDED[y];
-    return {y,l,lead,won,row:won?l.rows.find(r=>r.name===won):null};
+    const l=mvpLadder(y), won=AWARDED[y];
+    return {y,won,row:won?l.rows.find(r=>r.name===won):l.rows[0]};
   });
   out.appendChild(tbl([
     {h:'Season',f:r=>r.y===cur?r.y+' <span class="pill">live</span>':String(r.y)},
     {h:'MVP',f:r=>r.won?'<strong>'+r.won+'</strong>'
-      :'<strong>'+r.lead.name+'</strong> <span class="pill">leading</span>'},
-    {h:'Pos',f:r=>(r.row||r.lead).pos},
-    {h:'Rostered by',f:r=>(r.row||r.lead).mgr},
-    {h:'PF/G',r:true,n:true,sm:false,f:r=>f2((r.row||r.lead).pfg)},
-    {h:'GP',r:true,n:true,sm:false,f:r=>(r.row||r.lead).gp},
-    {h:'WAR',r:true,n:true,f:r=>(r.row||r.lead).war},
-    {h:'Score',r:true,n:true,f:r=>f2((r.row||r.lead).score)}
-  ],past,{click:r=>{ if(r.y>=LADDER_FROM) go('players',{b:'ladder',my:r.y}); }}));
+      :'<strong>'+r.row.name+'</strong> <span class="pill">leading</span>'},
+    {h:'Pos',f:r=>r.row?r.row.pos:'—'},
+    {h:'Rostered by',f:r=>r.row?r.row.mgr:'—'},
+    {h:'PF/G',r:true,n:true,sm:false,f:r=>r.row?f2(r.row.pfg):'—'},
+    {h:'GP',r:true,n:true,sm:false,f:r=>r.row?r.row.gp:'—'}
+  ],past,{nofilter:true}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
   out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: this league’s QB2s, RB3s, WR4s and TE2s, scored over every week somebody held them — the blanks count, because on the wire they do. Rebuilt each week while a season is live, then fixed, so a finished ladder never moves.'));
