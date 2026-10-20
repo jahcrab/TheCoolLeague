@@ -1253,8 +1253,15 @@ VIEWS.scorigami=()=>{
     g1.appendChild(tile(sqx.size,'Squares claimed'));
     g1.appendChild(tile(gms.length,'Games counted'));
     g1.appendChild(tile((100*nv/sqx.size).toFixed(1)+'%','Never repeated'));
-    const mc=[...sqx.entries()].sort((a,b)=>b[1].length-a[1].length)[0];
-    if(mc) g1.appendChild(tile(mc[1].length+'×','Most repeated',mc[0].split('|').join(' – ')));
+    /* a square rarely holds the record alone — three of them are on three games
+       apiece — so name them all, and fall back to a count once the dial is far
+       enough back that the record is two games and forty-one squares have it. */
+    const mx=Math.max(0,...[...sqx.values()].map(a=>a.length));
+    const tied=[...sqx.keys()].filter(k=>sqx.get(k).length===mx)
+      .map(k=>k.split('|').map(Number)).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    if(mx) g1.appendChild(tile(mx+'×','Most repeated',
+      tied.length<=4 ? tied.map(p=>p[0]+' – '+p[1]).join('  ·  ')
+                     : tied.length+' squares tied'));
   }
   fillTiles(sq,games);
   out.appendChild(g1);
