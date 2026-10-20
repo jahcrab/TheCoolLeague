@@ -193,7 +193,10 @@ button.btn[aria-pressed="true"]:hover{color:var(--bg)}
 .hero-body{margin-top:22px}
 .hero-body::after{content:'';display:block;clear:both}
 .hero-body figure{margin:0 0 18px}
-@media (min-width:880px){.hero-body figure{float:right;width:45%;margin:5px 0 16px 30px}}
+@media (min-width:880px){.hero-body figure{float:right;width:45%;margin:5px 0 16px 30px}
+  .hero-body figure.fig2{float:none;width:100%;margin:4px 0 0}}
+.hero-body figure.fig2{clear:both}
+.hero-body figure.fig2 img{width:100%;max-height:430px;object-fit:cover;object-position:center 40%}
 .hero-body p{margin:0 0 13px}
 .hero-body p:first-child::first-letter{font-size:3.1em;line-height:.82;float:left;padding:4px 9px 0 0;color:var(--accent);font-weight:600}
 figure{margin:0}
@@ -744,6 +747,9 @@ const ISSUE={
   deck:'Guzman was in the kitchen when the lineup locked. He started the wrong quarterback, put up the most points in the league, and the wrong quarterback outscored the right one.',
   photo:{src:'news/w6.webp',alt:'Kirk Cousins dropping back to throw',
     cap:'Kirk Cousins, whom Guzman did not mean to start, threw for 313 yards and two scores. Caleb Williams, whom he did, scored 16.50 from the bench.'},
+  photo2:{src:'news/w6-cat.webp',
+    alt:'The Cat in the Hat strung up as a pi\u00f1ata while a crowd of children swing sticks at him',
+    cap:'Guzman\u2019s statement in full, issued in place of comment: the Cat in the Hat, strung up, Week 6.'},
   lead:[
    'Guzman met the press on Sunday evening and opened with a confession. \u201cI meant to start the Caleb Williams guy,\u201d he said. Asked how a man comes to forget his own quarterback, he reached not for an excuse but for a recipe: \u201cI was making cinnamon rolls.\u201d',
    'The man he started instead was Kirk Cousins, who threw for 313 yards and two touchdowns and scored <strong>18.52</strong>. Caleb Williams sat on the bench and scored <strong>16.50</strong>. The mistake was worth two points and change, in Guzman\u2019s favour.',
@@ -789,7 +795,15 @@ VIEWS.overview=()=>{
   const fig=E('figure'), im=E('img');
   im.src=ISSUE.photo.src; im.alt=ISSUE.photo.alt; im.width=1400; im.height=896;
   fig.appendChild(im); fig.appendChild(E('figcaption',null,ISSUE.photo.cap));
-  hb.appendChild(fig); hb.appendChild(txt); hero.appendChild(hb);
+  hb.appendChild(fig); hb.appendChild(txt);
+  if(ISSUE.photo2){                      // runs full width under the lead, clear of the float
+    const f2=E('figure','fig2'), i2=E('img');
+    i2.src=ISSUE.photo2.src; i2.alt=ISSUE.photo2.alt; i2.loading='lazy';
+    i2.width=1400; i2.height=800;
+    f2.appendChild(i2); f2.appendChild(E('figcaption',null,ISSUE.photo2.cap));
+    hb.appendChild(f2);
+  }
+  hero.appendChild(hb);
   out.appendChild(hero);
 
   const strip=E('div','strip');
