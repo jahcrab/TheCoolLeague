@@ -1193,8 +1193,8 @@ VIEWS.scorigami=()=>{
 /* ---------- MVP ladder ----------
    The league's season-MVP formula:
      PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
-   Replacement values are rebuilt from this league each week rather than carried
-   over: QB2s, RB3s, WR4s and TE2s, scored over every week they were held. */
+   Replacement values are fixed per season rather than carried over: QB2s,
+   RB3s, WR4s and TE2s, scored over every week they were held. See RV_TABLE. */
 /* MVPs as the league awarded them. Final; the ladder below is a live view of the
    current season, not a re-litigation of past awards. */
 const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
@@ -1286,6 +1286,29 @@ const ROY={2020:['James Robinson',170.70],2021:['Najee Harris',241.00],2022:['Da
    Bobby <-> Alex, the night Week 5 closed. */
 const RECENT_MOVES={};
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
+/* Replacement value is fixed per season and written down rather than worked
+   out again on every load, so that a finished ladder can never move: the
+   league's own QB2s, RB3s, WR4s and TE2s, each man scored over every week
+   somebody held him, blanks included, because that is what the wire pays.
+   Only the live season's line changes, once a week, as the season fills in. */
+const RV_TABLE={
+  2020:{QB:14.1247,RB:8.2589,WR:8.4790,TE:6.3326},
+  2021:{QB:13.2795,RB:8.8395,WR:8.0074,TE:6.4280},
+  2022:{QB:12.1286,RB:8.9767,WR:8.1191,TE:6.2442},
+  2023:{QB:12.8441,RB:8.5313,WR:8.0869,TE:6.8279},
+  2024:{QB:12.8509,RB:8.0432,WR:8.8973,TE:6.3760},
+  2025:{QB:12.3814,RB:8.6943,WR:7.7435,TE:7.0375},
+  2026:{QB:13.0565,RB:7.5524,WR:7.8562,TE:5.4664}};
+/* A baseline for an earlier week of the live season, needed only when the
+   method behind the numbers changes mid-season: without it last week's
+   ladder, and so this week's movement on it, would be scored against a
+   baseline that did not exist last week. Empty while nothing has changed. */
+const RV_ASOF={};
+const RV_YEARS=Object.keys(RV_TABLE).map(Number).sort((a,b)=>a-b);
+function rvFor(y,upto){
+  if(upto&&RV_ASOF[y]&&RV_ASOF[y][upto]) return RV_ASOF[y][upto];
+  return RV_TABLE[y]||RV_TABLE[RV_YEARS[RV_YEARS.length-1]];
+}
 const MVP_CACHE={};
 /* `upto` runs the same formula against a shorter season, which is how last
    week's ladder — and so the week's movement — is worked out. */
@@ -1311,18 +1334,8 @@ function mvpLadder(year,upto){
   const PFGof=p=>{const g=GPof(p); return g?p.wk.filter(v=>v.pts>0).reduce((s,v)=>s+v.pts,0)/g:0};
   const minG=Math.max(3,Math.ceil(weeks.length*0.6));
   const elig=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&GPof(p)>=minG);
-  /* A replacement is scored over every week he was held, blanks and all — that
-     is what you actually get from the wire. A qualifier of scoring weeks only
-     would drop the men who blanked, which at tight end leaves the pool too
-     shallow and the value too high. */
-  const perWeek=p=>p.wk.reduce((s,v)=>s+v.pts,0)/p.wk.length;
-  const held=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&p.wk.length>=2);
-  const RV={}, SECOND={}, FIRST={}, POOL={};
+  const RV=rvFor(Y,upto), SECOND={}, FIRST={};
   Object.keys(MVP_BAND).forEach(pos=>{
-    const wire=held.filter(p=>p.pos===pos).map(perWeek).sort((a,b)=>b-a);
-    const [a,b]=MVP_BAND[pos], band=wire.slice(a-1,b);
-    RV[pos]=band.length?band.reduce((s,v)=>s+v,0)/band.length:0;
-    POOL[pos]=wire.length;
     const ranked=elig.filter(p=>p.pos===pos).map(PFGof).sort((a,b)=>b-a);
     FIRST[pos]=ranked[0]||0; SECOND[pos]=ranked[1]||0;
   });
@@ -1343,7 +1356,7 @@ function mvpLadder(year,upto){
             score:f+PAR+g+GW*1.5+POS*2+GAR+WAR*4-LBR*4};
   }).sort((a,b)=>b.score-a.score);
   MVP_CACHE[CK]={year:Y,weeks:weeks.length,lastWeek:weeks[weeks.length-1],minG,RV,rows,
-             counts:POOL, qualified:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
+             qualified:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
   return MVP_CACHE[CK];
 }
 /* Where each player sat a week ago: +n climbed, -n slipped, null is new to the ladder. */
@@ -2535,11 +2548,11 @@ function mvpBlock(){
   ],past,{click:r=>{ if(r.y>=LADDER_FROM) go('players',{b:'ladder',my:r.y}); }}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
-  out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: this league’s QB2s, RB3s, WR4s and TE2s, scored over every week somebody held them — the blanks count, because on the wire they do. Rebuilt every week, so they move with the season.'));
+  out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: this league’s QB2s, RB3s, WR4s and TE2s, scored over every week somebody held them — the blanks count, because on the wire they do. Rebuilt each week while a season is live, then fixed, so a finished ladder never moves.'));
   out.appendChild(tbl([
     {h:'Position',f:r=>'<strong>'+r[0]+'</strong>'},
+    {h:'The band',f:r=>r[0]+MVP_BAND[r[0]][0]+'–'+MVP_BAND[r[0]][1]},
     {h:'Replacement value',r:true,n:true,f:r=>f2(r[1])+' pts'},
-    {h:'In the pool',r:true,n:true,f:r=>L.counts[r[0]]},
     {h:'Qualified for the ladder',r:true,n:true,sm:false,f:r=>L.qualified[r[0]]}
   ],Object.entries(L.RV),{nofilter:true}));
 
