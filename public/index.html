@@ -796,8 +796,8 @@ const ISSUE={
   ],
   ladder:{title:'A New Man at the Top', img:'news/w6-jsn.webp',
     alt:'Jaxon Smith-Njigba running after the catch in a Seahawks throwback jersey', body:[
-   'Jahmyr Gibbs had led the MVP ladder since the opening weeks. He does not lead it any more. Detroit were on bye, Gibbs scored nothing, and Jaxon Smith-Njigba put 25.40 into the biggest score of the week and went past him: <strong>81.98 to 80.43</strong>.',
-   'The margin is 1.55 and the argument behind it is the whole point of the formula. Gibbs is still the better per-game player — 30.74 a game to Smith-Njigba’s 27.48. But the ladder asks what a man was worth to the team that rostered him, and a man on bye is worth nothing. Smith-Njigba has played six games to Gibbs’s five, and has two wins above replacement to Gibbs’s one: two weeks Guzman won that a waiver-wire body would have lost.',
+   'Jahmyr Gibbs had led the MVP ladder since the opening weeks. He does not lead it any more. Detroit were on bye, Gibbs scored nothing, and Jaxon Smith-Njigba put 25.40 into the biggest score of the week and went past him: <strong>82.15 to 80.21</strong>.',
+   'The margin is 1.94 and the argument behind it is the whole point of the formula. Gibbs is still the better per-game player — 30.74 a game to Smith-Njigba’s 27.48. But the ladder asks what a man was worth to the team that rostered him, and a man on bye is worth nothing. Smith-Njigba has played six games to Gibbs’s five, and has two wins above replacement to Gibbs’s one: two weeks Guzman won that a waiver-wire body would have lost.',
    'It also means the lead story and the ladder are the same team. Guzman forgot which quarterback he had started and still ran the league’s best roster past it, and the best player in the league right now is his.'
   ]},
   slate:{wk:7, games:[
@@ -1194,7 +1194,7 @@ VIEWS.scorigami=()=>{
    The league's season-MVP formula:
      PF/G + PAR + GP + GW(1.5) + POS(2) + GAR + WAR(4) - LBR(4)
    Replacement values are rebuilt from this league each week rather than carried
-   over: QB2s, RB3s, WR4s and TE2s by points per game, averaged, 14 teams deep. */
+   over: QB2s, RB3s, WR4s and TE2s, scored over every week they were held. */
 /* MVPs as the league awarded them. Final; the ladder below is a live view of the
    current season, not a re-litigation of past awards. */
 const AWARDED={2020:'Davante Adams',2021:'Jonathan Taylor',2022:'Travis Kelce',
@@ -1311,11 +1311,19 @@ function mvpLadder(year,upto){
   const PFGof=p=>{const g=GPof(p); return g?p.wk.filter(v=>v.pts>0).reduce((s,v)=>s+v.pts,0)/g:0};
   const minG=Math.max(3,Math.ceil(weeks.length*0.6));
   const elig=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&GPof(p)>=minG);
-  const RV={}, SECOND={}, FIRST={};
+  /* A replacement is scored over every week he was held, blanks and all — that
+     is what you actually get from the wire. A qualifier of scoring weeks only
+     would drop the men who blanked, which at tight end leaves the pool too
+     shallow and the value too high. */
+  const perWeek=p=>p.wk.reduce((s,v)=>s+v.pts,0)/p.wk.length;
+  const held=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&p.wk.length>=2);
+  const RV={}, SECOND={}, FIRST={}, POOL={};
   Object.keys(MVP_BAND).forEach(pos=>{
-    const ranked=elig.filter(p=>p.pos===pos).map(PFGof).sort((a,b)=>b-a);
-    const [a,b]=MVP_BAND[pos], band=ranked.slice(a-1,b);
+    const wire=held.filter(p=>p.pos===pos).map(perWeek).sort((a,b)=>b-a);
+    const [a,b]=MVP_BAND[pos], band=wire.slice(a-1,b);
     RV[pos]=band.length?band.reduce((s,v)=>s+v,0)/band.length:0;
+    POOL[pos]=wire.length;
+    const ranked=elig.filter(p=>p.pos===pos).map(PFGof).sort((a,b)=>b-a);
     FIRST[pos]=ranked[0]||0; SECOND[pos]=ranked[1]||0;
   });
   const rows=elig.map(p=>{
@@ -1335,7 +1343,7 @@ function mvpLadder(year,upto){
             score:f+PAR+g+GW*1.5+POS*2+GAR+WAR*4-LBR*4};
   }).sort((a,b)=>b.score-a.score);
   MVP_CACHE[CK]={year:Y,weeks:weeks.length,lastWeek:weeks[weeks.length-1],minG,RV,rows,
-             counts:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
+             counts:POOL, qualified:Object.fromEntries(Object.keys(MVP_BAND).map(p=>[p,elig.filter(x=>x.pos===p).length]))};
   return MVP_CACHE[CK];
 }
 /* Where each player sat a week ago: +n climbed, -n slipped, null is new to the ladder. */
@@ -2527,11 +2535,12 @@ function mvpBlock(){
   ],past,{click:r=>{ if(r.y>=LADDER_FROM) go('players',{b:'ladder',my:r.y}); }}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
-  out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: the average points per game of this league’s QB2s, RB3s, WR4s and TE2s. Rebuilt every week, so they move with the season.'));
+  out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: this league’s QB2s, RB3s, WR4s and TE2s, scored over every week somebody held them — the blanks count, because on the wire they do. Rebuilt every week, so they move with the season.'));
   out.appendChild(tbl([
     {h:'Position',f:r=>'<strong>'+r[0]+'</strong>'},
     {h:'Replacement value',r:true,n:true,f:r=>f2(r[1])+' pts'},
-    {h:'Qualified at the position',r:true,n:true,f:r=>L.counts[r[0]]}
+    {h:'In the pool',r:true,n:true,f:r=>L.counts[r[0]]},
+    {h:'Qualified for the ladder',r:true,n:true,sm:false,f:r=>L.qualified[r[0]]}
   ],Object.entries(L.RV),{nofilter:true}));
 
   out.appendChild(secH('How the Formula Works'));
@@ -2573,7 +2582,7 @@ function mvpBlock(){
   note.appendChild(E('h3',null,'Where this version bends the method'));
   ['A player qualifies at '+L.minG+' games, 60% of the weeks played so far. Without a cut-off, one big week off the waiver wire would top the ladder on points per game alone.',
    'Games played is counted as weeks the player scored anything while rostered in this league, since the archive holds fantasy rosters rather than NFL inactives. A genuine zero in a game he played is counted as a week off.',
-   'Replacement values come from qualified players in this league only. This early, the QB and TE bands run shallower than fourteen deep, so those values are noisier than the RB and WR ones.'
+   'Replacement values come from this league only, and from every man rostered a fortnight or more \u2014 scored over every week he was held, blank weeks included, because that is what the wire actually pays. This early the QB and TE bands run shallower than fourteen deep, so those two are noisier than the RB and WR ones.'
   ].forEach(t=>note.appendChild(E('p',null,t)));
   out.appendChild(note);
   return out;
