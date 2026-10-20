@@ -2578,22 +2578,26 @@ VIEWS.managers=()=>{
   return out;
 };
 
-/* The man a manager keeps writing into the lineup. Every start he has ever
-   made for him, in any bracket — a consolation week is a dead week for the
-   record book but the lineup was still set by hand, and a start is a start.
-   Ties go to the one who scored more, which is as good a tiebreak as any. */
+/* The man a manager keeps writing into the lineup, counted off the same index
+   the player pages use so that the two can never disagree: consolation weeks
+   are out, as they are everywhere else here, and a shared team credits both
+   men. Ties go to whoever scored more. */
 function favPlayer(m){
-  const M=D.mgrs, by=new Map();
-  D.tw.forEach(t=>{ if(!owns(M[t[3]],m))return;
-    t[7].forEach(e=>{
-      if(e[1]!==1||e[2]==null||!D.players[e[2]])return;
-      const r=by.get(e[2])||{id:e[2],name:D.players[e[2]],pos:'',n:0,pts:0,y0:t[0],y1:t[0]};
-      r.n++; r.pts+=e[4];
-      if(!r.pos)r.pos=D.pos[e[3]]||'';
-      if(t[0]<r.y0)r.y0=t[0]; if(t[0]>r.y1)r.y1=t[0];
-      by.set(e[2],r); });
+  let best=null;
+  playerStats().all.forEach(s=>{
+    const u=s.byMgr.get(m);
+    if(!u||!u.starts)return;
+    if(best&&(u.starts<best.n||(u.starts===best.n&&u.spts<best.pts)||
+        (u.starts===best.n&&u.spts===best.pts&&s.name.localeCompare(best.name)>=0)))return;
+    best={id:s.id,name:s.name,pos:s.pos,n:u.starts,pts:u.spts};
   });
-  return [...by.values()].sort((a,b)=>b.n-a.n||b.pts-a.pts||a.name.localeCompare(b.name))[0]||null;
+  if(best){
+    let y0=Infinity,y1=-Infinity;
+    D.tw.forEach(t=>{ if(t[2]===BR_CON||!owns(D.mgrs[t[3]],m))return;
+      if(t[7].some(e=>e[1]===1&&e[2]===best.id)){ if(t[0]<y0)y0=t[0]; if(t[0]>y1)y1=t[0] } });
+    best.y0=y0; best.y1=y1;
+  }
+  return best;
 }
 
 function mgrDetail(m){
