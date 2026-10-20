@@ -730,7 +730,12 @@ function boxOnly(g,first){
   const M=D.mgrs, bw=E('div','box');
   [first||g.win, (first||g.win)===g.win?g.los:g.win].forEach(t=>{
     const d=E('div'); d.appendChild(E('h4',null,M[t[3]]+' · Starters '+f2(t[7].filter(e=>e[1]).reduce((s,e)=>s+e[4],0))));
-    const st=t[7].filter(e=>e[1]), be=t[7].filter(e=>!e[1]).sort((a,b)=>b[4]-a[4]);
+    /* lineup order, not the order the archive happens to hold them in. The slot
+       dictionary runs QB, RB, WR, TE, FLEX, D/ST, K, so its index sorts a lineup
+       the way it reads on a scoreboard; the paired index keeps two backs or two
+       receivers in the order they were set. */
+    const st=t[7].filter(e=>e[1]).map((e,i)=>[e,i]).sort((a,b)=>a[0][0]-b[0][0]||a[1]-b[1]).map(x=>x[0]),
+          be=t[7].filter(e=>!e[1]).sort((a,b)=>b[4]-a[4]);
     const tb=E('table'); const body=E('tbody');
     const row=(e,cls)=>{const r=E('tr',cls);
       r.appendChild(E('td','sl',D.slots[e[0]]));
