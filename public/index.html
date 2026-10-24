@@ -229,6 +229,13 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 @media (min-width:880px){.cols{grid-template-columns:1.5fr 1fr}}
 .faq{display:grid;gap:0 18px;grid-template-columns:1fr}
 @media (min-width:760px){.faq{grid-template-columns:1fr 1fr}}
+/* The About cards balance themselves. Dealt alternately into two fixed columns,
+   two long cards landing on the same side left the other short by four hundred
+   pixels; flowing them lets the browser even the two out, and break-inside
+   keeps a card from being cut in half at the fold. */
+.cards2{column-gap:18px}
+@media (min-width:760px){.cards2{columns:2}}
+.cards2 .card{overflow:hidden;break-inside:avoid}
 .card.wide img{margin-bottom:11px}
 @media (min-width:700px){
   .card.wide{display:grid;grid-template-columns:46% 1fr;column-gap:20px;align-items:start}
@@ -2812,8 +2819,8 @@ VIEWS.about=()=>{
   g1.appendChild(tile(Object.keys(CHAMP).length,'Garrisons handed out'));
   out.appendChild(g1);
 
-  const faq=E('div','faq'), a=E('div'), b=E('div');
-  ABOUT.cards.forEach((c,i)=>{
+  const faq=E('div','cards2');
+  ABOUT.cards.forEach(c=>{
     const d=E('div','card'); d.appendChild(E('h3',null,c.t));
     if(c.img){                       /* a sidebar the text runs around */
       const f=E('figure','side'+(c.img.cls?' '+c.img.cls:'')), im=E('img');
@@ -2823,9 +2830,9 @@ VIEWS.about=()=>{
       f.appendChild(im); f.appendChild(cp); d.appendChild(f);
     }
     c.p.forEach(x=>{const q=E('p');q.innerHTML=x;d.appendChild(q)});
-    (i%2?b:a).appendChild(d);
+    faq.appendChild(d);
   });
-  faq.appendChild(a); faq.appendChild(b); out.appendChild(faq);
+  out.appendChild(faq);
 
   if(ABOUT.facts.length){
     out.appendChild(secH('Things That Are True'));
