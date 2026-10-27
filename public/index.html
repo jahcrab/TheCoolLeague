@@ -1011,7 +1011,10 @@ VIEWS.overview=()=>{
   ISSUE.watch.body.forEach(t=>{const p=E('p');p.innerHTML=t;wc.appendChild(p)});
   left.appendChild(wc);
 
-  right.appendChild(secH('Standings · After Week '+W));
+  /* the standings are whatever the archive holds, which can run ahead of the
+     issue when the data lands before the article does */
+  const SW=Math.max(...G.filter(g=>g.y===Y).map(g=>g.w));
+  right.appendChild(secH('Standings · After Week '+SW));
   right.appendChild(tbl([
     {h:'Manager',f:r=>'<strong>'+r.m+'</strong>'},{h:'W–L',n:true,f:r=>r.w+'–'+r.l},
     {h:'PF',r:true,n:true,f:r=>f2(r.pf)},{h:'PA',r:true,n:true,f:r=>f2(r.pa)}
@@ -1049,7 +1052,7 @@ VIEWS.overview=()=>{
         '<span>Beat <b>'+ap.beat.get(wmn)+'</b> of '+ap.n+' · '+lmn+' <b>'+ap.beat.get(lmn)+'</b></span>'+
         (tw?'<span>'+tw[1]+' <b>'+f2(tw[0])+'</b></span>':'')+
         (tl?'<span>'+tl[1]+' <b>'+f2(tl[0])+'</b></span>':'')+
-        '<span>Bench: '+wmn+' <b>'+f2((bench.get(wmn)||{}).pts||0)+'</b> · '+
+        '<span>Left on the table: '+wmn+' <b>'+f2((bench.get(wmn)||{}).pts||0)+'</b> · '+
           lmn+' <b>'+f2((bench.get(lmn)||{}).pts||0)+'</b></span>';
       c.appendChild(ln);
       if(note){const p=E('p','say');p.innerHTML=note;c.appendChild(p)}
@@ -1460,7 +1463,7 @@ const RV_TABLE={
   2023:{QB:12.8441,RB:8.5313,WR:8.0869,TE:6.8279},
   2024:{QB:12.8509,RB:8.0432,WR:8.8973,TE:6.3760},
   2025:{QB:12.3814,RB:8.6943,WR:7.7435,TE:7.0375},
-  2026:{QB:13.0565,RB:7.5524,WR:7.8562,TE:5.4664}};
+  2026:{QB:12.5525,RB:7.2622,WR:7.8233,TE:5.2835}};
 /* A baseline for an earlier week of the live season, needed only when the
    method behind the numbers changes mid-season: without it last week's
    ladder, and so this week's movement on it, would be scored against a
@@ -2933,13 +2936,40 @@ VIEWS.newsletters=()=>{
 
 /* What a man left on his bench, what his score would have done against the
    rest of the league that week, and how the pairing has gone all time. */
+/* What a lineup actually cost, which is not what the bench scored. A bench
+   full of points is no indictment if none of them could have been started:
+   in Week 6 Guzman sat on 45.10 and it was worth 5.60 to him, while Brendan
+   sat on 25.00 that was worth 20.70. So this is the honest number — the best
+   legal lineup the roster allowed, minus the one that was set.
+     The best lineup needs no search. Fill QB, two RB, two WR, TE, D/ST and K
+   with the top man at each, then give the flex to the best back, receiver or
+   tight end still standing: taking the top of every pool and then the best
+   leftover cannot be beaten when the flex draws from those three. Anyone on
+   IR is out of it, since he could not have been started either way. */
+const AP_FLEXOK=new Set(['RB','WR','TE']);
+function bestLineup(entries){
+  const pool=entries.filter(e=>e.slot!=='IR');
+  const by={}; pool.forEach(e=>(by[e.pos]=by[e.pos]||[]).push(e));
+  Object.values(by).forEach(a=>a.sort((x,y)=>y.pts-x.pts));
+  const picked=new Set(), out=[];
+  [['QB',1],['RB',2],['WR',2],['TE',1],['D/ST',1],['K',1]].forEach(([pos,n])=>{
+    (by[pos]||[]).slice(0,n).forEach(e=>{picked.add(e);out.push(e)}); });
+  const rest=pool.filter(e=>AP_FLEXOK.has(e.pos)&&!picked.has(e)).sort((x,y)=>y.pts-x.pts);
+  if(rest.length){picked.add(rest[0]);out.push(rest[0])}
+  return out;
+}
 function weekBench(y,w){
   const out=new Map();
   D.tw.forEach(t=>{ if(t[0]!==y||t[1]!==w||t[2]!==BR_REG)return;
-    let tot=0,best=null;
-    t[7].forEach(e=>{ if(e[1]||D.slots[e[0]]!=='BE')return;
-      tot+=e[4]; if(!best||e[4]>best[0])best=[e[4],D.players[e[2]]]; });
-    out.set(D.mgrs[t[3]],{pts:Math.round(tot*100)/100,top:best});
+    const ent=t[7].map(e=>({slot:D.slots[e[0]],started:e[1]===1,
+      name:D.players[e[2]],pos:D.pos[e[3]]||'',pts:e[4]}));
+    const actual=ent.filter(e=>e.started).reduce((s,e)=>s+e.pts,0);
+    const best=bestLineup(ent);
+    const gap=Math.round((best.reduce((s,e)=>s+e.pts,0)-actual)*100)/100;
+    /* the man it cost most to leave out: highest scorer who belonged in the
+       best lineup and was not in the real one */
+    const miss=best.filter(e=>!e.started).sort((a,b)=>b.pts-a.pts)[0]||null;
+    out.set(D.mgrs[t[3]],{pts:gap>0?gap:0,top:miss?[miss.pts,miss.name]:null});
   });
   return out;
 }
