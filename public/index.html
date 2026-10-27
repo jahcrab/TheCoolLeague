@@ -238,16 +238,20 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .cards2 .card{overflow:hidden;break-inside:avoid}
 /* A bought placement, and it should look like one: ruled off above and below,
    its own dark field, nothing of the paper's own voice inside the box. */
-.adv{margin:26px 0 0;border-top:2px solid var(--fg);border-bottom:2px solid var(--fg);padding:10px 0 16px}
+.withside{display:flex;gap:20px;align-items:flex-start}
+.withside>.gw{flex:1;min-width:0}
+.withside>.adv{flex:0 0 288px;margin:0}
+@media (max-width:900px){.withside{display:block}.withside>.adv{margin-top:20px;max-width:520px}}
+.adv{border:1px solid var(--line);background:var(--panel);padding:12px 13px 15px}
 .adv .lab{font-family:var(--f-disp);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
   color:var(--muted);text-align:center;margin-bottom:12px}
 .adv img{display:block;width:100%;height:auto}
-.adv .cap{font-size:13px;color:var(--muted);line-height:1.45;margin-top:9px;padding-left:10px;
+.adv .cap{font-size:12px;color:var(--muted);line-height:1.45;margin-top:9px;padding-left:9px;
   border-left:2px solid var(--accent)}
-.adv h3{font-family:var(--f-disp);font-size:clamp(20px,3.2vw,27px);letter-spacing:.01em;margin:14px 0 8px}
-.adv p{margin:0 0 9px;font-size:14.5px;line-height:1.5;max-width:68ch}
-.adv .url{font-family:var(--f-data);font-size:14px;letter-spacing:.02em}
-.adv .kick{font-style:italic;color:var(--muted);font-size:13.5px;margin-top:11px}
+.adv h3{font-family:var(--f-disp);font-size:19px;line-height:1.18;letter-spacing:.01em;margin:11px 0 7px}
+.adv p{margin:0 0 8px;font-size:13px;line-height:1.5}
+.adv .url{font-family:var(--f-data);font-size:13px;letter-spacing:.02em;word-break:break-word}
+.adv .kick{font-style:italic;color:var(--muted);font-size:12.5px;line-height:1.45;margin-top:10px}
 .card.wide img{margin-bottom:11px}
 @media (min-width:700px){
   .card.wide{display:grid;grid-template-columns:46% 1fr;column-gap:20px;align-items:start}
@@ -852,7 +856,7 @@ const ISSUE={
   recaps:[
    {w:'Owen', note:'His kicker outscored five of his own starters. Cairo Santos put up 14.00; Woody Marks, Rome Odunze, Brock Bowers, Aaron Jones and the Green Bay defense managed 38.90 between the five of them.'},
    {w:'James D', note:'Guzman’s defense scored nothing at all and his flex gave him 4.10. The front half of that lineup was good enough to beat most of the league. The back half is why it lost by thirty-one.'},
-   {w:'Michael', note:'<strong>Ayush’s defense scored −3.00.</strong> He lost by 3.28. Four straight wins ended on a unit that charged him for turning up.'},
+   {w:'Michael', note:'<strong>Ayush’s defense scored −3.00.</strong> He lost by 3.28. Four straight wins ended on a unit that charged him for turning up. He had a considerably better week away from the scoreboard, mind — he accepted a job offer at <strong>IBM</strong>. The league’s congratulations, and its condolences about the Ravens.'},
    {w:'Nick', note:'Brendan got 62.00 of his 108.92 from three men — McCaffrey, Jacobs and Colston Loveland, all over nineteen — and 5.42 from his quarterback. Fifty-seven percent of a losing score came from a third of the lineup.'},
    {w:'Graham', note:'Jon started two men who scored 0.00, and his quarterback had the best day of anyone in the game — Joe Burrow, 28.88, back off a bye. The winless team is not losing at the top of its lineup.'},
    {w:'Alex', note:'James V left nothing on his bench, the only manager all week to get every point his roster had, and lost by 5.64 to a side whose tight end caught nothing on National Tight Ends Day. James V, via his social media: <em>“Cade otton 0 points.”</em> Alex, unmoved: <em>“Moral support player. The glue guy.”</em>'},
@@ -1053,6 +1057,21 @@ VIEWS.overview=()=>{
     sec.body.forEach(t=>{const q=E('p');q.innerHTML=t;bd.appendChild(q)});
     c.appendChild(bd); out.appendChild(c);
   };
+  /* the advertisement runs as a rail beside the week's cards, not across the page */
+  const buildAd=()=>{
+    if(!ISSUE.ad) return null;
+    const A=ISSUE.ad, ad=E('div','adv');
+    ad.appendChild(E('div','lab','Advertisement'));
+    if(A.img){const im=E('img'); im.src=A.img; im.alt=A.alt||''; im.loading='lazy';
+      im.width=1400; im.height=A.h||933; ad.appendChild(im)}
+    if(A.cap){const c=E('div','cap'); c.innerHTML=A.cap; ad.appendChild(c)}
+    ad.appendChild(E('h3',null,A.title));
+    A.body.forEach(t=>{const q=E('p');q.innerHTML=t;ad.appendChild(q)});
+    const u=E('div','url'); u.innerHTML=A.url; ad.appendChild(u);
+    if(A.kick){const k=E('div','kick'); k.innerHTML=A.kick; ad.appendChild(k)}
+    return ad;
+  };
+
   wide(ISSUE.trade);
   wide(ISSUE.night);
 
@@ -1081,7 +1100,10 @@ VIEWS.overview=()=>{
       c.onclick=()=>go('games',{y:Y,w:W,focus:wmn});
       grid.appendChild(c);
     });
-    out.appendChild(grid);
+    const ad=buildAd();
+    if(ad){ const row=E('div','withside'); row.appendChild(grid); row.appendChild(ad);
+            out.appendChild(row); }
+    else out.appendChild(grid);
   }
   if(ISSUE.slate&&ISSUE.slate.games){
     const S=ISSUE.slate, st=standings(Y);
@@ -1112,19 +1134,6 @@ VIEWS.overview=()=>{
       grid.appendChild(c);
     });
     out.appendChild(grid);
-  }
-
-  if(ISSUE.ad){
-    const A=ISSUE.ad, ad=E('div','adv');
-    ad.appendChild(E('div','lab','Advertisement'));
-    if(A.img){const im=E('img'); im.src=A.img; im.alt=A.alt||''; im.loading='lazy';
-      im.width=1400; im.height=933; ad.appendChild(im)}
-    if(A.cap){const c=E('div','cap'); c.innerHTML=A.cap; ad.appendChild(c)}
-    ad.appendChild(E('h3',null,A.title));
-    A.body.forEach(t=>{const q=E('p');q.innerHTML=t;ad.appendChild(q)});
-    const u=E('div','url'); u.innerHTML=A.url; ad.appendChild(u);
-    if(A.kick){const k=E('div','kick'); k.innerHTML=A.kick; ad.appendChild(k)}
-    out.appendChild(ad);
   }
 
   const L=mvpLadder();
