@@ -252,6 +252,8 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .adv p{margin:0 0 8px;font-size:13px;line-height:1.5}
 .adv .url{font-family:var(--f-data);font-size:13px;letter-spacing:.02em;word-break:break-word}
 .adv .kick{font-style:italic;color:var(--muted);font-size:12.5px;line-height:1.45;margin-top:10px}
+.card.wide figure{margin:0 0 11px}
+.card.wide figure img{margin-bottom:0}
 .card.wide img{margin-bottom:11px}
 @media (min-width:700px){
   .card.wide{display:grid;grid-template-columns:46% 1fr;column-gap:20px;align-items:start}
@@ -836,19 +838,22 @@ const ISSUE={
    'First week of predictions: <strong>5–2</strong>.',
    'Every call at 72% or better landed — Graham, Bill, Owen, Alex, Michael. Both misses were the two games it put at <strong>52%</strong>, which is roughly what 52% is for.']},
   trade:{title:'The Sell-Off That Paid', img:'news/w7-flowers.webp', h:787,
-    alt:'Zay Flowers running clear for Baltimore', body:[
+    alt:'Zay Flowers running clear for Baltimore',
+    cap:'Zay Flowers, 48-yard screen-pass touchdown on third-and-9 in the first quarter — 27.70 for a manager who had already agreed to trade him.', body:[
    'Eight players were traded Thursday night — Stevenson, Zay Flowers, Hockenson and the Denver defense out, Skattebo, Mayer, Watson and Tucker in — with Stevenson mid-game and already on the board. Asked to explain himself, James D offered two words: <em>“Seen enough.”</em>',
    'The trade did not process until Tuesday morning. So all four of the men he gave away played for him one last time, and they scored <strong>66.70 points — 50.8% of his total</strong>. Flowers 27.70, Stevenson 22.50, Hockenson 13.50, Denver 3.00.',
    '<strong>131.22</strong> is the highest score anyone posted in Week 7, and the best week James D has had all season by 14.22. It belongs to a team that is 2–5, and it was assembled from a roster that stopped being his this morning. Guzman’s 99.80 would have beaten six other teams. It lost by 31.42.',
    'This is also where the page admits something. Our Week 7 slate called this the closest game on the board at 52%, and picked Guzman.']},
   night:{title:'Eight Teams, One Game', img:'news/w7-lamb.webp', h:900,
-    alt:'CeeDee Lamb catching a pass for Dallas', body:[
+    alt:'CeeDee Lamb catching a pass for Dallas',
+    cap:'CeeDee Lamb, 16-yard touchdown reception from Dak Prescott — one of two on the night, and the difference between Alex at 5–2 and Alex at 4–3.', body:[
    'Dallas at Philadelphia held the last player of eight different managers, and it settled two of them.',
    '<strong>Alex needed 18.77 from CeeDee Lamb</strong> and got 24.40 — five catches, 74 yards, two touchdowns — beating James V 89.82–84.18. Lamb’s first score moved him from 49% to 73% in a single play. Without Lamb he loses by nineteen.',
    '<strong>Nick needed 24.52 from Prescott and Pickens</strong>, and owning both ends of a connection is how you get it: their 21-yard touchdown in the second quarter was logged as one line, +13.94 and +37%. He won 123.38–108.92. On Sunday, asked by Brendan to look at his own team, he had said: <em>“Saw my projected went down and didnt even look into why. All i thought was damn my team is ass.”</em>',
    'Jon drew the cruellest arrangement on the board. He had Barkley; Graham had the Cowboys defense <em>and</em> the Cowboys kicker, so a Philadelphia touchdown paid Jon and billed Graham on the same snap. Barkley scored one in the first quarter and for about a minute the winless team had a pulse. Then he re-injured himself and finished with nine touches. The second Philadelphia score belonged to somebody else, which cost Graham two and paid Jon nothing. Graham won 107.52–87.98. Jon is <strong>0–7</strong>.']},
   ladder:{title:'It’s Getting Jeanty', img:'news/w7-jeanty.webp', h:900,
-    alt:'Ashton Jeanty catching a touchdown for Las Vegas', body:[
+    alt:'Ashton Jeanty catching a touchdown for Las Vegas',
+    cap:'Ashton Jeanty, 15-yard touchdown catch from Kirk Cousins in the fourth quarter, cutting the Rams’ lead to 28–18 — and worth 53% of win probability to Michael.', body:[
    'Michael 112.44, Ayush 109.16, and the quarterback who decided it was Kirk Cousins. Ashton Jeanty’s fifteen-yard receiving touchdown in the fourth quarter was worth 8.5 points and <strong>53% of win probability</strong>, the biggest single swing of the week. ESPN had Michael at 0% for most of the afternoon.',
    'Readers of last week’s issue will recognise the passer. <strong>Kirko Chainz</strong> is the quarterback Guzman never meant to start, left in the lineup while the cinnamon rolls were in the oven. Seven days later he throws the touchdown that ends Ayush’s four-game run.',
    'Michael’s two trades paid in exactly one direction. <strong>Drake Maye, six days a Black Panther, led all scorers with 27.44.</strong> Sam LaPorta, acquired the following afternoon, managed 2.80.',
@@ -964,8 +969,11 @@ VIEWS.issue=()=>{
   [I.trade,I.ladder].filter(Boolean).forEach(sec=>{
     const d=E('div','card wide'); d.style.marginTop='18px';
     d.appendChild(E('h3',null,sec.title));
-    if(sec.img){const g=E('img'); g.src=sec.img; g.alt=sec.alt||''; g.loading='lazy';
-      g.width=1400; g.height=933; d.appendChild(g)}
+    if(sec.img){const fg=E('figure'), g=E('img');
+      g.src=sec.img; g.alt=sec.alt||''; g.loading='lazy';
+      g.width=1400; g.height=sec.h||933; fg.appendChild(g);
+      if(sec.cap) fg.appendChild(E('figcaption',null,sec.cap));
+      d.appendChild(fg)}
     const bd=E('div','body');
     sec.body.forEach(t=>{const p=E('p');p.innerHTML=t;bd.appendChild(p)});
     d.appendChild(bd); out.appendChild(d);
@@ -1051,8 +1059,11 @@ VIEWS.overview=()=>{
   const wide=sec=>{ if(!sec)return;
     const c=E('div','card wide'); c.style.marginBottom='0';
     c.appendChild(E('h3',null,sec.title));
-    if(sec.img){const im=E('img'); im.src=sec.img; im.alt=sec.alt||''; im.loading='lazy';
-      im.width=1400; im.height=sec.h||933; c.appendChild(im)}
+    if(sec.img){const fg=E('figure'), im=E('img');
+      im.src=sec.img; im.alt=sec.alt||''; im.loading='lazy';
+      im.width=1400; im.height=sec.h||933; fg.appendChild(im);
+      if(sec.cap) fg.appendChild(E('figcaption',null,sec.cap));
+      c.appendChild(fg)}
     const bd=E('div','body');
     sec.body.forEach(t=>{const q=E('p');q.innerHTML=t;bd.appendChild(q)});
     c.appendChild(bd); out.appendChild(c);
