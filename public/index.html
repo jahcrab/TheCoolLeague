@@ -9,19 +9,19 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:site_name" content="The Cool League">
-<meta property="og:title" content="The Cinnamon Roll Defense">
-<meta property="og:description" content="Guzman was in the kitchen when the lineup locked. He started the wrong quarterback, put up the most points in the league, and the wrong quarterback outscored the right one.">
+<meta property="og:title" content="The Most Mickey Mouse 7–0 of All Time">
+<meta property="og:description" content="He called it himself, a week early, and got the number wrong by one. Owen is the first man in seven seasons to start a year 7–0 — and he is sixth in the league in points.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://thecoolleague.us/">
-<meta property="og:image" content="https://thecoolleague.us/og.png?v=2026w6">
+<meta property="og:image" content="https://thecoolleague.us/og.png?v=2026w7">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Scorigami Report, Week 6 of 2026: The Cinnamon Roll Defense">
+<meta property="og:image:alt" content="The Scorigami Report, Week 7 of 2026: The Most Mickey Mouse 7–0 of All Time">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Cinnamon Roll Defense">
-<meta name="twitter:description" content="Guzman was in the kitchen when the lineup locked. He started the wrong quarterback, put up the most points in the league, and the wrong quarterback outscored the right one.">
-<meta name="twitter:image" content="https://thecoolleague.us/og.png?v=2026w6">
+<meta name="twitter:title" content="The Most Mickey Mouse 7–0 of All Time">
+<meta name="twitter:description" content="He called it himself, a week early, and got the number wrong by one. Owen is the first man in seven seasons to start a year 7–0 — and he is sixth in the league in points.">
+<meta name="twitter:image" content="https://thecoolleague.us/og.png?v=2026w7">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;font:14px system-ui,sans-serif}
@@ -236,6 +236,18 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .cards2{column-gap:18px}
 @media (min-width:760px){.cards2{columns:2}}
 .cards2 .card{overflow:hidden;break-inside:avoid}
+/* A bought placement, and it should look like one: ruled off above and below,
+   its own dark field, nothing of the paper's own voice inside the box. */
+.adv{margin:26px 0 0;border-top:2px solid var(--fg);border-bottom:2px solid var(--fg);padding:10px 0 16px}
+.adv .lab{font-family:var(--f-disp);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--muted);text-align:center;margin-bottom:12px}
+.adv img{display:block;width:100%;height:auto}
+.adv .cap{font-size:13px;color:var(--muted);line-height:1.45;margin-top:9px;padding-left:10px;
+  border-left:2px solid var(--accent)}
+.adv h3{font-family:var(--f-disp);font-size:clamp(20px,3.2vw,27px);letter-spacing:.01em;margin:14px 0 8px}
+.adv p{margin:0 0 9px;font-size:14.5px;line-height:1.5;max-width:68ch}
+.adv .url{font-family:var(--f-data);font-size:14px;letter-spacing:.02em}
+.adv .kick{font-style:italic;color:var(--muted);font-size:13.5px;margin-top:11px}
 .card.wide img{margin-bottom:11px}
 @media (min-width:700px){
   .card.wide{display:grid;grid-template-columns:46% 1fr;column-gap:20px;align-items:start}
@@ -536,7 +548,8 @@ const NEWS=[
  {w:3,hl:'Bobby’s perfect run ends at sixteen · Bill keeps scoring · Jon keeps not'},
  {w:4,hl:'Brendan breaks the all-time record · Bill falls · Owen and Jon stand alone'},
  {w:5,hl:'Graham talks · Owen goes 5–0 · Bill wins by 93'},
- {w:6,hl:'Five new squares · Guzman starts the wrong quarterback · Owen ties the record'}
+ {w:6,hl:'Five new squares · Guzman starts the wrong quarterback · Owen ties the record'},
+ {w:7,hl:'Owen goes 7–0 · James D sells and wins · Eight teams on one Monday game'}
 ];
 
 /* ---------- data prep ---------- */
@@ -801,68 +814,73 @@ let CUR='overview', STATE={};
    to explain himself, he declines to comment. Quote him exactly as he
    typed it, spelling and all, and let the framing do the work. */
 const ISSUE={
-  yr:2026, wk:6, head:'The Cinnamon Roll Defense',
-  deck:'Guzman was in the kitchen when the lineup locked. He started the wrong quarterback, put up the most points in the league, and the wrong quarterback outscored the right one.',
-  photo:{src:'news/cousins.webp',alt:'Kirk Cousins dropping back to throw',
-    cap:'Kirk Cousins, whom Guzman did not mean to start, threw for 313 yards and two scores. Caleb Williams, whom he did, scored 16.50 from the bench.'},
-  photo2:{src:'news/w6-cat.webp',
-    alt:'The Cat in the Hat strung up as a pi\u00f1ata while a crowd of children swing sticks at him',
-    cap:'Guzman\u2019s statement in full, issued in place of comment: the Cat in the Hat, strung up, Week 6.'},
+  yr:2026, wk:7, head:'The Most Mickey Mouse 7–0 of All Time',
+  deck:'He called it himself, a week early, and got the number wrong by one. Owen is the first man in seven seasons to start a year 7–0 — and he is sixth in the league in points.',
+  photo:{src:'news/w7-judkins.webp',alt:'Quinshon Judkins carrying the ball for Cleveland',
+    cap:'Quinshon Judkins, 23.40 and two scores — the heaviest contribution to a seventh win that nobody has yet called convincing.'},
   lead:[
-   'Guzman met the press on Sunday evening and opened with a confession. \u201cI meant to start the Caleb Williams guy,\u201d he said. Asked how a man comes to forget his own quarterback, he reached not for an excuse but for a recipe: \u201cI was making cinnamon rolls.\u201d',
-   'The man he started instead was Kirk Cousins, who threw for 313 yards and two touchdowns and scored <strong>18.52</strong>. Caleb Williams sat on the bench and scored <strong>16.50</strong>. The mistake was worth two points and change, in Guzman\u2019s favor.',
-   'The rest of the roster needed no supervision at all. Jaxon Smith-Njigba 25.40, Bhayshul Tuten 24.70, Kyle Pitts 23.00, DeVonta Smith 20.50 \u2014 <strong>147.42</strong> altogether, the highest score of the week, and a number that would have beaten all thirteen other teams in the league.',
-   'It landed, as these things do, on James V. Guzman is now <strong>7\u20130</strong> against him and has never once scored under 125 in the series: 141.36, 133.48, 125.78, 138.08, 134.48, 126.48, and now 147.42. The average is 135.3 to 87.3. James V\u2019s 100.50 was the second-best game he has ever managed against the man, and would have beaten seven other teams this week. It lost by 47.',
-   'James V, for his part, blamed the fixture list. \u201cCursed matchup,\u201d he told reporters. \u201cI\u2019ll get u next year.\u201d Guzman, offered a right of reply, declined to use words at all: he submitted a video of the Cat in the Hat being beaten with sticks by a crowd of small children, captioned \u201chow I do james every year.\u201d The record book is on Guzman\u2019s side.'
-  ],
-  watch:{title:'Week 7 \u00b7 The One to Watch', body:[
-   '<strong>Alex vs James V</strong> \u2014 the 2022 Garrison final, played again by two teams missing half their lineups.',
-   'That final was Alex 124.60, James V 47.50. It is still the lowest score in playoff history and the third-lowest score ever recorded in this league. The week before it, James V had put up 184.38 to win a semi-final by 82.58. Nobody has ever fallen further in seven days, and it cost him the ring.',
-   'Buffalo, Washington, Jacksonville and the Chargers are all on bye. Alex loses Jayden Daniels, Terry McLaurin and Cam Little. James V loses Josh Allen and James Cook to the same byes, and <strong>Davante Adams for six to ten weeks</strong>. He projects for 78.9, the lowest in the league. This page makes it <strong>Alex, 72%</strong>.',
-   'The rest of the board, with every man ruled out taken off it: Graham 82% over Jon, who has lost Saquon Barkley; Bill 76% over Max; Owen 75% over Bobby; Michael 72% over Ayush; Guzman 52% over James D; and <strong>Brendan 52% over Nick</strong>, a game the injury list turned over — Lamar Jackson and Rashee Rice are both out.'
-  ]},
-  fall:{title:'The Fall', body:[
-   'Jon lost 84.14 to 64.00 and is <strong>0\u20136</strong>. Two other men have opened a season this way: Bill in 2020, who finished 1\u201312, and James V in 2021, who finished 3\u201311.',
-   'Sixty-four points would have beaten none of the other thirteen teams. He has the fewest points in the league by 92. Keenan Allen scored 16.20 on his bench while Mark Andrews started and scored 1.40. And two years ago he was winning the Garrison \u2014 last year he lost the final by 2.12.'
-  ]},
+   'Owen made the case against himself last Sunday, unprompted, before any reporter had put the question to him: “I’m going to be the most mickey mouse 6-0 team of all time.” Invited to defend it, he gestured at the box score. “Look at my points.”',
+   'A week later the only thing wrong with the statement is the number.',
+   'Nobody has ever started a season 7–0 here. Two men have reached six. Guzman got there in 2021 and lost the next week to Dan, 121.60–113.74. James D got there in 2020 and lost his 171.40–57.60 to Chris, which is still the widest game ever played in this league and will probably stay that way. Week seven is where this stops. It has stopped twice.',
+   'On Monday it didn’t. Owen beat Bobby <strong>117.46–93.48</strong>, and the thing that has never happened has now happened.',
+   'The rest of his case against himself holds up. He is <strong>sixth</strong> in the league in points, 799.18 against Bill’s 942.44. His all-play record is 54–37, which is fifth. Three of his seven wins have come by under four: 2.04 over James V in the opener, 3.92 over Alex, 3.86 over Graham. <strong>A combined 9.82 points separate 7–0 from 4–3.</strong>',
+   'Bobby had set his own terms in advance — “If I put up over 80 I’ll chalk that up as a win” — and put up 93.48. Both men got exactly what they asked for.'],
+  watch:{title:'Week 8 · The One to Watch', body:[
+   '<strong>Bill at Owen.</strong> The only undefeated team against the one that has scored the most, and they are level at <strong>3–3</strong> all time.',
+   'Our own numbers make it <strong>52%</strong> to Bill, the closest call this page has had to make. Owen took the last meeting 137.24–92.28 a year ago. If 7–0 ends anywhere, it ends here.']},
+  fall:{title:'The Page Is On The Record', body:[
+   'First week of predictions: <strong>5–2</strong>.',
+   'Every call at 72% or better landed — Graham, Bill, Owen, Alex, Michael. Both misses were the two games it put at <strong>52%</strong>, which is roughly what 52% is for.']},
+  trade:{title:'The Sell-Off That Paid', img:'news/w7-flowers.webp', h:787,
+    alt:'Zay Flowers running clear for Baltimore', body:[
+   'Eight players were traded Thursday night — Stevenson, Zay Flowers, Hockenson and the Denver defense out, Skattebo, Mayer, Watson and Tucker in — with Stevenson mid-game and already on the board. Asked to explain himself, James D offered two words: <em>“Seen enough.”</em>',
+   'The trade did not process until Tuesday morning. So all four of the men he gave away played for him one last time, and they scored <strong>66.70 points — 50.8% of his total</strong>. Flowers 27.70, Stevenson 22.50, Hockenson 13.50, Denver 3.00.',
+   '<strong>131.22</strong> is the highest score anyone posted in Week 7, and the best week James D has had all season by 14.22. It belongs to a team that is 2–5, and it was assembled from a roster that stopped being his this morning. Guzman’s 99.80 would have beaten six other teams. It lost by 31.42.',
+   'This is also where the page admits something. Our Week 7 slate called this the closest game on the board at 52%, and picked Guzman.']},
+  night:{title:'Eight Teams, One Game', img:'news/w7-lamb.webp', h:900,
+    alt:'CeeDee Lamb catching a pass for Dallas', body:[
+   'Dallas at Philadelphia held the last player of eight different managers, and it settled two of them.',
+   '<strong>Alex needed 18.77 from CeeDee Lamb</strong> and got 24.40 — five catches, 74 yards, two touchdowns — beating James V 89.82–84.18. Lamb’s first score moved him from 49% to 73% in a single play. Without Lamb he loses by nineteen.',
+   '<strong>Nick needed 24.52 from Prescott and Pickens</strong>, and owning both ends of a connection is how you get it: their 21-yard touchdown in the second quarter was logged as one line, +13.94 and +37%. He won 123.38–108.92. On Sunday, asked by Brendan to look at his own team, he had said: <em>“Saw my projected went down and didnt even look into why. All i thought was damn my team is ass.”</em>',
+   'Jon drew the cruellest arrangement on the board. He had Barkley; Graham had the Cowboys defense <em>and</em> the Cowboys kicker, so a Philadelphia touchdown paid Jon and billed Graham on the same snap. Barkley scored one in the first quarter and for about a minute the winless team had a pulse. Then he re-injured himself and finished with nine touches. The second Philadelphia score belonged to somebody else, which cost Graham two and paid Jon nothing. Graham won 107.52–87.98. Jon is <strong>0–7</strong>.']},
+  ladder:{title:'It’s Getting Jeanty', img:'news/w7-jeanty.webp', h:900,
+    alt:'Ashton Jeanty catching a touchdown for Las Vegas', body:[
+   'Michael 112.44, Ayush 109.16, and the quarterback who decided it was Kirk Cousins. Ashton Jeanty’s fifteen-yard receiving touchdown in the fourth quarter was worth 8.5 points and <strong>53% of win probability</strong>, the biggest single swing of the week. ESPN had Michael at 0% for most of the afternoon.',
+   'Readers of last week’s issue will recognise the passer. <strong>Kirko Chainz</strong> is the quarterback Guzman never meant to start, left in the lineup while the cinnamon rolls were in the oven. Seven days later he throws the touchdown that ends Ayush’s four-game run.',
+   'Michael’s two trades paid in exactly one direction. <strong>Drake Maye, six days a Black Panther, led all scorers with 27.44.</strong> Sam LaPorta, acquired the following afternoon, managed 2.80.',
+   'A note on the ladder itself. Replacement values changed basis this week — from this league’s own rosters to the whole NFL, which is the honest version — and under the new one Gibbs still led after Week 6. So Smith-Njigba’s takeover, which we reported last week, actually happened this week. He leads 81.79 to 79.80.']},
   recaps:[
-   {w:'Guzman', note:'The wrong quarterback outscored the right one by 2.02, and it hardly mattered — four of his nine starters cleared twenty. Seven meetings with James V, seven wins, never under 125.'},
-   {w:'Ayush',  note:'Germie Bernard went 25.70 out of the flex and Nabers added 28.50. Nick started two men who scored nothing at all and a quarterback who managed 10.48.'},
-   {w:'Michael',note:'The cleanest lineup of the week: Michael left 0.90 on his bench. Brendan got the best individual score in the league from McCaffrey and lost by 25 anyway.'},
-   {w:'Bill',   note:'Graham left 63.40 on the bench — Tre Tucker 26.70, Kamara 14.90, Harvey 14.60 — and posted his lowest score of the season. He is third in the league in points and has been scored on more than anyone.'},
-   {w:'Alex',   note:'Needed 10.79 out of Washington on Monday night and got 24.70. He also benched 67.96, Tyler Shough’s 26.96 among it, and won regardless.'},
-   {w:'Bobby',  note:'The only game Monday night could still decide. Mike Evans paid Bobby 12.40, Eddy Pineiro paid Max 5.00, and a 6.82 deficit at kickoff finished as a 14.22 loss.'},
-   {w:'Owen',   note:'A sixth win, and the first one in which he was the fourth-worst team in the league. Jon needed 36.55 from Diggs on Monday and got 16.40.'}
-  ],
-  ladder:{title:'A New Man at the Top', img:'news/w6-jsn.webp',
-    alt:'Jaxon Smith-Njigba running after the catch in a Seahawks throwback jersey', body:[
-   'Jahmyr Gibbs had led the MVP ladder since the opening weeks. He does not lead it any more. Detroit were on bye, Gibbs scored nothing, and Jaxon Smith-Njigba put 25.40 into the biggest score of the week and went past him: <strong>82.15 to 80.21</strong>.',
-   'The margin is 1.94 and the argument behind it is the whole point of the formula. Gibbs is still the better per-game player — 30.74 a game to Smith-Njigba’s 27.48. But the ladder asks what a man was worth to the team that rostered him, and a man on bye is worth nothing. Smith-Njigba has played six games to Gibbs’s five, and has two wins above replacement to Gibbs’s one: two weeks Guzman won that a waiver-wire body would have lost.',
-   'It also means the lead story and the ladder are the same team. Guzman forgot which quarterback he had started and still ran the league’s best roster past it, and the best player in the league right now is his.'
-  ]},
-  slate:{wk:7, games:[
-   {a:'Alex',b:'James V',pa:108.5,pb:78.9,fav:'Alex',pct:72,
-    note:'The 2022 Garrison final, replayed by two skeleton crews. Alex loses Daniels, McLaurin and Little to byes; James V loses Allen and Cook the same way and <strong>Davante Adams for six to ten weeks</strong>. He projects for the lowest total in the league.'},
-   {a:'Jon',b:'Graham',pa:81.5,pb:117.5,fav:'Graham',pct:82,
-    note:'Graham has beaten Jon four times and three of them by 20.44, 20.60 and 20.24 — he does not beat Jon so much as invoice him. Saquon Barkley is out, and 81.5 is the second-lowest projection on the board.'},
-   {a:'Ayush',b:'Michael',pa:96.0,pb:123.6,fav:'Michael',pct:72,
-    note:'Michael won the opener in 2023 and has not been close since: Ayush by 19.84, then by 39.94. His 126.46 in the middle of that is the most he has ever scored here, and it lost by twenty.'},
-   {a:'Bill',b:'Max',pa:136.5,pb:108.4,fav:'Bill',pct:76,
-    note:'The only roster the bye week did not touch, and the top projection in the league. Max leads the series 3–2 and took the last one 95.00–79.78, which is as ugly as either of them gets.'},
-   {a:'Owen',b:'Bobby',pa:111.0,pb:81.8,fav:'Owen',pct:75,
-    note:'Nobody has ever started 7–0. Bobby is 2–4 — but the only time these two have met he hung 166.10 on Owen, his career high by thirty-three points.'},
-   {a:'James D',b:'Guzman',pa:106.2,pb:103.0,fav:'Guzman',pct:52,
-    note:'Six meetings and never the same winner twice in a row, which by that arithmetic makes James D due. Breece Hall is out, and this is the nearest thing to a coin toss on the board.'},
-   {a:'Nick',b:'Brendan',pa:114.6,pb:118.6,fav:'Brendan',pct:52,
-    note:'The pairing that opened with Brendan beating Nick in the 2020 Garrison final, and the one the injury list turned over: <strong>Lamar Jackson and Rashee Rice are both out</strong>, which takes Nick from favorite to underdog.'}
-  ]},
-  trade:{title:'Six and Oh, Somehow', img:'news/w6b.webp',
-    alt:'Jordan Love throwing for the Packers', body:[
-   'Owen is <strong>6\u20130</strong>, which ties the best start in league history. James D opened 6\u20130 in 2020 and finished 10\u20133; Guzman opened 6\u20130 in 2021 and finished 9\u20135. Nobody has ever been 7\u20130.',
-   'He got out in front of it himself. \u201cI\u2019m going to be the most mickey mouse 6-0 team of all time,\u201d he announced on Sunday night, unprompted, and when asked to defend the claim he simply gestured at the box score: \u201cLook at my points.\u201d Sunday\u2019s 84.14 would have beaten four of the thirteen other teams. Three of his first five wins came by under four points. His all-play record is 43\u201335, fifth in the league, and Bill \u2014 who is 5\u20131 \u2014 has outscored him by 153 points.',
-   'Michael, asked for his read on the undefeated team, gave it without hedging: \u201cOwen deadass might have the easiest schedule ever.\u201d The tape is half with him \u2014 Owen has been scored on less than everyone but two. Week 7 brings Bobby, who is 2\u20134. The record is there to be taken.'
-  ]}
+   {w:'Owen', note:'His kicker outscored five of his own starters. Cairo Santos put up 14.00; Woody Marks, Rome Odunze, Brock Bowers, Aaron Jones and the Green Bay defense managed 38.90 between the five of them.'},
+   {w:'James D', note:'Guzman’s defense scored nothing at all and his flex gave him 4.10. The front half of that lineup was good enough to beat most of the league. The back half is why it lost by thirty-one.'},
+   {w:'Michael', note:'<strong>Ayush’s defense scored −3.00.</strong> He lost by 3.28. Four straight wins ended on a unit that charged him for turning up.'},
+   {w:'Nick', note:'Brendan got 62.00 of his 108.92 from three men — McCaffrey, Jacobs and Colston Loveland, all over nineteen — and 5.42 from his quarterback. Fifty-seven percent of a losing score came from a third of the lineup.'},
+   {w:'Graham', note:'Jon started two men who scored 0.00, and his quarterback had the best day of anyone in the game — Joe Burrow, 28.88, back off a bye. The winless team is not losing at the top of its lineup.'},
+   {w:'Alex', note:'James V left nothing on his bench, the only manager all week to get every point his roster had, and lost by 5.64 to a side whose tight end caught nothing on National Tight Ends Day. James V, via his social media: <em>“Cade otton 0 points.”</em> Alex, unmoved: <em>“Moral support player. The glue guy.”</em>'},
+   {w:'Bill', note:'Two Max starters cleared eleven; the other seven totalled 29.78. Bill is now ninety points clear of the league in scoring and has lost once.'}],
+  slate:{wk:8, games:[
+   {a:'Bill',b:'Owen',pa:121.6,pb:119.6,fav:'Bill',pct:52,
+    note:'The game of the season so far, and the closest number this page has produced. Level at <strong>3–3</strong> all time; Owen took the last one 137.24–92.28. Bill has lost once and outscored everybody by ninety.'},
+   {a:'Jon',b:'Michael',pa:94.9,pb:126.0,fav:'Michael',pct:81,
+    note:'Jon faces <strong>Drake Maye</strong> six days after trading him away, and Maye arrives off the highest score in his new owner’s win. Michael leads the series 5–2; Jon has won the last two of them.'},
+   {a:'Ayush',b:'Guzman',pa:116.0,pb:99.2,fav:'Ayush',pct:68,
+    note:'They have met twice in the bracket and split them: Ayush’s career high, 161.38, came in one, and Guzman’s 148.60 ended his season in the other. Guzman is without Breece Hall and DeVonta Smith, and his kicker and defense are both on bye.'},
+   {a:'Brendan',b:'James V',pa:108.6,pb:116.4,fav:'James V',pct:59,
+    note:'Brendan leads <strong>5–1</strong> and has won the last four, but Christian McCaffrey is on bye and his first-round pick is still hurt. James V gets Josh Allen and James Cook back after losing by 5.64 without them.'},
+   {a:'Nick',b:'Alex',pa:116.5,pb:125.4,fav:'Alex',pct:60,
+    note:'Both won on Monday night, in the same game, by the margin one Dallas receiver provided. Alex leads the series 4–2 and took the last one 138.00–75.20. Nick is without Rashee Rice and Lamar Jackson.'},
+   {a:'Graham',b:'Max',pa:107.6,pb:98.6,fav:'Graham',pct:60,
+    note:'Graham’s remade roster debuts — Stevenson, Flowers and Hockenson all processed this morning — but Chris Olave and Alvin Kamara are both on bye, which is most of what he had before. Max leads 4–3.'},
+   {a:'James D',b:'Bobby',pa:90.7,pb:109.7,fav:'Bobby',pct:70,
+    note:'The league’s two sellers, who have met exactly once. James D traded his defense away on Thursday and has not replaced it, so the projection above gives him the league median for an empty slot. He will need to pick somebody.'}]},
+  ad:{img:'news/passiverse.webp',alt:'The Passiverse: the NFL passing network, every player connected by throws and catches',
+    cap:'<strong>Five of the eight men above have been started in this league</strong> — Kelce 86 times, Adams 82, Mahomes 77, Rodgers 54, Brady 41. The other three retired before we existed.',
+    title:'Every throw. Every catch. 1999–2026.',
+    body:['Twenty-seven seasons of NFL passing drawn as a single network: every identified passer and receiver, joined by the balls that actually went between them. Search any player. Filter by season, team, position, targets or catches. Two games thrown in.',
+     'Built by <strong>Graham Batkin</strong>, of Olave Garden.'],
+    url:'thepassiverse.space',
+    kick:'The proprietor has started Chris Olave more times than the rest of this league combined, so he knows the value of a connection.'}
 };
+
 
 /* Issues that have been off the front page keep their article here. Putting a
    week in the archive is one move: lift the object out of ISSUE and drop it in
@@ -1025,14 +1043,18 @@ VIEWS.overview=()=>{
   right.appendChild(fc);
   cols.appendChild(left); cols.appendChild(right); out.appendChild(cols);
 
-  const td=E('div','card wide'); td.style.marginBottom='0';
-  td.appendChild(E('h3',null,ISSUE.trade.title));
-  const ti=E('img'); ti.src=ISSUE.trade.img; ti.alt=ISSUE.trade.alt; ti.loading='lazy';
-  ti.width=1400; ti.height=933; td.appendChild(ti);
-  const tb=E('div','body');
-  ISSUE.trade.body.forEach(t=>{const p=E('p');p.innerHTML=t;tb.appendChild(p)});
-  td.appendChild(tb);
-  out.appendChild(td);
+  /* the wide cards all look the same, so they are built the same */
+  const wide=sec=>{ if(!sec)return;
+    const c=E('div','card wide'); c.style.marginBottom='0';
+    c.appendChild(E('h3',null,sec.title));
+    if(sec.img){const im=E('img'); im.src=sec.img; im.alt=sec.alt||''; im.loading='lazy';
+      im.width=1400; im.height=sec.h||933; c.appendChild(im)}
+    const bd=E('div','body');
+    sec.body.forEach(t=>{const q=E('p');q.innerHTML=t;bd.appendChild(q)});
+    c.appendChild(bd); out.appendChild(c);
+  };
+  wide(ISSUE.trade);
+  wide(ISSUE.night);
 
   /* every game of the week, for the thirteen men who were not the lead story */
   if(ISSUE.recaps&&ISSUE.recaps.length){
@@ -1092,17 +1114,21 @@ VIEWS.overview=()=>{
     out.appendChild(grid);
   }
 
-  const L=mvpLadder();
-  if(ISSUE.ladder){
-    const lc=E('div','card wide'); lc.style.marginBottom='0';
-    lc.appendChild(E('h3',null,ISSUE.ladder.title));
-    const li=E('img'); li.src=ISSUE.ladder.img; li.alt=ISSUE.ladder.alt; li.loading='lazy';
-    li.width=1400; li.height=700; lc.appendChild(li);
-    const lb=E('div','body');
-    ISSUE.ladder.body.forEach(t=>{const p=E('p');p.innerHTML=t;lb.appendChild(p)});
-    lc.appendChild(lb);
-    out.appendChild(lc);
+  if(ISSUE.ad){
+    const A=ISSUE.ad, ad=E('div','adv');
+    ad.appendChild(E('div','lab','Advertisement'));
+    if(A.img){const im=E('img'); im.src=A.img; im.alt=A.alt||''; im.loading='lazy';
+      im.width=1400; im.height=933; ad.appendChild(im)}
+    if(A.cap){const c=E('div','cap'); c.innerHTML=A.cap; ad.appendChild(c)}
+    ad.appendChild(E('h3',null,A.title));
+    A.body.forEach(t=>{const q=E('p');q.innerHTML=t;ad.appendChild(q)});
+    const u=E('div','url'); u.innerHTML=A.url; ad.appendChild(u);
+    if(A.kick){const k=E('div','kick'); k.innerHTML=A.kick; ad.appendChild(k)}
+    out.appendChild(ad);
   }
+
+  const L=mvpLadder();
+  wide(ISSUE.ladder);
   out.appendChild(secH('The MVP Ladder · After Week '+W));
   const mi=E('div','hero-body');
   const mt=E('div');
@@ -1452,10 +1478,17 @@ const ROY={2020:['James Robinson',170.70],2021:['Najee Harris',241.00],2022:['Da
 const RECENT_MOVES={};
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
 /* Replacement value is fixed per season and written down rather than worked
-   out again on every load, so that a finished ladder can never move: the
-   league's own QB2s, RB3s, WR4s and TE2s, each man scored over every week
-   somebody held him, blanks included, because that is what the wire pays.
-   Only the live season's line changes, once a week, as the season fills in. */
+   out again on every load, so that a finished ladder can never move.
+     Through 2025 the figure is what this league's own rosters produced: the
+   band at each position, every man scored over every week somebody held him.
+   Those are frozen and will not change again.
+     From 2026 it is cut from the whole NFL instead, because fourteen rosters
+   only ever show you the men somebody wanted. FantasyPros' full-PPR list —
+   the same scoring used here, matching ESPN to the decimal — is taken over
+   the league's own weeks, anyone who has played fewer than half of them is
+   set aside, and the rest are ranked by points per game. The fourteen in the
+   band are the QB2s, RB3s, WR4s and TE2s: exactly fourteen at every position,
+   averaged straight, refreshed every week while a season is live. */
 const RV_TABLE={
   2020:{QB:14.1247,RB:8.2589,WR:8.4790,TE:6.3326},
   2021:{QB:13.2795,RB:8.8395,WR:8.0074,TE:6.4280},
@@ -1463,12 +1496,12 @@ const RV_TABLE={
   2023:{QB:12.8441,RB:8.5313,WR:8.0869,TE:6.8279},
   2024:{QB:12.8509,RB:8.0432,WR:8.8973,TE:6.3760},
   2025:{QB:12.3814,RB:8.6943,WR:7.7435,TE:7.0375},
-  2026:{QB:12.5525,RB:7.2622,WR:7.8233,TE:5.2835}};
+  2026:{QB:15.6218,RB:8.4694,WR:8.8607,TE:8.4750}};
 /* A baseline for an earlier week of the live season, needed only when the
    method behind the numbers changes mid-season: without it last week's
    ladder, and so this week's movement on it, would be scored against a
    baseline that did not exist last week. Empty while nothing has changed. */
-const RV_ASOF={};
+const RV_ASOF={2026:{6:{QB:15.3481,RB:8.4289,WR:9.0448,TE:8.2614}}};
 const RV_YEARS=Object.keys(RV_TABLE).map(Number).sort((a,b)=>a-b);
 function rvFor(y,upto){
   if(upto&&RV_ASOF[y]&&RV_ASOF[y][upto]) return RV_ASOF[y][upto];
@@ -2755,7 +2788,7 @@ function mvpBlock(){
   ],past,{nofilter:true}));
 
   out.appendChild(secH('Replacement Values · '+L.year));
-  out.appendChild(E('p','lede','What you could expect from the waiver wire at each position: this league’s QB2s, RB3s, WR4s and TE2s, scored over every week somebody held them — the blanks count, because on the wire they do. Rebuilt each week while a season is live, then fixed, so a finished ladder never moves.'));
+  out.appendChild(E('p','lede','What a replacement-level starter is worth at each position — the QB2s, RB3s, WR4s and TE2s. From 2026 the band is cut from the whole NFL, fourteen men at every position, rather than from the fourteen rosters here. Seasons through 2025 keep the league-derived figures their ladders were decided on.'));
   out.appendChild(tbl([
     {h:'Position',f:r=>'<strong>'+r[0]+'</strong>'},
     {h:'The band',f:r=>r[0]+MVP_BAND[r[0]][0]+'–'+MVP_BAND[r[0]][1]},
@@ -2802,7 +2835,7 @@ function mvpBlock(){
   note.appendChild(E('h3',null,'Where this version bends the method'));
   ['A player qualifies at '+L.minG+' games, 60% of the weeks played so far. Without a cut-off, one big week off the waiver wire would top the ladder on points per game alone.',
    'Games played is counted as weeks the player scored anything while rostered in this league, since the archive holds fantasy rosters rather than NFL inactives. A genuine zero in a game he played is counted as a week off.',
-   'Replacement values come from this league only, and from every man rostered a fortnight or more \u2014 scored over every week he was held, blank weeks included, because that is what the wire actually pays. This early the QB and TE bands run shallower than fourteen deep, so those two are noisier than the RB and WR ones.'
+   'Replacement values changed basis in 2026. Through 2025 they were drawn from this league alone \u2014 every man rostered a fortnight or more, scored over every week he was held. From 2026 the band comes off the whole NFL, which is the honest version: fourteen rosters only ever show you the men somebody wanted, and the floor of the wire sits below that. Past seasons keep the numbers their ladders were settled on rather than being re-run under a method that did not exist yet.'
   ].forEach(t=>note.appendChild(E('p',null,t)));
   out.appendChild(note);
   return out;
