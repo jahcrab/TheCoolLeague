@@ -241,6 +241,7 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .withside{display:flex;gap:20px;align-items:flex-start}
 .withside>.gw{flex:1;min-width:0}
 .withside>.adv{flex:0 0 352px;margin:0}
+.faq>.adv{margin:0 0 18px;align-self:start}
 @media (max-width:900px){.withside{display:block}.withside>.adv{margin-top:20px;max-width:520px}}
 .adv{border:1px solid var(--line);background:var(--panel);padding:12px 13px 15px}
 .adv .lab{font-family:var(--f-disp);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
@@ -999,6 +1000,26 @@ const ISSUES=Object.assign({},ISSUE_PAST,{[ISSUE.wk]:ISSUE});
    round it: standings, the slate and the game-by-game cards are this week's
    machinery, and a fortnight later they report the wrong week. The written
    stories keep. */
+/* The advertisement belongs to the issue, so it travels with it into the
+   archive. Never full-bleed: a rail beside the week's cards on the front
+   page, one cell of the card grid on an archived issue. */
+function adBlock(A){
+  if(!A) return null;
+  const ad=E('div','adv');
+  const link=el=>{ if(!A.href) return el;
+    const a=E('a'); a.href=A.href; a.target='_blank'; a.rel='noopener noreferrer';
+    a.appendChild(el); return a; };
+  ad.appendChild(E('div','lab','Advertisement'));
+  if(A.img){const im=E('img'); im.src=A.img; im.alt=A.alt||''; im.loading='lazy';
+    im.width=1400; im.height=A.h||933; ad.appendChild(link(im))}
+  if(A.cap){const c=E('div','cap'); c.innerHTML=A.cap; ad.appendChild(c)}
+  ad.appendChild(link(E('h3',null,A.title)));
+  A.body.forEach(t=>{const q=E('p');q.innerHTML=t;ad.appendChild(q)});
+  const u=E('div','url'); u.appendChild(link(E('span',null,A.url))); ad.appendChild(u);
+  if(A.kick){const k=E('div','kick'); k.innerHTML=A.kick; ad.appendChild(k)}
+  return ad;
+}
+
 VIEWS.issue=()=>{
   const out=E('div'), w=+STATE.iw, I=ISSUES[w];
   if(!I){ out.appendChild(E('p','empty','That issue has no article behind it.')); return out; }
@@ -1026,15 +1047,17 @@ VIEWS.issue=()=>{
   hb.appendChild(fig); hb.appendChild(txt); hero.appendChild(hb);
   out.appendChild(hero);
 
-  const col=[I.watch,I.fall].filter(Boolean);
-  if(col.length){
+  const col=[I.watch,I.fall].filter(Boolean), issueAd=adBlock(I.ad);
+  if(col.length||issueAd){
     const faq=E('div','faq'), a=E('div'), b=E('div');
     col.forEach((sec,n)=>{
       const c=E('div','card'); c.appendChild(E('h3',null,sec.title));
       sec.body.forEach(t=>{const p=E('p');p.innerHTML=t;c.appendChild(p)});
       (n%2?b:a).appendChild(c);
     });
-    faq.appendChild(a); faq.appendChild(b); out.appendChild(faq);
+    faq.appendChild(a); faq.appendChild(b);
+    if(issueAd) faq.appendChild(issueAd);
+    out.appendChild(faq);
   }
   [I.trade,I.night,I.ladder].filter(Boolean).forEach(sec=>{
     const d=E('div','card wide'); d.style.marginTop='18px';
@@ -1138,24 +1161,7 @@ VIEWS.overview=()=>{
     sec.body.forEach(t=>{const q=E('p');q.innerHTML=t;bd.appendChild(q)});
     c.appendChild(bd); out.appendChild(c);
   };
-  /* the advertisement runs as a rail beside the week's cards, not across the page */
-  const buildAd=()=>{
-    if(!ISSUE.ad) return null;
-    const A=ISSUE.ad, ad=E('div','adv');
-    const link=el=>{ if(!A.href) return el;
-      const a=E('a'); a.href=A.href; a.target='_blank'; a.rel='noopener noreferrer';
-      a.appendChild(el); return a; };
-    ad.appendChild(E('div','lab','Advertisement'));
-    if(A.img){const im=E('img'); im.src=A.img; im.alt=A.alt||''; im.loading='lazy';
-      im.width=1400; im.height=A.h||933; ad.appendChild(link(im))}
-    if(A.cap){const c=E('div','cap'); c.innerHTML=A.cap; ad.appendChild(c)}
-    ad.appendChild(link(E('h3',null,A.title)));
-    A.body.forEach(t=>{const q=E('p');q.innerHTML=t;ad.appendChild(q)});
-    const u=E('div','url'); u.appendChild(link(E('span',null,A.url))); ad.appendChild(u);
-    if(A.kick){const k=E('div','kick'); k.innerHTML=A.kick; ad.appendChild(k)}
-    return ad;
-  };
-
+  const buildAd=()=>adBlock(ISSUE.ad);
   wide(ISSUE.trade);
   wide(ISSUE.night);
 
