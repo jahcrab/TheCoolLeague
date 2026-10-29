@@ -2722,8 +2722,8 @@ VIEWS.records=()=>{
       :'<strong>'+r.from.y+'\u2013'+r.g.y+'</strong>'}]);
   const sn=E('div','note'); sn.style.marginTop='9px';
   sn.textContent='Consecutive wins across regular season and playoffs, so a streak can run from '+
-    'one season into the next. Click a line to open the game that ended it \u2014 or the last one won, '+
-    'if it is still going.';
+    'one season into the next. The To column is the last game won, not the defeat that ended the run. '+
+    'Click a line to open that win.';
   out.appendChild(sn);
 
   // player weeks
