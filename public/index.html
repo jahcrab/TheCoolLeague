@@ -2695,6 +2695,37 @@ VIEWS.records=()=>{
     {h:'Result',f:r=>r.won?'<span style="color:var(--good)">W</span>':'<span style="color:var(--bad)">L</span>'},
     {h:'When',r:true,f:r=>whenLab(r.g.y,r.g.w,r.g.br)}]);
 
+  /* Longest win streaks. Same basis as the rest of the record book -- regular
+     season and playoffs, consolation excluded -- so a run can carry from one
+     season into the next. Every streak level down to the tenth is shown whole:
+     cutting at ten exactly would drop some sevens and keep others. */
+  const seq={};
+  elig().forEach(g=>{ (seq[M[g.win[3]]]=seq[M[g.win[3]]]||[]).push({g,won:1});
+                      (seq[M[g.los[3]]]=seq[M[g.los[3]]]||[]).push({g,won:0}); });
+  const runs=[];
+  Object.entries(seq).forEach(([m,gs])=>{
+    gs.sort((a,b)=>a.g.y-b.g.y||a.g.w-b.g.w);
+    let cur=null;
+    gs.forEach(x=>{ if(x.won){ if(!cur)cur={m,n:0,from:x.g}; cur.n++; cur.g=x.g; }
+                    else { if(cur)runs.push(cur); cur=null; } });
+    if(cur){ cur.live=true; runs.push(cur); }
+  });
+  runs.sort((a,b)=>b.n-a.n||a.from.y-b.from.y||a.from.w-b.from.w);
+  const cut=runs.length>=10?runs[9].n:0;
+  const dim=t=>' <span style="color:var(--muted)">'+t+'</span>';
+  list('Longest Win Streaks',runs.filter(r=>r.n>=cut),[
+    {h:'',f:(r,i)=>i+1},{h:'Wins',n:true,f:r=>'<strong>'+r.n+'</strong>'},
+    {h:'Manager',f:r=>r.m},
+    {h:'From',f:r=>whenLab(r.from.y,r.from.w,r.from.br)},
+    {h:'To',f:r=>whenLab(r.g.y,r.g.w,r.g.br)+(r.live?dim('· running'):'')},
+    {h:'Span',r:true,f:r=>r.from.y===r.g.y?String(r.from.y)
+      :'<strong>'+r.from.y+'\u2013'+r.g.y+'</strong>'}]);
+  const sn=E('div','note'); sn.style.marginTop='9px';
+  sn.textContent='Consecutive wins across regular season and playoffs, so a streak can run from '+
+    'one season into the next. Click a line to open the game that ended it \u2014 or the last one won, '+
+    'if it is still going.';
+  out.appendChild(sn);
+
   // player weeks
   out.appendChild(secH('Biggest Player Weeks'));
   const pl=[]; D.tw.forEach(t=>{ if(t[2]===BR_CON)return;
