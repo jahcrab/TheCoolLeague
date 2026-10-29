@@ -292,6 +292,7 @@ figcaption{font-size:13px;color:var(--muted);line-height:1.4;margin-top:7px;padd
 .rg2{background:var(--accent2)}
 .rg3{background:var(--accent);border-color:var(--accent)}
 .rg4{background:var(--gold);border-color:var(--gold)}
+.agh{color:var(--gold)}
 .rlegend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--f-disp);font-size:11px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--muted);margin:0 0 16px}
 .rlegend span.i{display:flex;align-items:center;gap:6px}
@@ -3037,7 +3038,12 @@ function ringCounter(){
       Math.max(...b[2])-Math.max(...a[2])||a[0].localeCompare(b[0]));
     host.innerHTML='';
     if(!rows.length){host.appendChild(E('p','empty','No player in the Ring Counter matches that.'));return}
-    const cols=[{h:'Player',f:r=>'<strong>'+r[0]+'</strong>'},{h:'Pos',f:r=>r[1]}];
+    /* an Agholor MVP is a gold square in his winning year; put him in gold here too */
+    const aghYrs=r=>YRS.filter((y,i)=>r[2][i]===4);
+    const cols=[{h:'Player',f:r=>{const ay=aghYrs(r);
+      return ay.length
+        ? '<strong class="agh" title="Agholor MVP, '+ay.join(' and ')+'">'+r[0]+'</strong>'
+        : '<strong>'+r[0]+'</strong>';}},{h:'Pos',f:r=>r[1]}];
     YRS.forEach((y,i)=>cols.push({h:String(y).slice(2),r:true,
       f:r=>'<span class="rg rg'+r[2][i]+'" title="'+y+'"></span>'}));
     cols.push({h:'Rings',r:true,n:true,f:r=>'<strong>'+r[3]+'</strong>'});
