@@ -202,6 +202,20 @@ button.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--acce
 button.btn[aria-pressed="true"]:hover{color:var(--bg)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+/* issue navigation: the bar above an article and the pager under it */
+.itop{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-bottom:16px;flex-wrap:wrap}
+.ipager{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap}
+.ipager .sp{flex:1 1 220px}
+.ipager button{flex:1 1 220px;min-width:0;text-align:left;background:var(--panel);
+  border:1px solid var(--line);padding:13px 15px;cursor:pointer;color:var(--fg);font:inherit}
+.ipager button:hover{border-color:var(--accent)}
+.ipager button.nx{text-align:right}
+.ipager .k{display:block;margin-bottom:4px;font-family:var(--f-disp);font-size:11.5px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+.ipager button:hover .k{color:var(--accent)}
+.ipager .t{display:block;font-family:var(--f-disp);font-size:19px;font-weight:600;line-height:1.15}
+
 /* front page */
 .hero{border-bottom:2px solid var(--fg);padding-bottom:22px;margin-bottom:22px}
 .hero .eyebrow{font-family:var(--f-disp);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
@@ -1195,11 +1209,42 @@ function adBlock(A){
   return ad;
 }
 
+/* The weeks either side of this one. Only weeks with an article count, which
+   is whatever ISSUES holds -- the archive plus the current issue -- so a week
+   that was never written up is stepped over rather than linked to. */
+function issueNeighbours(w){
+  const ws=Object.keys(ISSUES).map(Number).sort((a,b)=>a-b), i=ws.indexOf(w);
+  return {prev:ws[i-1], next:ws[i+1]};
+}
+function issuePager(w){
+  const {prev,next}=issueNeighbours(w);
+  if(prev===undefined&&next===undefined) return null;
+  const nav=E('nav','ipager'); nav.setAttribute('aria-label','Other issues');
+  const tile=(n,isNext)=>{
+    const b=E('button',isNext?'nx':null);
+    const k=E('span','k',isNext?'Next \u00b7 Week '+n+' \u2192':'\u2190 Previous \u00b7 Week '+n);
+    const t=E('span','t',ISSUES[n].head);
+    b.appendChild(k); b.appendChild(t);
+    b.onclick=()=>go('issue',{iw:n});
+    return b;
+  };
+  nav.appendChild(prev===undefined?E('div','sp'):tile(prev,false));
+  if(next!==undefined) nav.appendChild(tile(next,true));
+  return nav;
+}
+
 VIEWS.issue=()=>{
   const out=E('div'), w=+STATE.iw, I=ISSUES[w];
   if(!I){ out.appendChild(E('p','empty','That issue has no article behind it.')); return out; }
-  const bk=E('button','btn','\u2190 All issues'); bk.style.marginBottom='16px';
-  bk.onclick=()=>go('newsletters'); out.appendChild(bk);
+  const top=E('div','itop');
+  const bk=E('button','btn','\u2190 All issues');
+  bk.onclick=()=>go('newsletters'); top.appendChild(bk);
+  const nxt=issueNeighbours(w).next;
+  if(nxt!==undefined){
+    const nb=E('button','btn','Week '+nxt+' \u2192');
+    nb.onclick=()=>go('issue',{iw:nxt}); top.appendChild(nb);
+  }
+  out.appendChild(top);
 
   const hero=E('div','hero'), eb=E('div','eyebrow');
   eb.innerHTML='<span>Scorigami Report</span><span class="dot"></span><span>Week '+I.wk+' \u00b7 '+I.yr+'</span>'+
@@ -1252,6 +1297,7 @@ VIEWS.issue=()=>{
   pg.alt='Scorigami Report, Week '+I.wk+' of '+I.yr+', one page';
   pg.width=1400; pg.height=1812; pg.style.cssText='width:100%;height:auto;border:1px solid var(--line)';
   out.appendChild(pg);
+  const pager=issuePager(w); if(pager) out.appendChild(pager);
   return out;
 };
 
