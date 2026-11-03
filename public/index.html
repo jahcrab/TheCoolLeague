@@ -3368,8 +3368,9 @@ VIEWS.about=()=>{
   RIVALRIES.forEach(r=>{
     const d=rivalry(r); if(!d) return;
     const c=E('div','card'); c.appendChild(E('h3',null,r.n));
+    const ld=d.wa>d.wb?r.a:r.b, tr=d.wa>d.wb?r.b:r.a;   /* name both men, always */
     const lead=d.wa===d.wb ? r.a+' and '+r.b+' are level at '+d.wa+'\u2013'+d.wb
-             : (d.wa>d.wb?r.a:r.b)+' leads '+Math.max(d.wa,d.wb)+'\u2013'+Math.min(d.wa,d.wb);
+             : ld+' leads '+tr+' '+Math.max(d.wa,d.wb)+'\u2013'+Math.min(d.wa,d.wb);
     const rec=E('p'); rec.innerHTML='<strong>'+lead+'</strong> after '+d.gs.length+
       ' meeting'+(d.gs.length===1?'':'s')+(d.po.length?' \u00b7 '+d.po.length+' in the bracket':'')+'.';
     c.appendChild(rec);
