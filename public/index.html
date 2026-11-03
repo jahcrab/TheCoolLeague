@@ -1812,6 +1812,49 @@ const BIO={
 
 /* The league's own story. Everything here is hand-written: add a fact by adding
    a line to FACTS, or a paragraph to the card it belongs in. */
+/* Named fixtures. Only the name and the reason are written down; the record,
+   the margins and the last meeting are computed from the archive every time
+   the page loads, so a rivalry can never go stale or disagree with the rest
+   of the site. Consolation games are excluded, as everywhere else. */
+const RIVALRIES=[
+ {n:'The Diddy Bowl', a:'Graham', b:'Guzman',
+  w:'Opening week, every year since 2021. Six meetings, six scorelines nobody had ever recorded — the only fixture in the league still unbeaten against the grid.'},
+ {n:'The Battle of Reeve Road', a:'Ayush', b:'Graham',
+  w:'They live on the same street. By Graham’s own terms, the winner “gets the nice aah house at the end.”'},
+ {n:'The Mill River Shootout', a:'Michael', b:'Owen',
+  w:'Two houses a short walk from Mill River. Owen took the first two meetings; Michael has won five of the six since.'},
+ {n:'The James Bowl', a:'James D', b:'James V',
+  w:'Self-explanatory, and the most-played fixture in the league alongside one other. They have also met in the bracket, where James V won by 82.58.'},
+ {n:'The Covert Operation', a:'Graham', b:'James V',
+  w:'They went to Covert Elementary School together. Nothing about it has been close since: no meeting has finished inside 24 points.'},
+ {n:'The First Final', a:'Brendan', b:'Nick',
+  w:'The first Garrison ever played for. Brendan won it 129.18–85.36 in 2020 — and has won two of the nine meetings since.'},
+ {n:'The Custody Battle', a:'Graham', b:'Max',
+  w:'Graham missed draft day in 2020, so Max drafted the team in his place and the two of them shared it for the season. Graham got one of his own in 2021. In eight meetings since, neither man has ever led the series by more than a single game.'},
+ {n:'The Battle for Boston', a:'Alex', b:'Graham',
+  w:'Boston University against Boston College.'},
+ {n:'The Cocktail Party', a:'Ayush', b:'Jon',
+  w:'Georgia against Florida. The real one has a name, so this one does too — though they have only managed two meetings so far.'},
+ {n:'The Annual Tribute', a:'Guzman', b:'James V',
+  w:'The most one-sided fixture in the league. Guzman has won all seven and has never once scored under 125 doing it.'},
+ {n:'The Garrison Rematch', a:'Alex', b:'Jon',
+  w:'Jon won the first seven, one of them the 2024 Garrison by 3.54. Alex finally took one in Week 1 of this season.'},
+ {n:'Twice in the Bracket', a:'Ayush', b:'Guzman',
+  w:'The only pair to have met twice in the playoffs. Ayush won the first by 83.00 in 2023; Guzman took the second in 2025.'}
+];
+
+/* record, margins and last meeting for one named fixture */
+function rivalry(r){
+  const gs=elig().filter(g=>{const s=new Set([D.mgrs[g.win[3]],D.mgrs[g.los[3]]]);
+    return s.has(r.a)&&s.has(r.b)&&s.size===2;});
+  if(!gs.length) return null;
+  const wa=gs.filter(g=>D.mgrs[g.win[3]]===r.a).length;
+  const last=gs[gs.length-1], po=gs.filter(g=>g.br===BR_PO);
+  const marg=gs.map(g=>g.marg);
+  return {gs,wa,wb:gs.length-wa,last,po,
+          close:Math.min(...marg),wide:Math.max(...marg)};
+}
+
 const ABOUT={
  lede:'Fourteen teams, seven seasons, one trophy made out of a Funko Pop and a selfie stick. This is where the league keeps its own history \u2014 who started it, how it works, and the things that only make sense if you were there.',
  cards:[
@@ -3316,6 +3359,28 @@ VIEWS.about=()=>{
     faq.appendChild(d);
   });
   out.appendChild(faq);
+
+  out.appendChild(secH('The Rivalries'));
+  out.appendChild(E('p','lede','Fixtures that mean something beyond the standings \u2014 a street, a school, '+
+    'a city, a final, or one man who simply cannot beat another. Every record below is counted from the '+
+    'archive, regular season and playoffs, and moves the week it changes.'));
+  const rv=E('div','cards2');
+  RIVALRIES.forEach(r=>{
+    const d=rivalry(r); if(!d) return;
+    const c=E('div','card'); c.appendChild(E('h3',null,r.n));
+    const lead=d.wa===d.wb ? r.a+' and '+r.b+' are level at '+d.wa+'\u2013'+d.wb
+             : (d.wa>d.wb?r.a:r.b)+' leads '+Math.max(d.wa,d.wb)+'\u2013'+Math.min(d.wa,d.wb);
+    const rec=E('p'); rec.innerHTML='<strong>'+lead+'</strong> after '+d.gs.length+
+      ' meeting'+(d.gs.length===1?'':'s')+(d.po.length?' \u00b7 '+d.po.length+' in the bracket':'')+'.';
+    c.appendChild(rec);
+    const w=E('p'); w.innerHTML=r.w; c.appendChild(w);
+    const L=d.last, lp=E('p','sub');
+    lp.innerHTML='Last met '+L.y+', Week '+L.w+' \u2014 '+D.mgrs[L.win[3]]+' '+f2(L.win[6])+
+      '\u2013'+f2(L.los[6])+'. Closest '+f2(d.close)+', widest '+f2(d.wide)+'.';
+    c.appendChild(lp);
+    rv.appendChild(c);
+  });
+  out.appendChild(rv);
 
   if(ABOUT.facts.length){
     out.appendChild(secH('Things That Are True'));
