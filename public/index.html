@@ -877,6 +877,13 @@ const ISSUE={
    'He won <strong>110.26–103.66</strong>. Luther Burden III gave him 18.60 and James Cook 18.10, and Josh Allen had already put up 26.56.',
    'He also left <strong>70.22 on his bench</strong> — Harold Fannin Jr. 23.40, Sam Darnold 17.50 — which is more than James D managed in his entire starting lineup. The called shot landed and the lineup was still wrong.',
    'Brendan got 26.80 from Michael Wilson and 23.20 from Josh Jacobs and started a kicker who scored nothing. He is <strong>2–6</strong>, and he holds the highest score in the history of this league. He asked for the fight and lost it by 6.60.']},
+  mvp:{title:'Two Points and a Quarter', img:'news/w8-mvp.webp', h:1120,
+    alt:'Two fighters in a boxing ring, one in Detroit colours landing a punch on one in Seattle colours',
+    cap:'Jahmyr Gibbs and Jaxon Smith-Njigba have been first and second all season. This week they swapped.', body:[
+   'The MVP ladder had <strong>Jaxon Smith-Njigba</strong> on top after Week 7. After Week 8 it has <strong>Jahmyr Gibbs</strong>, by <strong>2.25</strong>. They have been the top two every week the ladder has existed this season, and the order will not settle.',
+   'There is almost nothing between them. Gibbs is scoring <strong>27.97 a game</strong> to Smith-Njigba\u2019s 27.50. Both are worth about nineteen points a week more than a replacement would be \u2014 19.50 against 18.63. Both have delivered <strong>two wins their team would have lost without them</strong>, and neither has cost his manager a single week.',
+   'The difference is a bye. <strong>Gibbs has played seven games and Smith-Njigba eight</strong>, and Gibbs is ahead anyway. Nobody else is close: Josh Allen is third on 68.75, nearly twenty behind.',
+   'They are also about to be pointed at each other. Gibbs belongs to Bill, Smith-Njigba to Guzman, and <strong>Guzman plays Bill on Sunday</strong> \u2014 the top two on the ladder, in the same game, on opposite sides of it.']},
   watch:{title:'Week 9 · The One to Watch', body:[
    '<strong>Owen at Brendan.</strong> Seven days after losing for the first time, Owen draws the one man in the league who owns him.',
    '<strong>Brendan leads the series 4–1</strong>, and has won the last four in a row. One of them was <strong>148.96–148.30</strong> in Week 13 of 2023, decided by 0.66 — the same margin by which Brendan took the all-time scoring record off Max in Week 4 of this season.',
@@ -1357,7 +1364,7 @@ VIEWS.issue=()=>{
     if(issueAd) faq.appendChild(issueAd);
     out.appendChild(faq);
   }
-  [I.trade,I.night,I.ladder].filter(Boolean).forEach(sec=>{
+  [I.trade,I.night,I.ladder,I.mvp].filter(Boolean).forEach(sec=>{
     const d=E('div','card wide'); d.style.marginTop='18px';
     d.appendChild(E('h3',null,sec.title));
     if(sec.img){const fg=E('figure'), g=E('img');
@@ -1528,6 +1535,7 @@ VIEWS.overview=()=>{
 
   const L=mvpLadder();
   wide(ISSUE.ladder);
+  wide(ISSUE.mvp);          /* the race, directly above the table it describes */
   out.appendChild(secH('The MVP Ladder · After Week '+W));
   const mi=E('div','hero-body');
   const mt=E('div');
