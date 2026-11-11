@@ -2007,6 +2007,16 @@ const ROY={2020:['James Robinson',170.70],2021:['Najee Harris',241.00],2022:['Da
    Bobby <-> Alex, the night Week 5 closed. */
 const RECENT_MOVES={};
 const MVP_BAND={QB:[15,28],RB:[29,42],WR:[43,56],TE:[15,28]};
+/* The regular season is fourteen weeks, so the games a man needs to finish on
+   the ladder is settled from the start: ceil(14 * 0.6), which is nine. */
+const MVP_SEASON_WK=14;
+/* Men who are out long enough that they can no longer reach that nine, and so
+   are already off the final ladder however well the rest of the year goes.
+   They come off this one as well, because a man who cannot finish on it should
+   not be the mark the man above him is measured against either. `back` is the
+   earliest week he could play again; everything before it is time he cannot
+   bank. Clear the entry the moment he is activated and he returns on his own. */
+const MVP_OUT={2026:{'Puka Nacua':{back:14, why:'IR, Week 10'}}};
 /* Replacement value is fixed per season and written down rather than worked
    out again on every load, so that a finished ladder can never move.
      Through 2025 the figure is what this league's own rosters produced: the
@@ -2063,7 +2073,11 @@ function mvpLadder(year,upto){
   const GPof=p=>p.wk.filter(v=>v.pts>0).length;
   const PFGof=p=>{const g=GPof(p); return g?p.wk.filter(v=>v.pts>0).reduce((s,v)=>s+v.pts,0)/g:0};
   const minG=Math.max(3,Math.ceil(weeks.length*0.6));
-  const elig=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&GPof(p)>=minG);
+  /* out for long enough that the season's own minimum is already beyond him */
+  const endMin=Math.max(3,Math.ceil(MVP_SEASON_WK*0.6));
+  const done=p=>{const o=(MVP_OUT[Y]||{})[p.name];
+    return !!o && GPof(p)+Math.max(0,MVP_SEASON_WK-o.back+1) < endMin;};
+  const elig=Object.values(pl).filter(p=>MVP_BAND[p.pos]&&GPof(p)>=minG&&!done(p));
   const RV=rvFor(Y,upto), SECOND={}, FIRST={};
   Object.keys(MVP_BAND).forEach(pos=>{
     const ranked=elig.filter(p=>p.pos===pos).map(PFGof).sort((a,b)=>b-a);
