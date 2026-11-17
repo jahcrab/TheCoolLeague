@@ -3925,7 +3925,11 @@ const TABS=[['overview','Overview'],['scorigami','Scorigami'],['games','Games'],
 function go(v,st){
   if(v==='rings'){ v='players'; st=Object.assign({b:'ring'},st); }     // tabs these used to be
   if(v==='mvp'){ v='players'; st=Object.assign({b:'ladder'},st); }
-  CUR=v; STATE=st||{}; try{location.hash=v}catch(e){} render(); scrollTo({top:0,behavior:'smooth'});
+  CUR=v; STATE=st||{};
+  /* An issue carries its week in the address, so a single week can be linked
+     to on its own: #issue/10. Every other view is just its own name. */
+  try{location.hash=(v==='issue'&&STATE.iw)?('issue/'+STATE.iw):v}catch(e){}
+  render(); scrollTo({top:0,behavior:'smooth'});
 }
 function render(){
   const rail=$('#rail'); rail.innerHTML='';
@@ -3941,7 +3945,10 @@ fetch('archive.json').then(r=>r.json()).then(d=>{
   const last=SEASONS[SEASONS.length-1], lw=Math.max(...G.filter(g=>g.y===last).map(g=>g.w));
   $('#asof').textContent='Through Week '+lw+', '+last;
   const h=(location.hash||'').replace('#','');
-  if(VIEWS[h])CUR=h;
+  const mi=h.match(/^issue(?:\/(\d+))?$/);
+  if(mi){ const w=mi[1]?+mi[1]:ISSUE.wk;      // bare #issue means this week's
+          if(ISSUES[w]){ CUR='issue'; STATE={iw:w}; } }
+  else if(VIEWS[h])CUR=h;
   render();
 }).catch(err=>{ $('#main').innerHTML='<p class="empty">Could not load the archive data.</p>'; console.error(err); });
 let rsz; addEventListener('resize',()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{ if(CUR!=='scorigami')return;
