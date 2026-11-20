@@ -3940,7 +3940,7 @@ function render(){
   try{ m.appendChild(VIEWS[CUR]()); }
   catch(err){ m.appendChild(E('p','empty','Something went wrong rendering this view: '+err.message)); console.error(err); }
 }
-fetch('archive.json').then(r=>r.json()).then(d=>{
+fetch('archive.ccd9d8620d.json').then(r=>r.json()).then(d=>{
   prep(d);
   const last=SEASONS[SEASONS.length-1], lw=Math.max(...G.filter(g=>g.y===last).map(g=>g.w));
   $('#asof').textContent='Through Week '+lw+', '+last;
