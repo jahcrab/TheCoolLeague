@@ -561,6 +561,7 @@ function setCvd(on){
 
 let D=null, G=[], BYK=new Map(), CHAMP={}, RUNUP={}, CAREER=new Map(), H2H=new Map(), SEASONS=[];
 const BR_REG=0, BR_PO=1, BR_CON=2, PO_FINAL={};
+const SEASON_SETTLED={2026:{Bill:'in'}};
 /* The bracket is three rounds, so name them by distance from the final week. */
 function roundName(y,w,br){
   if(br===BR_CON) return 'Consolation';
@@ -617,7 +618,16 @@ function prep(d){
   });
   for(const y in CHAMP){ CAREER.get(CHAMP[y]).titles++; CAREER.get(CHAMP[y]).finals++; CAREER.get(RUNUP[y]).finals++; }
   // a season only counts against a playoff rate once its bracket has been played
-  CAREER.forEach(c=>{ c.cseas=[...c.seasons].filter(y=>PO_FINAL[y]).length; });
+  /* A season belongs in the playoff line once a manager's outcome in it is
+     settled -- played out, clinched or eliminated -- and not only once the
+     bracket has been contested. Bill clinched the West in week 11 with three
+     games to play, so 2026 is decided for him and counts in both halves.
+     Refreshed each week from tools/clinch.py; 'in' also adds the appearance. */
+  CAREER.forEach(c=>{
+    c.cseas=[...c.seasons].filter(y=>PO_FINAL[y]).length;
+    for(const y in SEASON_SETTLED){ const v=SEASON_SETTLED[y][c.m], yr=+y;
+      if(v && c.seasons.has(yr) && !PO_FINAL[yr]){ c.cseas++; if(v==='in') c.po.add(yr); } }
+  });
   // head to head (regular + playoffs)
   G.forEach(g=>{ if(g.br===BR_CON)return;
     const A1=credits(M[g.win[3]]), B1=credits(M[g.los[3]]);
